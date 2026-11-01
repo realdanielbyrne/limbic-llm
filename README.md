@@ -4,6 +4,7 @@ Hippocampally inspired memory modules for sequence models in PyTorch. Each part 
 
 * **Strategy I (direct circuit).** EC → DG → CA3 → CA2 → CA1 → Subiculum as one residual block, with a one-shot episodic store in CA3.
 * **Strategy II (Titans hybrid).** The Titans long-term memory (Behrouz, Zhong & Mirrokni, 2024, [arXiv:2501.00663](https://arxiv.org/abs/2501.00663)) extended with a dentate-gyrus write path, a CA1 comparator, and novelty-scaled memory learning rates.
+* **Gated DeltaNet memory.** The linear, momentum-free special case of the Titans memory (Yang, Kautz & Hatamizadeh, 2024, [arXiv:2412.06464](https://arxiv.org/abs/2412.06464)), usable as a token mixer, as the memory inside Titans layers, or with dentate-gyrus addressing.
 
 Both strategies can feed a replay-consolidation loop for continual learning, in the spirit of complementary learning systems.
 
@@ -16,11 +17,13 @@ Both strategies can feed a replay-consolidation loop for continual learning, in 
                                                                                              └─► replay priority ─► sleep consolidation
 ```
 
+The `docs/` folder holds the background write-ups: a hippocampus report, the ML-architecture parallels document, and an interactive circuit diagram.
+
 ## Install
 
 ```bash
 pip install -e .            # requires torch >= 2.1
-pytest -q                   # 29 tests: shapes, causality, sparsity, memory, replay, regressions
+pytest -q                   # 51 tests: shapes, causality, sparsity, memory, replay, Gated DeltaNet, regressions
 ```
 
 ## Component map
@@ -36,6 +39,8 @@ pytest -q                   # 29 tests: shapes, causality, sparsity, memory, rep
 | CA1 | `CA1Comparator` | $\phi = [a; r; a \odot r; \lvert a-r \rvert]$, $\text{fused} = W\phi$, $n_t = \sigma(\text{MLP}(\phi))$ |
 | Subiculum | `Subiculum` | SwiGLU output scaled by a novelty-dependent gain $\text{softplus}(a\,n_t + b)$ |
 | Titans LMM | `NeuralMemory` | $\ell = \lVert M(k_t) - v_t \rVert^2$, $S_t = \eta S_{t-1} - \theta_t \nabla\ell$, $M_t = (1-\alpha)M_{t-1} + S_t$; with `sequential=True`, $v_t = W_V x_{t+1}$ |
+| Gated DeltaNet | `gated_delta_scan`, `gated_delta_chunked` | $S_t = \alpha_t S_{t-1}(I - \beta_t k_t k_t^\top) + \beta_t v_t k_t^\top$, $o_t = S_t q_t$ (exact; chunked form solves $(I+L)U = \operatorname{diag}(\beta)(V - \operatorname{diag}(\Gamma)KS_0^\top)$ per chunk) |
+| GDN addressing | `GatedDeltaNet(addressing=…)` | `"gdn"` standard q/k/v + short conv; `"tied"` address $a_t$ is the query at $t$ and the key of the write $a_{t-1} \mapsto v_t$; `"dg"` the same with $a_t = \text{norm}(\text{k-WTA}(W_a x_t))$ |
 | Replay | `PrioritizedReplayBuffer`, `Consolidator` | $P(i) \propto p_i^{a}$; replay loss is CE $+\ \tau^2\,\text{KL}(\text{stored}\,\Vert\,\text{current})$; `sleep()` updates only the slow parameters |
 
 ## Usage
@@ -68,6 +73,23 @@ model = TitansHippocampalLM(vocab=32000, d_model=256, n_heads=8, n_layers=4,
 # all four flags False gives plain Titans, so ablations are one flag each
 ```
 
+**Gated DeltaNet (linear CA3-style memory)**
+
+```python
+from hippoformer import GatedDeltaLM, TitansHippocampalLM
+
+# token mixer stack; attn_every=4 gives the 3:1 DeltaNet:attention mix of Qwen3-Next
+lm = GatedDeltaLM(vocab=32000, d_model=256, n_heads=8, n_layers=8, attn_every=4,
+                  addressing="dg", key_expansion=8, dg_sparsity=0.05)
+out = lm(tokens); out2 = lm(next_tokens, state=out.state)    # constant-size state, streamable
+
+# or as the memory inside Titans layers (exact per-token delta rule instead of chunk-start gradients)
+titans = TitansHippocampalLM(vocab=32000, d_model=256, n_layers=4, memory_type="gated_delta",
+                             mem_heads=8, use_dg=True, sequential=True)
+```
+
+Gated DeltaNet is exactly one SGD step on the Titans loss $\tfrac12\lVert Sk_t - v_t\rVert^2$, taken at the decayed state $\alpha_t S_{t-1}$ with step size $\beta_t$. So $\alpha_t$ is the forgetting (weight-decay / LTD) gate, $\beta_t$ the encoding strength, and the bracket $v_t - \alpha_t S_{t-1} k_t$ is the CA1-style prediction error; `test_equals_one_sgd_step_on_titans_loss_at_decayed_state` checks this. With one-hot keys and $\alpha = \beta = 1$ the state is exact RAM, as in [Qwenputer](https://divagr.com/blog/qwenputer), which is the limit that dentate-gyrus pattern separation approaches.
+
 **Drop the block into your own transformer**
 
 ```python
@@ -96,9 +118,12 @@ cons.sleep(steps=200)                                          # offline consoli
 ```bash
 python experiments/assoc_recall.py --steps 3000     # one-shot recall across a gap longer than attention
 python experiments/continual.py --steps 600         # sequential fact tasks: naive vs. replay
+python experiments/gdn_capacity.py --pairs 8,16,32  # does DG addressing raise linear-memory capacity?
 ```
 
 **Associative recall.** The model studies 6 random key→value pairs, sees 40 filler tokens, then is queried on every pair in shuffled order. Only the recalled values are scored, and chance is 1/16. Local models use a 16-token window, segment, or chunk, so the bindings sit outside their attention by the time they're queried.
+
+**Gated DeltaNet capacity.** Pure Gated DeltaNet models (no attention) are trained on associative recall at increasing load (8, 16 and 32 pairs, with 64 possible keys). Four variants are compared: standard keys at $d_k = 16$; standard, tied dense, and tied DG-sparse keys at $d_k = 128$. Tied dense against DG at the same state size isolates the effect of sparsity.
 
 **Continual learning.** Three tasks, each with its own fixed key→value facts, are learned one after another. Only the first occurrence of a key in a sequence is scored, so the model must hold the facts in its weights. The script reports the accuracy matrix, average final accuracy, and backward transfer (BWT).
 
@@ -118,8 +143,9 @@ These three changes came out of debugging. Each is covered by a test.
 * **Meta-gradients.** With `meta_grad=True`, training differentiates through the memory update (second order). Attention is written as explicit softmax because PyTorch's fused CPU kernels have no double-backward. `meta_grad=False` gives a cheaper first-order version.
 * **Causality.** Memory is read before a chunk or segment and written after it. Tests check that perturbing a token never changes logits at earlier positions.
 * **CA3 writes.** Slot choice is not differentiable, but stored patterns keep their autograd graph within a call, so later recall losses train the encoding path. The store is detached between calls (truncated BPTT).
+* **Gated DeltaNet kernels.** `gated_delta_scan` is the reference per-token loop. `gated_delta_chunked` gives the same result to within $10^{-4}$ (tested) and is used by default. Decay ratios are computed as $\exp(g_C - g_i)$, so strong decay can't produce 0/0. There is no fused GPU kernel; for long sequences on GPU, use a dedicated implementation such as flash-linear-attention.
 * **Novelty supervision.** `novelty_alignment_loss` trains CA1's mismatch signal to predict the z-scored next-token loss. Without it, novelty is only shaped indirectly.
 
 ## References
 
-Behrouz, Zhong & Mirrokni (2024), Titans: Learning to Memorize at Test Time. Ramsauer et al. (2020), Hopfield Networks is All You Need. McClelland, McNaughton & O'Reilly (1995), complementary learning systems. Wilson & McNaughton (1994), replay during sleep. Lisman & Grace (2005), the hippocampal–VTA loop and CA1 novelty detection. Perez et al. (2018), FiLM. Howard & Kahana (2002), temporal context model. Buzzega et al. (2020), Dark Experience Replay.
+Behrouz, Zhong & Mirrokni (2024), Titans: Learning to Memorize at Test Time. Yang, Kautz & Hatamizadeh (2024), Gated Delta Networks: Improving Mamba2 with Delta Rule. Schlag, Irie & Schmidhuber (2021), Linear Transformers Are Secretly Fast Weight Programmers. Ramsauer et al. (2020), Hopfield Networks is All You Need. McClelland, McNaughton & O'Reilly (1995), complementary learning systems. Wilson & McNaughton (1994), replay during sleep. Lisman & Grace (2005), the hippocampal–VTA loop and CA1 novelty detection. Perez et al. (2018), FiLM. Howard & Kahana (2002), temporal context model. Buzzega et al. (2020), Dark Experience Replay.
