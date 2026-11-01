@@ -1,0 +1,44 @@
+[full_attn   ] step   500  loss 1.416  recall 0.474  (14s)
+[full_attn   ] step  1000  loss 1.316  recall 0.478  (29s)
+[full_attn   ] step  1500  loss 1.177  recall 0.464  (44s)
+[full_attn   ] step  2000  loss 1.172  recall 0.477  (58s)
+[full_attn   ] step  2500  loss 1.117  recall 0.476  (73s)
+[full_attn   ] step  3000  loss 1.170  recall 0.485  (88s)
+[window_attn ] step   500  loss 2.931  recall 0.066  (15s)
+[window_attn ] step  1000  loss 2.912  recall 0.058  (30s)
+[window_attn ] step  1500  loss 2.904  recall 0.062  (45s)
+[window_attn ] step  2000  loss 2.927  recall 0.056  (61s)
+[window_attn ] step  2500  loss 2.912  recall 0.061  (75s)
+[window_attn ] step  3000  loss 2.911  recall 0.059  (89s)
+[hippocampal ] step   500  loss 2.145  recall 0.291  (52s)
+[hippocampal ] step  1000  loss 2.072  recall 0.323  (105s)
+[hippocampal ] step  1500  loss 2.069  recall 0.343  (160s)
+[hippocampal ] step  2000  loss 2.017  recall 0.350  (213s)
+[hippocampal ] step  2500  loss 1.709  recall 0.399  (264s)
+[hippocampal ] step  3000  loss 1.731  recall 0.414  (317s)
+[titans_mac  ] step   500  loss 1.496  recall 0.484  (54s)
+[titans_mac  ] step  1000  loss 1.327  recall 0.467  (111s)
+[titans_mac  ] step  1500  loss 1.191  recall 0.458  (168s)
+[titans_mac  ] step  2000  loss 1.214  recall 0.488  (223s)
+[titans_mac  ] step  2500  loss 1.141  recall 0.469  (279s)
+[titans_mac  ] step  3000  loss 1.207  recall 0.483  (335s)
+[titans_seq  ] step   500  loss 1.439  recall 0.473  (57s)
+[titans_seq  ] step  1000  loss 1.358  recall 0.472  (116s)
+[titans_seq  ] step  1500  loss 1.203  recall 0.464  (175s)
+[titans_seq  ] step  2000  loss 1.176  recall 0.468  (232s)
+[titans_seq  ] step  2500  loss 1.128  recall 0.472  (289s)
+[titans_seq  ] step  3000  loss 1.184  recall 0.490  (346s)
+[titans_hippo] step   500  loss 2.829  recall 0.120  (89s)
+[titans_hippo] step  1000  loss 2.784  recall 0.114  (179s)
+[titans_hippo] step  1500  loss 2.779  recall 0.111  (267s)
+[titans_hippo] step  2000  loss 2.618  recall 0.169  (358s)
+[titans_hippo] step  2500  loss 2.488  recall 0.183  (449s)
+[titans_hippo] step  3000  loss 2.463  recall 0.172  (540s)
+
+chance = 0.062
+full_attn    params  221,184  final 0.485  best 0.485
+window_attn  params  221,184  final 0.059  best 0.066
+hippocampal  params  329,479  final 0.414  best 0.414
+titans_mac   params  238,470  final 0.483  best 0.488
+titans_seq   params  238,470  final 0.490  best 0.490
+titans_hippo params  429,320  final 0.172  best 0.183

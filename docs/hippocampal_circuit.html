@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hippocampal CA Circuit Diagram</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0e17;
+    color: #c8d6e5;
+    font-family: 'Noto Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .page-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 32px 60px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
+  .header h1 {
+    font-family: 'Source Serif 4', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #e8f0fe;
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+  }
+
+  .header .subtitle {
+    font-size: 13px;
+    color: #6b7fa3;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .diagram-wrapper {
+    background: linear-gradient(145deg, #0f1520 0%, #111927 50%, #0d1219 100%);
+    border: 1px solid #1e2d42;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .diagram-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 30% 40%, rgba(56,120,200,0.04) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 60%, rgba(200,100,60,0.03) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  svg { display: block; margin: 0 auto; }
+
+  .legend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-top: 28px;
+  }
+
+  .legend-card {
+    background: linear-gradient(135deg, #111b2a 0%, #0e1521 100%);
+    border: 1px solid #1a2840;
+    border-radius: 10px;
+    padding: 18px 20px;
+    transition: border-color 0.3s;
+  }
+
+  .legend-card:hover { border-color: #2a4a70; }
+
+  .legend-card h3 {
+    font-family: 'Source Serif 4', serif;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .legend-card p {
+    font-size: 12.5px;
+    line-height: 1.65;
+    color: #8a9bb5;
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  .bottom-note {
+    text-align: center;
+    margin-top: 32px;
+    font-size: 11.5px;
+    color: #4a5d7a;
+    font-style: italic;
+    line-height: 1.7;
+  }
+
+  /* Animations */
+  @keyframes pulseGlow { 0%,100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+  @keyframes dashFlow { to { stroke-dashoffset: -20; } }
+  @keyframes recurrentPulse { 0%,100% { stroke-opacity: 0.5; } 50% { stroke-opacity: 1; } }
+
+  .flow-arrow { animation: dashFlow 1.5s linear infinite; }
+  .recurrent-path { animation: recurrentPulse 2.5s ease-in-out infinite; }
+</style>
+</head>
+<body>
+<div class="page-container">
+
+  <div class="header">
+    <h1>Hippocampal CA Subfield Circuitry</h1>
+    <div class="subtitle">CA3 &bull; CA2 &bull; CA1 Representative Subnetwork with Recurrent Collaterals</div>
+  </div>
+
+  <div class="diagram-wrapper">
+    <svg viewBox="0 0 1340 820" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:1340px;height:auto;">
+      <defs>
+        <!-- Arrowheads -->
+        <marker id="arr-exc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,1 L9,5 L0,9 z" fill="#5b9bd5"/>
+        </marker>
+        <marker id="arr-schaffer" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,1 L9,5 L0,9 z" fill="#e8a838"/>
+        </marker>
+        <marker id="arr-recurrent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,1 L9,5 L0,9 z" fill="#e06050"/>
+        </marker>
+        <marker id="arr-inh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,2 L8,5 L0,8 z" fill="#a070d0"/>
+        </marker>
+        <marker id="arr-mossy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,1 L9,5 L0,9 z" fill="#50c878"/>
+        </marker>
+        <marker id="arr-output" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,1 L9,5 L0,9 z" fill="#78c8e8"/>
+        </marker>
+        <marker id="arr-ca2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,1 L9,5 L0,9 z" fill="#d4a0e0"/>
+        </marker>
+
+        <!-- Glows -->
+        <filter id="glow-blue" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="4" result="blur"/>
+          <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+        </filter>
+        <filter id="glow-red" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+        </filter>
+        <filter id="glow-green" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+        </filter>
+        <filter id="soft-shadow">
+          <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#000" flood-opacity="0.4"/>
+        </filter>
+
+        <!-- Region backgrounds -->
+        <linearGradient id="ca3-bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#1a2a44" stop-opacity="0.7"/>
+          <stop offset="100%" stop-color="#152035" stop-opacity="0.4"/>
+        </linearGradient>
+        <linearGradient id="ca2-bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#2a1f3a" stop-opacity="0.6"/>
+          <stop offset="100%" stop-color="#1e1530" stop-opacity="0.3"/>
+        </linearGradient>
+        <linearGradient id="ca1-bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#2a3520" stop-opacity="0.5"/>
+          <stop offset="100%" stop-color="#1a2518" stop-opacity="0.3"/>
+        </linearGradient>
+      </defs>
+
+      <!-- ═══════ REGION BOUNDARIES ═══════ -->
+      <rect x="40" y="60" width="400" height="700" rx="14" fill="url(#ca3-bg)" stroke="#253a5a" stroke-width="1.5" stroke-dasharray="6,3"/>
+      <rect x="470" y="60" width="260" height="700" rx="14" fill="url(#ca2-bg)" stroke="#3a2855" stroke-width="1.5" stroke-dasharray="6,3"/>
+      <rect x="760" y="60" width="400" height="700" rx="14" fill="url(#ca1-bg)" stroke="#354525" stroke-width="1.5" stroke-dasharray="6,3"/>
+
+      <!-- Region labels -->
+      <text x="240" y="100" text-anchor="middle" font-family="Source Serif 4, serif" font-size="22" font-weight="700" fill="#5b9bd5" opacity="0.9">CA3</text>
+      <text x="240" y="122" text-anchor="middle" font-family="Noto Sans, sans-serif" font-size="10.5" fill="#4a6a90" font-weight="500" letter-spacing="1.5">AUTOASSOCIATIVE NETWORK</text>
+
+      <text x="600" y="100" text-anchor="middle" font-family="Source Serif 4, serif" font-size="22" font-weight="700" fill="#b080d0" opacity="0.9">CA2</text>
+      <text x="600" y="122" text-anchor="middle" font-family="Noto Sans, sans-serif" font-size="10.5" fill="#7a5a90" font-weight="500" letter-spacing="1.5">TRANSITIONAL ZONE</text>
+
+      <text x="960" y="100" text-anchor="middle" font-family="Source Serif 4, serif" font-size="22" font-weight="700" fill="#78c878" opacity="0.9">CA1</text>
+      <text x="960" y="122" text-anchor="middle" font-family="Noto Sans, sans-serif" font-size="10.5" fill="#5a8050" font-weight="500" letter-spacing="1.5">PRIMARY OUTPUT STATION</text>
+
+      <!-- ═══════ LAYER MARKERS ═══════ -->
+      <text x="1190" y="188" font-family="JetBrains Mono, monospace" font-size="9" fill="#3a5070" text-anchor="end" letter-spacing="1">str. oriens</text>
+      <line x1="780" y1="195" x2="1145" y2="195" stroke="#253545" stroke-width="0.5" stroke-dasharray="3,5"/>
+
+      <text x="1190" y="358" font-family="JetBrains Mono, monospace" font-size="9" fill="#3a5070" text-anchor="end" letter-spacing="1">str. pyramidale</text>
+      <line x1="780" y1="365" x2="1145" y2="365" stroke="#253545" stroke-width="0.5" stroke-dasharray="3,5"/>
+
+      <text x="1190" y="528" font-family="JetBrains Mono, monospace" font-size="9" fill="#3a5070" text-anchor="end" letter-spacing="1">str. radiatum</text>
+      <line x1="780" y1="535" x2="1145" y2="535" stroke="#253545" stroke-width="0.5" stroke-dasharray="3,5"/>
+
+      <text x="1190" y="668" font-family="JetBrains Mono, monospace" font-size="9" fill="#3a5070" text-anchor="end" letter-spacing="1">str. lacun.-mol.</text>
+      <line x1="780" y1="675" x2="1145" y2="675" stroke="#253545" stroke-width="0.5" stroke-dasharray="3,5"/>
+
+      <!-- ═══════════════════════════════════ -->
+      <!-- CA3 PYRAMIDAL CELLS (5 neurons)     -->
+      <!-- ═══════════════════════════════════ -->
+      <!-- Pyramidal cell bodies - triangular shape -->
+      <g id="ca3-cells">
+        <!-- CA3 Pyramidal 1 -->
+        <g transform="translate(120, 280)">
+          <polygon points="0,-18 -14,14 14,14" fill="#1a3558" stroke="#5b9bd5" stroke-width="2" filter="url(#glow-blue)"/>
+          <text y="32" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#5b9bd5">P1</text>
+          <!-- Apical dendrite -->
+          <line x1="0" y1="-18" x2="0" y2="-70" stroke="#3a6a9a" stroke-width="1.5" opacity="0.6"/>
+          <line x1="0" y1="-50" x2="-20" y2="-75" stroke="#3a6a9a" stroke-width="1" opacity="0.4"/>
+          <line x1="0" y1="-50" x2="18" y2="-78" stroke="#3a6a9a" stroke-width="1" opacity="0.4"/>
+          <!-- Basal dendrite -->
+          <line x1="-14" y1="14" x2="-30" y2="40" stroke="#3a6a9a" stroke-width="1" opacity="0.4"/>
+          <line x1="14" y1="14" x2="28" y2="42" stroke="#3a6a9a" stroke-width="1" opacity="0.4"/>
+        </g>
+
+        <!-- CA3 Pyramidal 2 -->
+        <g transform="translate(200, 260)">
+          <polygon points="0,-18 -14,14 14,14" fill="#1a3558" stroke="#5b9bd5" stroke-width="2" filter="url(#glow-blue)"/>
+          <text y="32" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#5b9bd5">P2</text>
+          <line x1="0" y1="-18" x2="0" y2="-75" stroke="#3a6a9a" stroke-width="1.5" opacity="0.6"/>
+          <line x1="0" y1="-55" x2="-22" y2="-80" stroke="#3a6a9a" stroke-width="1" opacity="0.4"/>
+          <line x1="0" y1="-55" x2="20" y2="-82" stroke="#3a6a9a" stroke-width="1" opacity="0.4"/>
+          <line x1="-14" y1="14" x2="-25" y2="44" stroke="#3a6a9a" stroke-width="1" opacity="0.4"/>
+          <line x1="14" y1="14" x2="30" y2="38" stroke="#3a6a9a" stroke-width="1" opacity="0.4"/>
+        </g>
+
+        <!-- CA3 Pyramidal 3 -->
+        <g transform="translate(280, 275)">
+          <polygon points="0,-18 -14,14 14,14" fill="#1a3558" stroke="#5b9bd5" stroke-width="2" filter="url(#glow-blue)"/>
+          <text y="32" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#5b9bd5">P3</text>
+          <line x1="0" y1="-18" x2="0" y2="-72" stroke="#3a6a9a" stroke-width="1.5" opacity="0.6"/>
+          <line x1="0" y1="-48" x2="-18" y2="-76" stroke="#3a6a9a" stroke-width="1" opacity="0.4"/>
+          <line x1="0" y1="-48" x2="22" y2="-74" stroke="#3a6a9a" stroke-width="1" opacity="0.4"/>
+          <line x1="-14" y1="14" x2="-28" y2="42" stroke="#3a6a9a" stroke-width="1" opacity="0.4"/>
+          <line x1="14" y1="14" x2="26" y2="44" stroke="#3a6a9a" stroke-width="1" opacity="0.4"/>
+        </g>
+
+        <!-- CA3 Pyramidal 4 -->
+        <g transform="translate(360, 255)">
+          <polygon points="0,-18 -14,14 14,14" fill="#1a3558" stroke="#5b9bd5" stroke-width="2" filter="url(#glow-blue)"/>
+          <text y="32" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#5b9bd5">P4</text>
+          <line x1="0" y1="-18" x2="0" y2="-68" stroke="#3a6a9a" stroke-width="1.5" opacity="0.6"/>
+          <line x1="0" y1="-45" x2="-20" y2="-72" stroke="#3a6a9a" stroke-width="1" opacity="0.4"/>
+          <line x1="0" y1="-45" x2="18" y2="-70" stroke="#3a6a9a" stroke-width="1" opacity="0.4"/>
+          <line x1="-14" y1="14" x2="-24" y2="40" stroke="#3a6a9a" stroke-width="1" opacity="0.4"/>
+          <line x1="14" y1="14" x2="28" y2="36" stroke="#3a6a9a" stroke-width="1" opacity="0.4"/>
+        </g>
+      </g>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- CA3 RECURRENT COLLATERALS (red curved arcs) -->
+      <!-- ═══════════════════════════════════════════ -->
+      <g class="recurrent-path" filter="url(#glow-red)">
+        <!-- P1 → P2 -->
+        <path d="M130,268 C150,220 180,218 200,250" fill="none" stroke="#e06050" stroke-width="2" marker-end="url(#arr-recurrent)"/>
+        <!-- P2 → P3 -->
+        <path d="M210,248 C230,210 260,205 278,262" fill="none" stroke="#e06050" stroke-width="2" marker-end="url(#arr-recurrent)"/>
+        <!-- P3 → P1 -->
+        <path d="M270,288 C250,340 150,340 122,296" fill="none" stroke="#e06050" stroke-width="2" marker-end="url(#arr-recurrent)"/>
+        <!-- P2 → P4 -->
+        <path d="M216,258 C250,200 330,195 356,244" fill="none" stroke="#e06050" stroke-width="2" marker-end="url(#arr-recurrent)"/>
+        <!-- P4 → P2 -->
+        <path d="M348,270 C340,330 220,325 202,272" fill="none" stroke="#e06050" stroke-width="2" marker-end="url(#arr-recurrent)"/>
+        <!-- P3 → P4 -->
+        <path d="M294,268 C310,230 340,228 356,250" fill="none" stroke="#e06050" stroke-width="1.5" marker-end="url(#arr-recurrent)"/>
+        <!-- P1 → P3 -->
+        <path d="M134,274 C160,170 250,168 276,260" fill="none" stroke="#e06050" stroke-width="1.5" opacity="0.7" marker-end="url(#arr-recurrent)"/>
+        <!-- P4 → P3 -->
+        <path d="M350,272 C340,310 300,312 284,290" fill="none" stroke="#e06050" stroke-width="1.5" opacity="0.7" marker-end="url(#arr-recurrent)"/>
+      </g>
+
+      <!-- Recurrent label -->
+      <text x="240" y="370" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#e06050" opacity="0.85" font-weight="500">RECURRENT COLLATERALS</text>
+      <text x="240" y="384" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#c04040" opacity="0.6">(autoassociative network)</text>
+
+      <!-- ═══════════════════════════ -->
+      <!-- CA3 INTERNEURON (basket)    -->
+      <!-- ═══════════════════════════ -->
+      <g transform="translate(170, 420)">
+        <circle r="14" fill="#2a1840" stroke="#a070d0" stroke-width="2"/>
+        <text y="4" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#c090e0" font-weight="500">BC</text>
+        <text y="32" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#8060a0" opacity="0.7">Basket Cell</text>
+      </g>
+
+      <!-- Inhibitory connections from basket cell to pyramidal cells -->
+      <path d="M170,406 C170,360 130,320 125,296" fill="none" stroke="#a070d0" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr-inh)" opacity="0.6"/>
+      <path d="M178,406 C185,370 198,320 200,276" fill="none" stroke="#a070d0" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr-inh)" opacity="0.6"/>
+      <path d="M184,412 C220,380 270,330 278,290" fill="none" stroke="#a070d0" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr-inh)" opacity="0.6"/>
+
+      <!-- ═══════════════════════════════ -->
+      <!-- CA2 PYRAMIDAL CELLS (2 neurons) -->
+      <!-- ═══════════════════════════════ -->
+      <g transform="translate(560, 270)">
+        <polygon points="0,-18 -14,14 14,14" fill="#2a1840" stroke="#b080d0" stroke-width="2"/>
+        <text y="32" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#b080d0">P5</text>
+        <line x1="0" y1="-18" x2="0" y2="-70" stroke="#7050a0" stroke-width="1.5" opacity="0.6"/>
+        <line x1="0" y1="-50" x2="-18" y2="-72" stroke="#7050a0" stroke-width="1" opacity="0.4"/>
+        <line x1="0" y1="-50" x2="16" y2="-74" stroke="#7050a0" stroke-width="1" opacity="0.4"/>
+        <line x1="-14" y1="14" x2="-24" y2="40" stroke="#7050a0" stroke-width="1" opacity="0.4"/>
+        <line x1="14" y1="14" x2="22" y2="38" stroke="#7050a0" stroke-width="1" opacity="0.4"/>
+      </g>
+
+      <g transform="translate(640, 260)">
+        <polygon points="0,-18 -14,14 14,14" fill="#2a1840" stroke="#b080d0" stroke-width="2"/>
+        <text y="32" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#b080d0">P6</text>
+        <line x1="0" y1="-18" x2="0" y2="-65" stroke="#7050a0" stroke-width="1.5" opacity="0.6"/>
+        <line x1="0" y1="-45" x2="-16" y2="-68" stroke="#7050a0" stroke-width="1" opacity="0.4"/>
+        <line x1="0" y1="-45" x2="18" y2="-70" stroke="#7050a0" stroke-width="1" opacity="0.4"/>
+        <line x1="-14" y1="14" x2="-22" y2="42" stroke="#7050a0" stroke-width="1" opacity="0.4"/>
+        <line x1="14" y1="14" x2="26" y2="36" stroke="#7050a0" stroke-width="1" opacity="0.4"/>
+      </g>
+
+      <!-- CA2 note: No mossy fiber input -->
+      <rect x="505" y="450" width="190" height="52" rx="6" fill="#1a1228" stroke="#3a2555" stroke-width="1" opacity="0.8"/>
+      <text x="600" y="469" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#9070b0">No mossy fiber input</text>
+      <text x="600" y="484" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#7050a0" opacity="0.7">Receives: supramammillary</text>
+      <text x="600" y="496" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#7050a0" opacity="0.7">nucleus + vasopressin</text>
+
+      <!-- ═══════════════════════════════ -->
+      <!-- CA1 PYRAMIDAL CELLS (4 neurons) -->
+      <!-- ═══════════════════════════════ -->
+      <g transform="translate(840, 275)">
+        <polygon points="0,-18 -14,14 14,14" fill="#1a3020" stroke="#78c878" stroke-width="2" filter="url(#glow-green)"/>
+        <text y="32" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#78c878">P7</text>
+        <line x1="0" y1="-18" x2="0" y2="-72" stroke="#4a8040" stroke-width="1.5" opacity="0.6"/>
+        <line x1="0" y1="-50" x2="-20" y2="-76" stroke="#4a8040" stroke-width="1" opacity="0.4"/>
+        <line x1="0" y1="-50" x2="18" y2="-78" stroke="#4a8040" stroke-width="1" opacity="0.4"/>
+        <line x1="-14" y1="14" x2="-28" y2="42" stroke="#4a8040" stroke-width="1" opacity="0.4"/>
+        <line x1="14" y1="14" x2="26" y2="44" stroke="#4a8040" stroke-width="1" opacity="0.4"/>
+      </g>
+
+      <g transform="translate(920, 260)">
+        <polygon points="0,-18 -14,14 14,14" fill="#1a3020" stroke="#78c878" stroke-width="2" filter="url(#glow-green)"/>
+        <text y="32" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#78c878">P8</text>
+        <line x1="0" y1="-18" x2="0" y2="-68" stroke="#4a8040" stroke-width="1.5" opacity="0.6"/>
+        <line x1="0" y1="-48" x2="-18" y2="-72" stroke="#4a8040" stroke-width="1" opacity="0.4"/>
+        <line x1="0" y1="-48" x2="20" y2="-70" stroke="#4a8040" stroke-width="1" opacity="0.4"/>
+        <line x1="-14" y1="14" x2="-24" y2="40" stroke="#4a8040" stroke-width="1" opacity="0.4"/>
+        <line x1="14" y1="14" x2="28" y2="38" stroke="#4a8040" stroke-width="1" opacity="0.4"/>
+      </g>
+
+      <g transform="translate(1000, 270)">
+        <polygon points="0,-18 -14,14 14,14" fill="#1a3020" stroke="#78c878" stroke-width="2"/>
+        <text y="32" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#78c878">P9</text>
+        <line x1="0" y1="-18" x2="0" y2="-66" stroke="#4a8040" stroke-width="1.5" opacity="0.6"/>
+        <line x1="0" y1="-46" x2="-16" y2="-70" stroke="#4a8040" stroke-width="1" opacity="0.4"/>
+        <line x1="0" y1="-46" x2="18" y2="-68" stroke="#4a8040" stroke-width="1" opacity="0.4"/>
+        <line x1="-14" y1="14" x2="-26" y2="38" stroke="#4a8040" stroke-width="1" opacity="0.4"/>
+        <line x1="14" y1="14" x2="24" y2="42" stroke="#4a8040" stroke-width="1" opacity="0.4"/>
+      </g>
+
+      <g transform="translate(1080, 265)">
+        <polygon points="0,-18 -14,14 14,14" fill="#1a3020" stroke="#78c878" stroke-width="2"/>
+        <text y="32" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#78c878">P10</text>
+        <line x1="0" y1="-18" x2="0" y2="-64" stroke="#4a8040" stroke-width="1.5" opacity="0.6"/>
+        <line x1="0" y1="-44" x2="-15" y2="-68" stroke="#4a8040" stroke-width="1" opacity="0.4"/>
+        <line x1="0" y1="-44" x2="17" y2="-66" stroke="#4a8040" stroke-width="1" opacity="0.4"/>
+        <line x1="-14" y1="14" x2="-22" y2="36" stroke="#4a8040" stroke-width="1" opacity="0.4"/>
+        <line x1="14" y1="14" x2="20" y2="40" stroke="#4a8040" stroke-width="1" opacity="0.4"/>
+      </g>
+
+      <!-- CA1 Interneuron -->
+      <g transform="translate(960, 410)">
+        <circle r="14" fill="#1a2a18" stroke="#60a860" stroke-width="2"/>
+        <text y="4" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#80c880" font-weight="500">IN</text>
+        <text y="32" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#50804a" opacity="0.7">O-LM Cell</text>
+      </g>
+      <!-- CA1 inhibitory connections -->
+      <path d="M955,396 C940,360 845,320 842,290" fill="none" stroke="#60a860" stroke-width="1.2" stroke-dasharray="4,3" opacity="0.5"/>
+      <path d="M960,396 C960,370 922,320 920,276" fill="none" stroke="#60a860" stroke-width="1.2" stroke-dasharray="4,3" opacity="0.5"/>
+
+      <!-- ══════════════════════════════════════════ -->
+      <!-- MAJOR PATHWAY CONNECTIONS                  -->
+      <!-- ══════════════════════════════════════════ -->
+
+      <!-- MOSSY FIBER INPUTS from DG (entering from bottom-left) -->
+      <g>
+        <!-- Input bundle from DG -->
+        <rect x="55" y="570" width="140" height="44" rx="8" fill="#0e2018" stroke="#50c878" stroke-width="1.5"/>
+        <text x="125" y="588" text-anchor="middle" font-family="Source Serif 4, serif" font-size="11" font-weight="600" fill="#50c878">Dentate Gyrus</text>
+        <text x="125" y="604" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#3a9050" opacity="0.8">Granule Cell Axons</text>
+
+        <!-- Mossy fibers to CA3 pyramidal cells -->
+        <path d="M125,570 C125,500 120,340 120,296" fill="none" stroke="#50c878" stroke-width="2.5" marker-end="url(#arr-mossy)" filter="url(#glow-green)" opacity="0.8"/>
+        <path d="M145,570 C160,480 195,340 200,276" fill="none" stroke="#50c878" stroke-width="2.5" marker-end="url(#arr-mossy)" opacity="0.7"/>
+        <path d="M165,570 C190,470 270,340 280,290" fill="none" stroke="#50c878" stroke-width="2.5" marker-end="url(#arr-mossy)" opacity="0.7"/>
+        <path d="M180,570 C220,460 340,340 358,270" fill="none" stroke="#50c878" stroke-width="2" marker-end="url(#arr-mossy)" opacity="0.6"/>
+
+        <!-- Mossy fiber label -->
+        <text x="82" y="520" font-family="JetBrains Mono" font-size="9" fill="#50c878" opacity="0.8" transform="rotate(-70,82,520)" font-weight="500">Mossy Fibers</text>
+
+        <!-- Giant bouton indicators (large dots) -->
+        <circle cx="120" cy="330" r="5" fill="#50c878" opacity="0.4"/>
+        <circle cx="200" cy="310" r="5" fill="#50c878" opacity="0.4"/>
+        <circle cx="280" cy="320" r="5" fill="#50c878" opacity="0.4"/>
+        <circle cx="358" cy="302" r="5" fill="#50c878" opacity="0.35"/>
+        <text x="315" y="350" font-family="JetBrains Mono" font-size="7.5" fill="#50c878" opacity="0.6">giant boutons</text>
+      </g>
+
+      <!-- SCHAFFER COLLATERALS: CA3 → CA1 -->
+      <g>
+        <path d="M374,260 C480,240 700,260 836,262" fill="none" stroke="#e8a838" stroke-width="2.8" marker-end="url(#arr-schaffer)" opacity="0.85"/>
+        <path d="M374,268 C500,290 720,280 916,250" fill="none" stroke="#e8a838" stroke-width="2.5" marker-end="url(#arr-schaffer)" opacity="0.7"/>
+        <path d="M374,275 C520,320 750,300 996,258" fill="none" stroke="#e8a838" stroke-width="2" marker-end="url(#arr-schaffer)" opacity="0.6"/>
+        <path d="M374,280 C550,340 780,310 1076,254" fill="none" stroke="#e8a838" stroke-width="1.8" marker-end="url(#arr-schaffer)" opacity="0.5"/>
+
+        <!-- Schaffer collateral label -->
+        <rect x="590" y="218" width="165" height="22" rx="4" fill="#2a1e10" stroke="#e8a838" stroke-width="0.8" opacity="0.7"/>
+        <text x="672" y="233" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#e8a838" font-weight="500">Schaffer Collaterals</text>
+      </g>
+
+      <!-- CA3 → CA2 connections -->
+      <g>
+        <path d="M374,265 C420,255 510,258 555,260" fill="none" stroke="#d4a0e0" stroke-width="1.8" marker-end="url(#arr-ca2)" opacity="0.6"/>
+        <path d="M374,270 C430,270 520,260 635,248" fill="none" stroke="#d4a0e0" stroke-width="1.5" marker-end="url(#arr-ca2)" opacity="0.5"/>
+      </g>
+
+      <!-- CA2 → CA1 connections -->
+      <g>
+        <path d="M654,252 C700,255 770,265 836,266" fill="none" stroke="#d4a0e0" stroke-width="1.8" marker-end="url(#arr-ca2)" opacity="0.6"/>
+        <path d="M654,258 C720,270 800,268 916,254" fill="none" stroke="#d4a0e0" stroke-width="1.5" marker-end="url(#arr-ca2)" opacity="0.5"/>
+      </g>
+
+      <!-- PERFORANT PATH: EC → CA1 (direct, bypasses DG/CA3) -->
+      <g>
+        <rect x="830" y="620" width="180" height="44" rx="8" fill="#0e1820" stroke="#5b9bd5" stroke-width="1.5"/>
+        <text x="920" y="638" text-anchor="middle" font-family="Source Serif 4, serif" font-size="11" font-weight="600" fill="#78b8e8">Entorhinal Cortex</text>
+        <text x="920" y="654" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#4a80a0" opacity="0.8">Layer III → Direct Path</text>
+
+        <path d="M920,620 C920,560 880,400 845,290" fill="none" stroke="#5ba8d5" stroke-width="2" stroke-dasharray="8,4" marker-end="url(#arr-exc)" opacity="0.6" class="flow-arrow"/>
+        <path d="M940,620 C950,550 940,380 925,276" fill="none" stroke="#5ba8d5" stroke-width="1.8" stroke-dasharray="8,4" marker-end="url(#arr-exc)" opacity="0.5" class="flow-arrow"/>
+
+        <!-- Direct path label -->
+        <text x="870" y="510" font-family="JetBrains Mono" font-size="8.5" fill="#5ba8d5" opacity="0.7" transform="rotate(-75,870,510)">Temporoammonic Path</text>
+      </g>
+
+      <!-- PERFORANT PATH: EC Layer II → DG -->
+      <g>
+        <rect x="55" y="680" width="160" height="44" rx="8" fill="#0e1820" stroke="#5b9bd5" stroke-width="1.5"/>
+        <text x="135" y="698" text-anchor="middle" font-family="Source Serif 4, serif" font-size="11" font-weight="600" fill="#78b8e8">Entorhinal Cortex</text>
+        <text x="135" y="714" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#4a80a0" opacity="0.8">Layer II → Perforant Path</text>
+
+        <path d="M135,680 C135,650 130,630 125,618" fill="none" stroke="#5b9bd5" stroke-width="2" marker-end="url(#arr-exc)" opacity="0.6"/>
+      </g>
+
+      <!-- CA1 OUTPUT to Subiculum -->
+      <g>
+        <rect x="1050" y="420" width="120" height="40" rx="8" fill="#0e1a20" stroke="#78c8e8" stroke-width="1.5"/>
+        <text x="1110" y="436" text-anchor="middle" font-family="Source Serif 4, serif" font-size="11" font-weight="600" fill="#78c8e8">Subiculum</text>
+        <text x="1110" y="452" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#4a90a0" opacity="0.8">→ EC, Mammillary Bodies</text>
+
+        <path d="M1086,280 C1110,320 1110,380 1110,416" fill="none" stroke="#78c8e8" stroke-width="2.5" marker-end="url(#arr-output)" opacity="0.8"/>
+        <path d="M1004,286 C1040,340 1080,380 1095,416" fill="none" stroke="#78c8e8" stroke-width="2" marker-end="url(#arr-output)" opacity="0.6"/>
+      </g>
+
+      <!-- CA1 → EC feedback -->
+      <g>
+        <rect x="1050" y="530" width="130" height="36" rx="8" fill="#0e1820" stroke="#5ba8d5" stroke-width="1.2" opacity="0.7"/>
+        <text x="1115" y="548" text-anchor="middle" font-family="Source Serif 4, serif" font-size="10" font-weight="600" fill="#6090b0">→ EC Deep Layers</text>
+        <text x="1115" y="560" text-anchor="middle" font-family="JetBrains Mono" font-size="7.5" fill="#4a7090" opacity="0.7">feedback projection</text>
+
+        <path d="M1110,460 L1110,526" fill="none" stroke="#5ba8d5" stroke-width="1.5" marker-end="url(#arr-exc)" opacity="0.5" stroke-dasharray="6,3"/>
+      </g>
+
+      <!-- ═══════ NMDA / LTP ANNOTATION ═══════ -->
+      <g>
+        <rect x="750" y="370" width="148" height="28" rx="5" fill="#2a2010" stroke="#e8a838" stroke-width="1" opacity="0.7"/>
+        <text x="824" y="389" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#e8a838" font-weight="500">NMDA-dependent LTP</text>
+        <line x1="824" y1="368" x2="860" y2="300" stroke="#e8a838" stroke-width="0.8" opacity="0.4" stroke-dasharray="3,3"/>
+      </g>
+
+      <!-- ═══════ TRISYNAPTIC CIRCUIT ANNOTATION ═══════ -->
+      <g>
+        <rect x="280" y="690" width="340" height="50" rx="8" fill="#0e1520" stroke="#ffffff" stroke-width="1" opacity="0.4"/>
+        <text x="450" y="710" text-anchor="middle" font-family="Source Serif 4, serif" font-size="12" font-weight="600" fill="#c8d6e5" opacity="0.7">Trisynaptic Circuit Flow</text>
+        <text x="450" y="728" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#6b7fa3" opacity="0.7">EC → DG → CA3 → CA1 → Subiculum → EC</text>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Legend Cards -->
+  <div class="legend-grid">
+    <div class="legend-card">
+      <h3><span class="dot" style="background:#e06050;box-shadow:0 0 6px #e06050"></span> <span style="color:#e06050">CA3 Recurrent Collaterals</span></h3>
+      <p>CA3 pyramidal cells send axon branches back to other CA3 neurons, forming an <strong style="color:#c8d6e5">autoassociative network</strong>. This architecture enables <strong style="color:#c8d6e5">pattern completion</strong>: a partial cue reactivates the full stored representation. Each CA3 cell may contact ~4% of all other CA3 cells&mdash;an extraordinarily dense recurrent system.</p>
+    </div>
+
+    <div class="legend-card">
+      <h3><span class="dot" style="background:#e8a838;box-shadow:0 0 6px #e8a838"></span> <span style="color:#e8a838">Schaffer Collaterals (CA3→CA1)</span></h3>
+      <p>The third synapse of the trisynaptic loop. CA3 axons project to CA1 stratum radiatum, where <strong style="color:#c8d6e5">NMDA receptor-dependent LTP</strong> encodes new memories. This is the synapse most vulnerable to ethanol blockade during alcohol-induced blackouts.</p>
+    </div>
+
+    <div class="legend-card">
+      <h3><span class="dot" style="background:#50c878;box-shadow:0 0 6px #50c878"></span> <span style="color:#50c878">Mossy Fibers (DG→CA3)</span></h3>
+      <p>Dentate granule cell axons form <strong style="color:#c8d6e5">giant synaptic boutons</strong> (marked as large dots) on CA3 proximal dendrites. Each bouton contains hundreds of release sites, making these among the most powerful synapses in the brain. Note: mossy fibers do <em>not</em> innervate CA2.</p>
+    </div>
+
+    <div class="legend-card">
+      <h3><span class="dot" style="background:#d4a0e0;box-shadow:0 0 6px #d4a0e0"></span> <span style="color:#d4a0e0">CA2 Connections</span></h3>
+      <p>CA2 receives input from CA3 and projects to CA1, but <strong style="color:#c8d6e5">lacks mossy fiber input</strong>. Instead, it receives unique projections from the supramammillary nucleus and vasopressinergic afferents. CA2 is specialized for <strong style="color:#c8d6e5">social memory</strong> processing.</p>
+    </div>
+
+    <div class="legend-card">
+      <h3><span class="dot" style="background:#5ba8d5;box-shadow:0 0 6px #5ba8d5"></span> <span style="color:#5ba8d5">Entorhinal Cortex Paths</span></h3>
+      <p><strong style="color:#c8d6e5">Perforant path</strong> (EC Layer II → DG): main cortical input. <strong style="color:#c8d6e5">Temporoammonic path</strong> (EC Layer III → CA1): direct bypass route shown as dashed lines. CA1 compares CA3 predictions with direct EC sensory input for <strong style="color:#c8d6e5">novelty/mismatch detection</strong>.</p>
+    </div>
+
+    <div class="legend-card">
+      <h3><span class="dot" style="background:#a070d0;box-shadow:0 0 6px #a070d0"></span> <span style="color:#a070d0">Inhibitory Interneurons</span></h3>
+      <p><strong style="color:#c8d6e5">Basket cells</strong> (CA3) and <strong style="color:#c8d6e5">O-LM cells</strong> (CA1) provide GABAergic inhibition (dashed lines) that regulates excitation-inhibition balance. These interneurons are key targets of benzodiazepines and ethanol's GABAergic potentiation.</p>
+    </div>
+  </div>
+
+  <p class="bottom-note">
+    Diagram shows a representative subnetwork of ~10 pyramidal cells from a population of ~250,000 (CA3) and ~400,000 (CA1) in the human hippocampus.<br>
+    Triangles = pyramidal/granule cells (excitatory) &nbsp;|&nbsp; Circles = interneurons (inhibitory) &nbsp;|&nbsp; Dashed lines = inhibitory projections
+  </p>
+
+</div>
+</body>
+</html>

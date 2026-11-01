@@ -1,0 +1,9 @@
+[naive ] after task 0: T0=1.00  T1=0.13  T2=0.10
+[naive ] after task 1: T0=0.35  T1=1.00  T2=0.14
+[naive ] after task 2: T0=0.21  T1=0.33  T2=1.00
+[replay] after task 0: T0=1.00  T1=0.13  T2=0.10
+[replay] after task 1: T0=1.00  T1=1.00  T2=0.14
+[replay] after task 2: T0=1.00  T1=1.00  T2=1.00
+
+naive  avg final acc 0.513   BWT -0.731
+replay avg final acc 1.000   BWT +0.000

@@ -1,0 +1,16 @@
+[titans_seq_dg] step   500  loss 2.080  recall 0.315  (77s)
+[titans_seq_dg] step  1000  loss 1.520  recall 0.430  (152s)
+[titans_seq_dg] step  1500  loss 1.357  recall 0.443  (228s)
+[titans_seq_dg] step  2000  loss 1.259  recall 0.473  (304s)
+[titans_seq_dg] step  2500  loss 1.183  recall 0.470  (379s)
+[titans_seq_dg] step  3000  loss 1.213  recall 0.478  (455s)
+[titans_seq_ca1] step   500  loss 1.898  recall 0.410  (67s)
+[titans_seq_ca1] step  1000  loss 1.863  recall 0.402  (135s)
+[titans_seq_ca1] step  1500  loss 1.707  recall 0.418  (203s)
+[titans_seq_ca1] step  2000  loss 1.740  recall 0.431  (271s)
+[titans_seq_ca1] step  2500  loss 1.616  recall 0.432  (340s)
+[titans_seq_ca1] step  3000  loss 1.652  recall 0.440  (407s)
+
+chance = 0.062
+titans_seq_dg params  346,246  final 0.478  best 0.478
+titans_seq_ca1 params  321,544  final 0.440  best 0.440
