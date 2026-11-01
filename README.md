@@ -17,7 +17,7 @@ Both strategies can feed a replay-consolidation loop for continual learning, in 
                                                                                              └─► replay priority ─► sleep consolidation
 ```
 
-The `docs/` folder holds the background write-ups: a hippocampus report, the ML-architecture parallels document, and an interactive circuit diagram.
+[`docs/architecture.html`](docs/architecture.html) diagrams how the package fits together; open it in a browser. The `docs/` folder also holds the background write-ups: a hippocampus report, the ML-architecture parallels document, and an interactive circuit diagram.
 
 ## Install
 
