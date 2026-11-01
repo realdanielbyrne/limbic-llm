@@ -12,6 +12,8 @@ long streams can be processed call-by-call.
                             ``n_neocortex>0`` is context-augmentation mode.
 * ``TitansHippocampalLM`` — Strategy II. A stack of TitansHippocampalLayer
                             (MAC / MAG / MAL with DG, CA1 and novelty-lr).
+* ``GatedDeltaLM``        — Gated DeltaNet stack (linear CA3-style memory),
+                            optionally hybrid with attention (Qwen3-Next 3:1).
 """
 
 from __future__ import annotations
@@ -22,8 +24,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .attention import TransformerLayer
+from .attention import FeedForward, TransformerLayer
 from .ca3 import EpisodicStore
+from .gated_delta import GatedDeltaNet
 from .hippocampal_block import HippocampalBlock
 from .neural_memory import MemoryState
 from .titans_hybrid import TitansHippocampalLayer
@@ -76,6 +79,57 @@ class BaselineLM(nn.Module):
         for layer in self.layers:
             x = layer(x)
         return LMOutput(self.head(x))
+
+
+# ---------------------------------------------------------------- gated deltanet
+class _GDNBlock(nn.Module):
+    def __init__(self, d_model: int, n_heads: int, dropout: float = 0.0, **gdn_kwargs) -> None:
+        super().__init__()
+        self.norm = nn.LayerNorm(d_model)
+        self.mixer = GatedDeltaNet(d_model, n_heads, **gdn_kwargs)
+        self.ff = FeedForward(d_model, dropout=dropout)
+
+    def forward(self, x, state=None):
+        y, state, err = self.mixer(self.norm(x), state)
+        x = x + y
+        return x + self.ff(x), state, err
+
+
+class GatedDeltaLM(nn.Module):
+    """Stack of Gated DeltaNet blocks, optionally hybrid with attention.
+
+    ``attn_every=N`` makes every N-th layer a (windowed) attention layer, e.g.
+    ``attn_every=4`` gives the 3:1 DeltaNet:attention mix of Qwen3-Next.
+    ``addressing`` is "gdn" | "tied" | "dg" (see ``gated_delta.py``).
+    The recurrent state is returned and can be passed back to stream.
+    """
+
+    def __init__(self, vocab: int, d_model: int = 64, n_heads: int = 4, n_layers: int = 2,
+                 attn_every: int | None = None, window: int | None = None, max_len: int = 1024,
+                 dropout: float = 0.0, **gdn_kwargs) -> None:
+        super().__init__()
+        self.embed = _Embed(vocab, d_model, max_len)
+        self.layers = nn.ModuleList(
+            TransformerLayer(d_model, n_heads, window, dropout)
+            if (attn_every and (i + 1) % attn_every == 0)
+            else _GDNBlock(d_model, n_heads, dropout, **gdn_kwargs)
+            for i in range(n_layers)
+        )
+        self.head = _Head(d_model, vocab)
+
+    def forward(self, tokens: torch.Tensor, state: list | None = None, offset: int = 0) -> LMOutput:
+        x = self.embed(tokens, offset)
+        states = list(state) if state else [None] * len(self.layers)
+        errs = []
+        for i, layer in enumerate(self.layers):
+            if isinstance(layer, _GDNBlock):
+                x, states[i], err = layer(x, states[i])
+                errs.append(err)
+            else:
+                x = layer(x)
+        surprise = torch.stack(errs).mean(0) if errs else None
+        return LMOutput(self.head(x), None, surprise,
+                        [s.detach() if s is not None else None for s in states])
 
 
 # ------------------------------------------------------------------- strategy I
@@ -142,7 +196,7 @@ class TitansHippocampalLM(nn.Module):
 
     @property
     def dentate_gyri(self):
-        return [l.memory.dg for l in self.layers if l.memory.dg is not None]
+        return [l.memory.dg for l in self.layers if getattr(l.memory, "dg", None) is not None]
 
     def forward(self, tokens: torch.Tensor, state: list[MemoryState] | None = None,
                 offset: int = 0) -> LMOutput:

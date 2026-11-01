@@ -7,6 +7,9 @@ Three variants, matching the paper, each optionally upgraded with
 * novelty-scaled memory learning rate             (``novelty_lr``)
 * heteroassociative cue→successor writes          (``sequential``)
 
+``memory_type="gated_delta"`` swaps the deep Titans memory for a linear
+Gated DeltaNet memory (exact per-token delta rule; DG sparsifies addresses).
+
 With all four switched off these layers reduce to plain Titans
 MAC / MAG / MAL, which makes ablations a one-flag change.
 
@@ -25,6 +28,7 @@ import torch.nn as nn
 from .attention import FeedForward, MultiHeadAttention, causal_mask, with_prefix
 from .ca1 import CA1Comparator
 from .dentate_gyrus import DentateGyrus
+from .gated_delta import GatedDeltaMemory
 from .neural_memory import MemoryState, NeuralMemory
 
 
@@ -65,19 +69,28 @@ class TitansHippocampalLayer(nn.Module):
         novelty_lr: bool = True,
         sequential: bool = True,
         meta_grad: bool = True,
+        memory_type: str = "titans",
+        mem_heads: int = 1,
         dropout: float = 0.0,
     ) -> None:
         super().__init__()
         if variant not in {"mac", "mag", "mal"}:
             raise ValueError(variant)
+        if memory_type not in {"titans", "gated_delta"}:
+            raise ValueError(memory_type)
         self.variant = variant
         self.chunk = chunk
         self.window = window
         self.novelty_lr = novelty_lr and use_ca1
 
-        dg = DentateGyrus(d_model, dg_expansion, dg_sparsity) if use_dg else None
-        self.memory = NeuralMemory(d_model, d_model, mem_depth, dg=dg, meta_grad=meta_grad,
-                                   sequential=sequential)
+        if memory_type == "titans":
+            dg = DentateGyrus(d_model, dg_expansion, dg_sparsity) if use_dg else None
+            self.memory = NeuralMemory(d_model, d_model, mem_depth, dg=dg, meta_grad=meta_grad,
+                                       sequential=sequential)
+        else:   # linear delta-rule memory; DG sparsifies the addresses themselves
+            self.memory = GatedDeltaMemory(d_model, d_model, mem_heads, use_dg=use_dg,
+                                           key_expansion=dg_expansion if use_dg else 1,
+                                           dg_sparsity=dg_sparsity, sequential=sequential)
         self.persistent = PersistentMemory(n_persistent, d_model)
         self.ca1 = CA1Comparator(d_model, d_model, n_heads) if use_ca1 else None
 
