@@ -31,7 +31,6 @@ import math
 import sys
 from pathlib import Path
 
-import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -39,22 +38,29 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from limbic_llm.temporal_loop import HippocampalLoop  # noqa: E402
 
 
+def _roots(tau: int, rho: float, K: float) -> torch.Tensor:
+    """Roots of z^τ − ρ z^{τ−1} + K(1 − ρ), as eigenvalues of its companion matrix."""
+    C = torch.zeros(tau, tau, dtype=torch.float64)
+    C[1:, :-1] = torch.eye(tau - 1, dtype=torch.float64)
+    C[0, 0], C[0, -1] = rho, -K * (1 - rho)                        # first row: −(coefficients)
+    return torch.linalg.eigvals(C)
+
+
 def critical_gain(tau: int, rho: float) -> tuple[float, float]:
     """Smallest K at which z^τ − ρ z^{τ−1} + K(1 − ρ) has a root on the unit circle,
     and the ringing period (tokens) at that point."""
     lo, hi = 0.0, 1.0
     def unstable(K):
-        c = np.zeros(tau + 1); c[0], c[1], c[-1] = 1.0, -rho, K * (1 - rho)
-        return np.abs(np.roots(c)).max() >= 1.0
+        return _roots(tau, rho, K).abs().max().item() >= 1.0
     while not unstable(hi):
         hi *= 2
     for _ in range(60):
         mid = (lo + hi) / 2
         lo, hi = (lo, mid) if unstable(mid) else (mid, hi)
-    c = np.zeros(tau + 1); c[0], c[1], c[-1] = 1.0, -rho, hi * (1 - rho)
-    r = np.roots(c)
-    z = r[np.argmax(np.abs(r))]
-    period = 2 * math.pi / abs(np.angle(z)) if abs(np.angle(z)) > 1e-9 else float("inf")
+    r = _roots(tau, rho, hi)
+    z = r[r.abs().argmax()]
+    ang = abs(torch.angle(z).item())
+    period = 2 * math.pi / ang if ang > 1e-9 else float("inf")
     return hi, period
 
 
@@ -75,7 +81,7 @@ def run(feedback: str, A: float, beta: float, kernel: str, seeds: int, T: int, D
         peak.append(r.max().item())
     return {"feedback": feedback, "A": A, "beta": beta, "kernel": kernel, "vocab": vocab,
             "K": A * torch.sigmoid(torch.tensor(-1.0)).item() * beta if feedback == "subtractive" else None,
-            "inj_mid": float(np.mean(mid)), "inj_late": float(np.mean(late)), "inj_max": float(np.max(peak))}
+            "inj_mid": sum(mid) / len(mid), "inj_late": sum(late) / len(late), "inj_max": max(peak)}
 
 
 def main():
