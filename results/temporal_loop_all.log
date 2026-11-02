@@ -1,0 +1,21 @@
+[window         ] step   250 loss 3.555 what 0.152 when 0.355 (26s)
+[window         ] step   500 loss 3.465 what 0.145 when 0.377 (52s)
+[window         ] step   750 loss 3.330 what 0.150 when 0.348 (78s)
+[window         ] step  1000 loss 3.443 what 0.137 when 0.363 (104s)
+[window         ] step  1250 loss 3.322 what 0.135 when 0.318 (130s)
+[window         ] step  1500 loss 3.591 what 0.109 when 0.338 (159s)
+[window         ] long rollout {"what_gap_20_140": 0.0, "what_gap_140_300": 0.0, "what_gap_300_500": 0.083}
+[memory         ] step   250 loss 3.160 what 0.152 when 0.289 (48s)
+[memory         ] step   500 loss 2.535 what 0.156 when 0.557 (98s)
+[memory         ] step   750 loss 2.759 what 0.154 when 0.777 (146s)
+[memory         ] step  1000 loss 2.470 what 0.158 when 0.812 (218s)
+[memory         ] step  1250 loss 0.705 what 0.887 when 0.869 (265s)
+[memory         ] step  1500 loss 0.508 what 0.996 when 0.852 (313s)
+[memory         ] long rollout {"what_gap_20_140": 1.0, "what_gap_140_300": 0.609, "what_gap_300_500": 0.167, "inj_ratio_16_128": 0.173, "inj_ratio_128_320": 0.207, "inj_ratio_320_519": 0.207, "inj_ratio_max": 0.362, "gain": 0.403}
+[time           ] step   250 loss 2.468 what 0.115 when 0.844 (32s)
+[time           ] step   500 loss 2.332 what 0.145 when 0.859 (65s)
+[time           ] step   750 loss 2.284 what 0.121 when 0.873 (98s)
+[time           ] step  1000 loss 2.194 what 0.131 when 0.902 (127s)
+[time           ] step  1250 loss 2.311 what 0.129 when 0.889 (158s)
+[time           ] step  1500 loss 2.310 what 0.102 when 0.883 (188s)
+[time           ] long rollout {"what_gap_20_140": 0.059, "what_gap_140_300": 0.13, "what_gap_300_500": 0.208}
