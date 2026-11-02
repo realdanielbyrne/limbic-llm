@@ -175,14 +175,17 @@ With a loop horizon that covers the gap (`--kernel exp --rho 0.95 --tau 32`, wei
 | Model, all layers windowed | Windowed | Side, default kernel | Side, horizon kernel | Full attention |
 |---|---:|---:|---:|---:|
 | Qwen3-1.7B-Base, loss / token accuracy / exact | 3.07 / 0.11 / 0.00 | 1.84 / 0.29 / 0.00 | **1.38 / 0.46 / 0.00** | 0.01 / 1.00 / 1.00 |
-| Qwen3.5-2B-Base, loss / token accuracy / exact | 3.04 / 0.13 / 0.00 | 1.69 / 0.32 / 0.00 | **1.24 / 0.55 / 0.02** | 0.03 / 1.00 / 1.00 |
+| Qwen3.5-2B-Base, loss / token accuracy / exact | 3.04 / 0.13 / 0.00 | 1.84 / 0.29 / 0.00 | **1.24 / 0.55 / 0.02** | 0.03 / 1.00 / 1.00 |
 
-The 1.69 entry is from the superseded bf16 run (an anti-causal leak; see the handoff note).
+The default-kernel entries are the float32 reruns, both at the format floor. An earlier bf16 figure of 1.69 for Qwen3.5 came from an anti-causal leak and is superseded.
+
+**How much of the value arrives.** With five scored tokens (the leading space, then four digits) and $k$ digits known perfectly, the rest at chance, mean digit loss is $\frac{4-k}{5}\ln 10$ and token accuracy is $\frac{1 + k + 0.1(4-k)}{5}$. Qwen3's 1.381 / 0.461 matches $k = 1$ exactly (1.382 / 0.46). Qwen3.5's 1.239 / 0.55 lies between $k = 1$ and $k = 2$. The loop stores each key and its value at the same position, so nothing moves the lookup on to the next digit. This is the gap successor-bound addressing (RESULTS §3) fills.
 
 * **Qwen3.5's Gated DeltaNet layers alone do not recall the needle** (0.00). This suggests native GDN memory keeps a trace too weak for exact recall at this distance, and that the hybrid relies on its attention layers for exact recall.
 * **With the side channels tapping block 12, recall is exact.** Moving the tap to block 22 removes it, so the success depends on the GDN layers after the tap.
-* **The loop could not see the needle itself.** With $\rho = 0.7$ and $\tau = 16$ its span is $\tau/\ln(1/\rho) \approx 45$ tokens and its weight at a 500-token lag is about $10^{-19}$ (exactly 0 at lags 501–503, the clamped half of the cosine). So the Qwen3 failure is a setting, not evidence against the loop, and on Qwen3.5 the needle must reach the tap through the GDN layers before it. The working hypothesis is a chain: GDN layers before the tap carry a weak trace, the loop re-presents it, and GDN layers after the tap integrate it. With a horizon that covers the gap, the loop alone carries needle information 500 tokens back in both models (loss well below the format floor, token accuracy 0.46–0.55), though not yet exact recall.
-* The first GPU runs had the side channels in bf16, where Adam updates near 1 round away; the table uses the float32 reruns.
+* **The loop could not see the needle itself.** With $\rho = 0.7$ and $\tau = 16$ its span is $\tau/\ln(1/\rho) \approx 45$ tokens and its weight at a 500-token lag is about $10^{-19}$ (exactly 0 at lags 501–503, the clamped half of the cosine). So the Qwen3 failure is a setting, not evidence against the loop, and on Qwen3.5 the needle must reach the tap through the GDN layers before it. The working hypothesis is a chain: GDN layers before the tap carry a weak trace, the loop re-presents it, and GDN layers after the tap integrate it. With a horizon that covers the gap, the loop alone carries needle information 500 tokens back in both models: one of the four digits on Qwen3, and between one and two on Qwen3.5. Exact recall of all four digits is not there yet. The Qwen3.5 run left the floor only near step 2,700, as the learning rate reached zero, so it is probably undertrained.
+* The first GPU runs had the side channels in bf16, where Adam updates near 1 round away; the tables use the float32 reruns.
+* **Language modelling** (WikiText-103, window 256, 1,000 steps): the side channels cut windowed perplexity from 14.6 to 12.0 on Qwen3 (full attention 9.0; 41% of the loss gap) and from 16.3 to 11.2 on Qwen3.5 with attention windowed (full 9.8; 74%). Only the windowed + side condition trains on WikiText, so part of each gain may be domain adaptation rather than memory.
 
 ### What this shows
 
