@@ -22,3 +22,8 @@ memory_time     what 1.000  when 0.922  inj late 0.303
 [closed_osc_ca1 ] step  2000 loss 0.002 what 1.000 when 0.998 (544s)
 [closed_osc_ca1 ] step  2500 loss 0.001 what 1.000 when 1.000 (681s)
 [closed_osc_ca1 ] step  3000 loss 0.001 what 1.000 when 1.000 (823s)
+[closed_osc_ca1 ] long rollout {"what_gap_20_140": 1.0, "what_gap_140_300": 0.333, "what_gap_300_500": 0.037, "inj_ratio_16_128": 0.294, "inj_ratio_128_320": 0.312, "inj_ratio_320_519": 0.312, "inj_ratio_max": 0.435, "gain": 0.483}
+
+baselines: what 0.125 (chance), when 0.333 (majority bin)
+closed_osc_ca1  what 1.000  when 1.000  inj late 0.312
+finished
