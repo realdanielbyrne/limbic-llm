@@ -35,6 +35,19 @@ See [`results/evolve/NOTEBOOK.md`](evolve/NOTEBOOK.md) and [`results/evolve/roun
 - The Qwen3 windowed+side eval loss, 1.8421, equals 0.8·ln10, the answer-format floor exactly. The side channels learned the leading space and the digit distribution, and carry no information about the value.
 - **Caution:** the bf16 run's all-windowed drop (eval 1.692) was an **anti-causal leak**, not long-range transfer. `torch.arange(512, dtype=bfloat16)` has only 385 distinct values; positions 505–511 become [504, 506, 508, 508, 508, 510, 512]. So the `d >= 0` masks in `loop_kernel` and `decay_kernel` (`limbic_llm/temporal_loop.py:94`, `:109-111`) let some answer positions see their own targets. This session verified it on CPU. The kernels take their dtype from the activations, so any bf16 use of `HippocampalLoop` or `TimeChannel` hits this. The float32 fix (`3c90bde`) avoids it in `pretrained_loop.py`.
 
+## Review of the 2 Nov additions (genesis §5.6–5.7, NOTEBOOK, REGISTER, references), for the coordinating session
+
+These files belong to the coordinating session, so this session did not edit them. Corrections and gaps:
+
+1. **RESULTS.md §4.7, horizon table, Qwen3.5 "Side, default kernel" = 1.69.** This is the superseded bf16 number. The fp32 rerun exists (`pretrained_qwen35_needle_allwin.json`, 3000 steps): **1.84 / 0.29 / 0.00**, at the format floor like Qwen3. With 1.69 in the table, the default kernel looks as if it partly worked on Qwen3.5. It did not.
+2. **REGISTER has no entry for the Qwen3.5 LM result.** `pretrained_qwen35_lm` (attention layers only windowed): perplexity 16.28 → 11.22 with the side channels, full attention 9.83, which closes **74%** of the loss gap against 41% for Qwen3. P5 should cover both models, with the same domain-adaptation caveat.
+3. **The "one digit known" decomposition of P4 is missing from REGISTER and RESULTS.** The Qwen3 horizon run's 1.381 / 0.461 equals exactly (3/5)·ln10 and 0.46, the level for one of the four digits known perfectly and three at chance. This is the most useful mechanistic clue so far. The loop stores key and value from the same position, so nothing moves the lookup on to the next digit. It also links directly to **W1**: successor-bound addressing is exactly that shift.
+4. **REGISTER lacks two cheap experiments:**
+   - (a) Repeat `pretrained_qwen35_needle_allwin_horizon` with more steps. It left the floor only at step ~2700 of 3000, as the cosine learning rate reached zero, so it is undertrained.
+   - (b) Per-digit loss logging (round-0 C1), to confirm which digit the loop recovers.
+5. **References checked:** Zhao et al. 2025 (arXiv 2507.11878; Zhao, Huang, Wu, Bau, Shi) exists and says what the notebook claims. The four A6/A7 models exist. `huihui-ai/Huihui-Qwen3.5-9B-abliterated` is tagged image-text-to-text and loads as `AutoModelForMultimodalLM`, so `pretrained_loop.py`'s model loading and `find_blocks` will probably need changes for A7.
+6. **Agree with O3:** a fixed-size state for the pretrained track, keeping the O(T) loop with the horizon kernel as the reference arm. W1 also targets the observed one-digit failure.
+
 ## Files this session owns
 
 Every `results/pretrained_*.json` and `results/pretrained_*.log` file, plus this note. Each JSON holds
