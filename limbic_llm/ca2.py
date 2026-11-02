@@ -2,18 +2,22 @@
 
 Biology
 -------
-CA2 lacks mossy-fibre input but receives vasopressinergic and supramammillary
-projections that no other CA field gets; it is required for social memory.
-It acts as a side channel that biases CA3→CA1 traffic by context.
+CA2 receives strong direct input from entorhinal layer II, a weaker dentate-gyrus
+(mossy-fibre) input (Kohara et al. 2014), and vasopressinergic and supramammillary
+projections; it is required for social memory (Hitti & Siegelbaum 2014). In the
+brain it is a route parallel to CA3 → CA1 (DG/EC-II → CA2 → CA1), not a stage in
+series with it; here it is modelled as a side channel that biases CA3 → CA1 traffic
+by context. CA2 activity drifts over hours to days (Mankin et al. 2015).
 
 Computation
 -----------
     γ, β = f(c)                       c = external context or temporal context
     y    = x ⊙ (1 + γ) + β            (initialised to the identity: γ = β = 0)
 
-When no external context is supplied, a slowly drifting *temporal context*
+When no external context is supplied, a drifting *temporal context*
 c_t = (1-ρ) Σ_{s≤t} ρ^{t-s} x_s is used (Howard & Kahana's temporal context
-model), computed as a causal depthwise convolution with a learnable ρ.
+model), computed as a causal depthwise convolution with a learnable ρ. With the
+default ρ = 0.9 its time constant is about 10 tokens, far faster than CA2's drift.
 """
 
 from __future__ import annotations

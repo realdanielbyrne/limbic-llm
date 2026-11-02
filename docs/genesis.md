@@ -29,7 +29,7 @@ Claude built the package (first named *hippoformer*): `HippocampalBlock`, the Ti
 
 > "https://divagr.com/blog/qwenputer and https://divagr.com/attention-lab/delta describe a way to use architectures that incorporate Gated DeltaNet linear transformers as RAM. Could this be analogous to the LMM and/or the CA3. The decay gate is similar to the weight decay/ associative memory loss function. That is they serve similar functions."
 
-**Daniel** proposed the analogy. **Claude** made it exact: the Gated DeltaNet update is one gradient step on the Titans memory loss, taken at the decayed state.
+**Daniel** proposed the analogy. **Claude** made it exact: the Gated DeltaNet update is one gradient step on the Titans memory loss, taken at the decayed state. *(Later found to be published: the identity is stated in the Gated DeltaNet paper itself, §3, and in DeltaNet and Longhorn; see §9.)*
 
 $$S_t = \alpha_t S_{t-1}(I - \beta_t k_t k_t^\top) + \beta_t v_t k_t^\top$$
 
@@ -152,7 +152,7 @@ This became three records:
 
 **Claude** added two points of context:
 - Biology: CA2 supports social recognition memory and in mice also *promotes* aggression through the lateral septum, so it acts as a context selector rather than an enforcer of norms.
-- Prior art: circuit breakers already reroute harmful representations towards incoherent or refusal states, but by fine-tuning. What is new here is a runtime, graded controller: a leaky integral of a harm score drives a capped steering gain. Plain novelty is not the same as harm, so the score should come from a harm probe, or from "norm novelty", a mismatch against a memory of aligned behaviour.
+- Prior art: circuit breakers already reroute harmful representations towards incoherent or refusal states, but by fine-tuning. What is new here is a runtime, graded controller *(§9: input-adaptive coefficients are AdaSteer's and closed-loop control is PID steering's; only the leaky temporal integral is distinct)*: a leaky integral of a harm score drives a capped steering gain. Plain novelty is not the same as harm, so the score should come from a harm probe, or from "norm novelty", a mismatch against a memory of aligned behaviour.
 
 ### 5.7 Re-aligning an unaligned model (Daniel)
 
@@ -212,6 +212,11 @@ Small models (about 0.1M parameters, CPU), mostly single seeds; final numbers ar
 | The loop's kernels were causal in any precision | In bf16, `arange(512)` has only 385 distinct values, so positions merged and the clock's $d \ge 0$ mask let a position see the next token. Found by the GPU session; index arithmetic now stays in float32 |
 | The loop has an $O(1)$-state recurrent form | Only if relevance factorises as $\varphi(q)^\top\varphi(k)$. The exponential relevance used here does not, so the store grows as $O(T)$; a fixed-state version leads back to linear attention and Gated DeltaNet |
 | The pretrained needle runs tested the loop's memory | With $\rho = 0.7$ and $\tau = 16$, the kernel's e-folding span is $\tau/\ln(1/\rho) \approx 45$ tokens, and its weight is exactly 0 for lags of 501–503 (the clamped half of the cosine). The horizon has to be set for the gap. |
+| The GDN = Titans-step identity was derived in this session | It is stated in the Gated DeltaNet paper (§3), DeltaNet and Longhorn (§9) |
+| The CPU recall task measures key–value binding | A binding-free strategy scores 0.476 at 6 pairs; full attention and Titans sit at it. Only successor-tied memories bind (§9) |
+| Standard GDN's drop with more pairs is a capacity limit | It follows the binding-free curve at loads far below d_k; standard GDN never learned binding (§9) |
+| CA1 pyramidal cells do not project back to CA3; CA2 lacks mossy-fibre input and sits between CA3 and CA1 | Excitatory vCA1 → dCA3 projections exist (Lin et al. 2021); DG → CA2 input and a parallel CA2 → CA1 route exist (Kohara et al. 2014) (§9) |
+| Subtractive feedback is a high-pass filter that cuts echo and passes new content | By Bode's sensitivity integral it must amplify some band: at K = 1, about 2.5× near a 46-token period (§9) |
 
 ## 8. Open questions
 
@@ -223,6 +228,40 @@ The current list, with status and priority, is kept in [`research/REGISTER.md`](
 - Does the direct entorhinal → CA3 read beat a dentate-gyrus read when the cue is noisy (Treves & Rolls)?
 - What is the compensation for the delayed CA1 feedback: theta timing, slow GABA$_\text{B}$ inhibition, or the clamp?
 - Consolidation: replaying high-novelty episodes into adapters on the frozen model.
+
+## 9. Literature review (Daniel, 2 Nov 2026)
+
+A separate session (Claude, in Claude Science) reviewed the project against the literature.
+
+> "https://github.com/realdanielbyrne/limbic-llm describes a research path on modeling various aspects of the human hippocampus into deep learning constructs.  The repository lays out research tracks for CA3-CA1 style skip connections, CA2 style side channel injections for CoT reasoning and alignment, DG-CA3 style MoE, and using GDN modules in Qwen models as a form of soft Rnn style autoregressive memory. In addition I've added a paper I found on a previous modeling attempt to this chat.  Review the bibliography, the genesis document, the proposed experiments and existing code. Help me flesh out the research with a review of existing literature and how it relates to this or how my research extends existing research.  Fan out as necessary."
+
+**Daniel** supplied Samsonovich & Ascoli (2005), a hippocampal model of episodic retrieval as path search. **Claude** split the work into seven parallel tracks: one per research track, one for the paper, a bibliography audit, and a code review. Every citation was verified against Crossref, arXiv or OpenAlex. The output is in [`research/reviews/2026-11-02_literature/`](../research/reviews/2026-11-02_literature/README.md).
+
+The verdict was blunt. Most components are published under other names:
+
+- the GDN–Titans identity (in the GDN paper itself);
+- exact RAM from orthogonal keys (Kohonen 1972);
+- successor binding (Sompolinsky & Kanter 1986; induction heads);
+- the DG-gated MoE (HiCL);
+- the CA1 fusion vector (InferSent);
+- the closed loop (Feedback Transformer);
+- the time channel (Shankar & Howard's Laplace stage).
+
+What looks new is the control-theoretic treatment of re-injection loops, gist momentum steering, the temporal integral in the harm controller, the P2 observation on Qwen3.5, and an opening the paper points to. That opening is goal-directed path search through a successor memory beyond the attention window, which neither this repo nor the LLM-memory literature implements.
+
+The code review found that the CPU recall task can be solved to 0.476 without binding, which restates M1 and M4. Claude reproduced the ceiling independently.
+
+The review landed after the GPU session's round 1. P11 (W1 retrieves the digit chain but cannot choose which stored pair to start from) turned out to be the paper's missing-key problem, so the paper's goal field became backlog item L6.
+
+> "Make a commit to the repo with your findings.  Update the lab notebook, bib, genesis, and other related documents.  Some experiments are ongoing.  Add a handoff comment for other agents so that they can consume your research."
+
+The commit went on a new branch from the tip of `feat/round1-side-memory`, leaving the GPU session's `research/HANDOFF.md` untouched. It:
+
+- replaced `docs/references.bib` with the audited version;
+- added 72 prior-art entries to REFERENCES.md;
+- updated the register (B12–B15, the RV2 findings table, backlog L1–L16, status notes) and the notebook;
+- corrected four docstrings;
+- added a handoff note for agents, [`research/reviews/2026-11-02_literature/HANDOFF.md`](../research/reviews/2026-11-02_literature/HANDOFF.md).
 
 ## Where to find things
 
@@ -239,3 +278,4 @@ The current list, with status and priority, is kept in [`research/REGISTER.md`](
 | [`../research/plans/`](../research/plans/), [`../research/reviews/`](../research/reviews/) | Round plans (round 0) and dated reviews (RV1) |
 | [`../results/`](../results/) | Raw JSON and logs: `synthetic/` (CPU), `pretrained/` (GPU), `evolve/round1/`, `alignment/` |
 | [`../REFERENCES.md`](../REFERENCES.md) | Bibliography |
+| [`../research/reviews/2026-11-02_literature/`](../research/reviews/2026-11-02_literature/README.md) | Literature review, track reports, handoff for agents |

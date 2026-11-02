@@ -243,7 +243,7 @@ Abliteration removes the refusal direction ([Arditi et al. 2024](https://arxiv.o
 1. No hook.
 2. Static refusal direction at layer L (CAA / ActAdd). Because abliteration removes the model's ability to *write* the refusal direction but not to *read* it, adding it back is expected to restore refusal, perhaps indiscriminately. This is the ceiling and the over-refusal baseline.
 3. Conditional steering (CAST-style switch).
-4. The graded controller from the CA2 proposal, $h \leftarrow h - G\tanh(\kappa E_t)\lVert h\rVert\hat d$ with $E_t = \lambda E_{t-1} + s_t$, where $s_t$ comes from a harmfulness probe.
+4. The graded controller from the CA2 proposal, $h \leftarrow h - G\tanh(\kappa E_t)\lVert h\rVert\hat d$ with $E_t = \lambda E_{t-1} + s_t$, where $s_t$ comes from a harmfulness probe. [Correction, 2 Nov 2026 (RV2.S2): here $\hat d$ is the refusal direction, so the hook *adds* it, $h \leftarrow h + G\tanh(\kappa E_t)\lVert h\rVert\hat d_\text{refusal}$, as `steering.py` does. The minus sign holds only for the harm direction $\hat d_\text{harm}$ of the CA2 proposal.]
 5. The same controller with $\hat d$ estimated from the unaligned model alone, without access to the aligned sibling.
 
 **What would be informative.** Arm 2 restoring refusal is close to a tautology. The questions are:
@@ -584,3 +584,49 @@ ln 2 = 0.69 and ln 3 = 1.10.
   If (a) fails at 14 but works at 21, the fix is where the key is read, not how it is built.
 - **W1g: temporal-context keys** (Howard & Kahana's temporal context model, already the project's CA2 reference). File each value under a slowly drifting context vector, the leaky integral of recent addresses, as well as the previous address. The first digit's key then carries "the code for Name is", not just "is". The state stays fixed-size and causal.
 - **W1b.c, longer.** Tap 21 at 6000 steps with 2 and 3 pairs. It was still improving.
+
+## Literature review and code audit, review RV2 (2 Nov 2026)
+
+**Setup.** At Daniel's request, a separate session (Claude Science) reviewed the literature for the four research tracks (CA3 → CA1 skip paths, CA2 side-channel injection, DG → CA3 as MoE, GDN as recurrent memory). It also reviewed the Samsonovich & Ascoli (2005) pathfinding model Daniel supplied, audited the bibliography, and reviewed the code. Seven sub-agents ran in parallel, each verifying every DOI and arXiv id it cited. The review covers commit `3799b36`, is committed on top of `1620784`, and reads rounds 1 and 2 against the literature. Report: [`reviews/2026-11-02_literature/`](reviews/2026-11-02_literature/README.md), with a synthesis, seven track reports, `findings.json` for agents, `new_refs.bib`, scripts and a handoff note. Register: RV2 findings, B12–B15, backlog L1–L16.
+
+**What it found**
+
+1. **Most components are published.**
+   - "GDN = one gradient step on the Titans loss" is in the GDN paper itself (§3), DeltaNet and Longhorn (B15).
+   - "One-hot keys = exact RAM" is Kohonen (1972) and Schlag et al. (2021).
+   - Successor-bound addressing is Sompolinsky–Kanter sequence memory, which in transformers is the induction-head and H3-shift mechanism.
+   - The DG-gated MoE with CA3 storage and replay is HiCL (AAAI 2026).
+   - The CA1 fusion vector is the InferSent matching feature.
+   - The closed loop of lagged self-states is the Feedback Transformer.
+   - The time channel is the Laplace stage of Shankar & Howard.
+   - W1 is close to δ-mem (2026), and W3 sits beside two 2026 LLM-sleep papers.
+2. **What looks new.**
+   - The loop-gain analysis of re-injection (K = 1.680 reproduced independently; primacy by self-rehearsal).
+   - Gist momentum steering, for which no precedent was found.
+   - The temporal integral in the harm controller: incremental, and a smoothed CAST switch at the defaults (RV2.S1).
+   - P2 as an observation about hybrids (RV2.X3).
+   - The pathfinding opening (item 5).
+3. **Measurement (RV2.X1, RV2.X2).** `AssociativeRecall` admits a binding-free strategy scoring 0.476 at 6 pairs. Full attention (0.485) and Titans (0.483–0.490) sit at it, and `gdn_x8` follows the ceiling at 8 / 16 / 32 pairs, so M1 shows set memory and M4 is not a capacity result. The short convolutions start as the identity (B12). The one-pair needle is passkey retrieval, which P8 confirms.
+4. **Biology (B13, RV2.K2, RV2.K3).**
+   - An excitatory CA1 → CA3 back-projection exists.
+   - CA2 receives DG input and sits in parallel to CA3 → CA1.
+   - "Norms drive CA2" is unsupported.
+   - Mossy cells are excitatory.
+   - Subtractive feedback must amplify some band (Bode). At K = 1 that is about 2.5× near a 46-token period, which may explain T10.
+5. **Pathfinding (RV2.F1).** Samsonovich & Ascoli's CA3 transition matrix *J* is the repo's successor store. Their CA3 → CA1 goal field *W*, written at sharp waves by a hindsight max-recency rule, together with theta-timed probes of candidate successors, makes it a path search. A re-implementation reproduced their path lengths (6.69 ± 3.29 against 4.24 ± 0.66 optimal at 10⁴ contexts; one graph and seed).
+
+**Read against rounds 1–2.** P8 confirms the passkey critique. P9 rules out adapter repair only when every layer is windowed, and P2 still needs L2. P11 and P13 are RV2.F1 in LLM form: every W1b variant changed the write-side address. None selected the start: digit-1 loss was ≈ ln(pairs) in the identity-initialised arms, and higher in ctx4u (0.84 / 1.90 with 2 / 3 pairs). Start selection is read-side, through a dense cue from the query span or a goal field (L6). P14 (gdn mode loses the chain) is confounded by B12.
+
+**Register changes.**
+- M1, M2, M6 and T16 moved to Open; M4 to Refuted.
+- Notes were appended to M3, M5, M7, T6, T7, T10–T14, P1, P2, P9–P11, P13, P14, W1b, O9, A2, A3 and R2.
+- W6.a and O7 are superseded by L6 and L9.
+- B12–B15, the RV2 table and §4.8 (L1–L16) were added.
+- A bracketed sign correction was added to the A6 proposal (RV2.S2).
+
+**Next, in order.**
+1. L1 (MQAR re-benchmark, cheap, CPU).
+2. B12, then rerun W1b.a.
+3. L2 and L4 on Qwen3.5.
+4. A read-side W1b arm and L6.
+5. A2 with the RV2.S3 arms before A6 runs at scale.

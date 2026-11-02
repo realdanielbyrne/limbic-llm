@@ -47,6 +47,17 @@ The scripts now default to this layout: the CPU scripts write to `results/synthe
 
 The open findings of the review of the alignment, CoT and CA1 decision tracks are tracked in the RV1 table of [`REGISTER.md`](REGISTER.md) (report: [`reviews/2026-11-02_alignment_cot_ca1.md`](reviews/2026-11-02_alignment_cot_ca1.md)). They block A2, A6, R2, R3, R4, J1 and J3, and qualify A1, A7, R1 and the S1 gist arm. Fix them before running those.
 
+## Literature review RV2 (2 Nov)
+
+A Claude Science session reviewed the four research tracks against the literature, at Daniel's request. It also reviewed the Samsonovich & Ascoli (2005) pathfinding model, audited the bibliography and reviewed the code. **Agents should start with [`reviews/2026-11-02_literature/HANDOFF.md`](reviews/2026-11-02_literature/HANDOFF.md)**; machine-readable verdicts are in `findings.json`. It went in as a PR from `docs/literature-review` into this branch. Points that affect running work:
+
+- **GPU session, W1b.**
+  - Round 2 changed only the write-side address. The review reads P11 and P13 as needing a *read-side* selector, a cue from the query span or a goal field (RV2.F1, L6).
+  - W1b.a (gdn mode, P14) is confounded by **B12**: `CausalConv1d` starts as the identity, so gdn mode begins with no token shift.
+- **Before writing up P2:** run the memory-free adapter, LoRA and state-offset controls (RV2.X3, L2).
+- **CPU recall numbers** (M1, M4, M6, M7) sit at a binding-free ceiling of 0.476 (RV2.X1). Do not cite them as binding results.
+- **Bibliography.** `docs/references.bib` is the audited version (160 entries, DOIs). `docs/src/bib_to_json.py` requires REFERENCES.md and the bib to share keys, so add a source to both. Further verified sources are in `reviews/2026-11-02_literature/new_refs.bib`.
+
 ## Warning: bf16 leaks
 
 - **bf16 index arithmetic leaks the future.** `torch.arange(512, dtype=bfloat16)` has only 385 distinct values; positions 505–511 become [504, 506, 508, 508, 508, 510, 512]. Position masks such as `d >= 0` then let some answer positions see their own targets. This anti-causal leak, not long-range transfer, produced the bf16 all-windowed Qwen3.5 loss of 1.69 (round-0 D5, register B4). The kernels used to take their index dtype from the activations, so every bf16 use of `HippocampalLoop` or `TimeChannel` was exposed. `loop_kernel` and `decay_kernel` now build indices in float32 (`51aecae`; `limbic_llm/temporal_loop.py`, `test_bf16_stays_causal_over_long_sequences`), and `pretrained_loop.py` runs the side channels in float32 (`3c90bde`). **Any new script or candidate** must keep index arithmetic in float32 or integers (rule E5) and test causality on bf16 input (rule E1, as `tests/test_evolve_w1.py` does).

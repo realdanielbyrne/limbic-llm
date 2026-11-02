@@ -14,7 +14,7 @@ It is a research library, not a pretrained LLM: memory modules you can drop into
 ## What's inside
 
 * **Strategy I, the direct circuit.** EC → DG → CA3 → CA2 → CA1 → Subiculum as one residual block, with a one-shot episodic store in CA3.
-* **Strategy II, a Titans hybrid.** The Titans test-time memory ([Behrouz et al., 2024](https://arxiv.org/abs/2501.00663)) with a dentate-gyrus write path, a CA1 comparator and novelty-scaled learning rates.
+* **Strategy II, a Titans hybrid.** The Titans test-time memory ([Behrouz et al., NeurIPS 2025](https://arxiv.org/abs/2501.00663)) with a dentate-gyrus write path, a CA1 comparator and novelty-scaled learning rates.
 * **Gated DeltaNet memory.** The linear special case of the Titans memory ([Yang et al., 2025](https://arxiv.org/abs/2412.06464)), with exact per-token updates, a fast chunkwise kernel and dentate-gyrus addressing.
 * **Replay consolidation.** A novelty-prioritized replay buffer and an offline "sleep" phase that trains only the slow parameters, after the complementary learning systems theory.
 * **A regulated temporal loop.** The model's own lagged activations are written into an associative memory and fed back as clamped, damped sinusoids that weaken on every circuit, as a contrast of episode against prior, under CA1 negative-feedback gain control. A clock of elapsed time, built from scale-invariant time cells, rides alongside. See [the design note](docs/design/temporal-loop.md).
@@ -40,6 +40,8 @@ Small CPU models (0.2–0.4 M parameters, single seed), so these are sanity chec
 
 **One-shot recall beyond the attention window.** The model sees 6 key→value pairs, 40 filler tokens, then is queried on every key. Local models see 16 tokens at a time; chance is 0.06.
 
+> **Caveat (literature review, 2 Nov 2026).** Queries are teacher-forced and values repeat, so a model that only remembers *which* values were studied, and strikes each as it is revealed, scores **0.476** without binding any key to its value. Full attention, Titans and Strategy I sit at or below that ceiling. Only the Gated DeltaNet memories, whose addresses are successor-bound, show binding. See [`research/reviews/2026-11-02_literature/`](research/reviews/2026-11-02_literature/README.md) and register RV2.X1.
+
 | Model | Recall |
 |---|---:|
 | Windowed attention, no memory | 0.06 |
@@ -51,7 +53,7 @@ Small CPU models (0.2–0.4 M parameters, single seed), so these are sanity chec
 
 **Continual learning.** Learning three fact sets in sequence, naive training forgets badly (backward transfer −0.73). Novelty-prioritized replay with a sleep phase removes the forgetting (backward transfer 0.00).
 
-**Memory capacity.** Standard Gated DeltaNet loses recall once the number of stored pairs exceeds its key dimension (0.43 → 0.13). Successor-bound addressing turns the state into exact RAM, with perfect recall up to 32 pairs.
+**Memory capacity.** Successor-bound addressing gives perfect recall up to 32 pairs, within the key dimension, where a linear memory is exact (Kohonen 1972; Schlag et al. 2021). Standard Gated DeltaNet's drop with more pairs (0.43 → 0.13) follows the binding-free ceiling, so it is not a capacity limit: it never learned binding (register M4, B12).
 
 **A regulated temporal loop and a clock of elapsed time.** On a task that asks what happened and how long ago, beyond a 16-token window, the loop carries content and the clock carries elapsed time; each alone leaves the other at baseline.
 
@@ -150,7 +152,7 @@ consolidator.sleep(steps=200)                                      # offline con
 | Gated DeltaNet | Linear associative memory | `GatedDeltaNet`, `GatedDeltaMemory` | $S_t = \alpha_t S_{t-1}(I - \beta_t k_t k_t^\top) + \beta_t v_t k_t^\top$ |
 | Replay | Consolidation | `PrioritizedReplayBuffer`, `Consolidator` | Priority from novelty; sleep updates slow parameters only |
 
-Gated DeltaNet is exactly one gradient step on the Titans loss $\tfrac12\lVert Sk_t - v_t\rVert^2$ at the decayed state $\alpha_t S_{t-1}$. Its decay gate $\alpha_t$ is the forgetting term, its write gate $\beta_t$ is encoding strength, and $v_t - \alpha_t S_{t-1}k_t$ is the prediction error CA1 computes. With one-hot keys and $\alpha = \beta = 1$ the state is exact RAM, as in [Qwenputer](https://divagr.com/blog/qwenputer), which is the limit that dentate-gyrus pattern separation approaches.
+As the Gated DeltaNet paper states ([Yang et al., 2025](https://arxiv.org/abs/2412.06464), §3; see also Longhorn), Gated DeltaNet is exactly one gradient step on the Titans loss $\tfrac12\lVert Sk_t - v_t\rVert^2$ at the decayed state $\alpha_t S_{t-1}$. Its decay gate $\alpha_t$ is the forgetting term, its write gate $\beta_t$ is encoding strength, and $v_t - \alpha_t S_{t-1}k_t$ is the prediction error CA1 computes. With orthonormal (e.g. one-hot) keys and $\alpha = \beta = 1$ the state is exact RAM up to $d_k$ items: Kohonen's correlation-matrix memory, demonstrated on Qwen3.5 by [Qwenputer](https://divagr.com/blog/qwenputer). Under this linear readout, sparse dentate-gyrus keys do not raise that bound.
 
 ## Experiments
 
@@ -243,7 +245,8 @@ Three design changes came out of debugging, each covered by a test.
 | [`docs/notebooks/`](docs/notebooks/) | Activation Addition notebooks (GPT-2-XL; Qwen3 with alignment and chain-of-thought presets) |
 | [RESULTS.md](RESULTS.md) | Full experimental results |
 | [`docs/implementation-notes.md`](docs/implementation-notes.md) | Implementation details and simplifications |
-| [REFERENCES.md](REFERENCES.md) | Bibliography, grouped by circuit component; BibTeX in [`docs/references.bib`](docs/references.bib) |
+| [REFERENCES.md](REFERENCES.md) | Bibliography, grouped by circuit component; BibTeX in [`docs/references.bib`](docs/references.bib) (audited 2 Nov 2026, with DOIs) |
+| [`research/reviews/2026-11-02_literature/`](research/reviews/2026-11-02_literature/README.md) | Literature review: closest prior work and novelty per track, Samsonovich & Ascoli (2005) pathfinding, code audit, proposed experiments L1–L16, and a handoff note for agents |
 
 ## Repository layout
 

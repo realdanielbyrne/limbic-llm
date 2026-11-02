@@ -3,7 +3,8 @@
 Biology
 -------
 EC layer II (~2e5 cells) projects to ~1e6 granule cells, of which only 2-4 %
-fire for any input. Strong feedback inhibition (basket / mossy cells) enforces
+fire for any input. Strong feedback inhibition (basket and other GABAergic interneurons; hilar mossy
+cells are excitatory, Scharfman 2016) enforces
 this sparsity. The result is that overlapping EC patterns are mapped to nearly
 orthogonal granule-cell codes before they reach CA3.
 
