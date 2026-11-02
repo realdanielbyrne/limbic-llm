@@ -1,2 +1,19 @@
 [memory         ] step   500 loss 2.216 what 0.133 when 0.842 (141s)
 [memory         ] step  1000 loss 0.156 what 0.998 when 0.889 (275s)
+[memory         ] step  1500 loss 0.237 what 1.000 when 0.893 (405s)
+[memory         ] step  2000 loss 0.267 what 1.000 when 0.908 (538s)
+[memory         ] step  2500 loss 0.055 what 1.000 when 0.936 (673s)
+[memory         ] step  3000 loss 0.208 what 1.000 when 0.941 (804s)
+[memory         ] long rollout {"what_gap_20_140": 1.0, "what_gap_140_300": 1.0, "what_gap_300_500": 0.815, "probe_newer_named": 0.453, "probe_older_named": 0.383, "cue_noise_0.0": 1.0, "cue_noise_0.5": 1.0, "cue_noise_1.0": 1.0, "cue_noise_2.0": 0.984, "inj_ratio_16_128": 0.289, "inj_ratio_128_320": 0.3, "inj_ratio_320_519": 0.297, "inj_ratio_max": 0.415, "gain": 0.461}
+[closed_osc_sub ] step   500 loss 2.172 what 0.109 when 0.949 (130s)
+[closed_osc_sub ] step  1000 loss 0.645 what 0.664 when 0.922 (256s)
+[closed_osc_sub ] step  1500 loss 0.208 what 0.998 when 0.953 (386s)
+[closed_osc_sub ] step  2000 loss 0.114 what 0.998 when 0.967 (518s)
+[closed_osc_sub ] step  2500 loss 0.027 what 1.000 when 0.971 (651s)
+[closed_osc_sub ] step  3000 loss 0.062 what 0.998 when 0.979 (780s)
+[closed_osc_sub ] long rollout {"what_gap_20_140": 1.0, "what_gap_140_300": 0.278, "what_gap_300_500": 0.222, "probe_newer_named": 0.402, "probe_older_named": 0.375, "cue_noise_0.0": 1.0, "cue_noise_0.5": 1.0, "cue_noise_1.0": 1.0, "cue_noise_2.0": 0.906, "inj_ratio_16_128": 1.967, "inj_ratio_128_320": 1.711, "inj_ratio_320_519": 1.706, "inj_ratio_max": 6.948, "gain": 0.312}
+
+baselines: what 0.125 (chance), when 0.333 (majority bin)
+memory          what 1.000  when 0.941  inj late 0.297
+closed_osc_sub  what 0.998  when 0.979  inj late 1.706
+finished

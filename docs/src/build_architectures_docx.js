@@ -377,7 +377,8 @@ if (ALL.window) {
   C.push(spacer(80));
   C.push(p("Echo is the injection as a fraction of the incoming signal on 520-token sequences. Only the full design keeps it below the new input everywhere, and it stays stationary across the run. Undamped feedback grows with length; damping alone overshoots in the first circuits; the clamped sinusoid without control resonates. None diverged numerically, because the next layer’s LayerNorm rescales the stream. The cost is forgetting: at gaps of 300–500 tokens recall is 0.40 undamped, 0.00 damped and 0.04–0.10 for the full design."));
   C.push(h3("Do new tokens dominate?"));
-  const pr = [["Undamped closed loop", PROBE.closed_flat], ["Damped closed loop", PROBE.closed_exp], ["Subtractive feedback, no clamp", FB.closed_osc_sub],
+  const pr = [["Undamped closed loop", PROBE.closed_flat], ["Damped closed loop", PROBE.closed_exp], ["Subtractive feedback, no clamp, seed 0", FB.closed_osc_sub],
+    ["Subtractive feedback, no clamp, seed 1", OPEN.closed_osc_sub],
     ["Full design without contrast", AB.closed_osc_ca1_nocontrast], ["Full design", PROBE.closed_osc_ca1],
     ["Full design, DG keys, direct read", AB.closed_osc_ca1_dg], ["Full design, DG keys, DG read", AB.closed_osc_ca1_dgread],
     ["Open loop (stores the pre-injection stream), seed 1", OPEN.memory]].filter(r => r[1] && r[1].long && r[1].long.probe_newer_named !== undefined);
@@ -402,7 +403,7 @@ if (SYS) {
     [3360, 1500, 1500, 1500, 1500]));
   C.push(spacer(80));
 }
-C.push(p("On an untrained closed loop with the clamp removed and a persistent input, the measured attenuation matches the op-amp law within 1–3 %, and the loop rings and grows at K = 2.15 as predicted. Trained without the clamp, subtractive feedback was the only unregulated loop that learned content (what 0.99, against 0.13 with no feedback and 0.15 with divisive feedback). It did not bound the echo (2.6× the input) or break primacy, because at a stable loop gain it removes only about a quarter of sustained echo. A guaranteed bound still needs the clamp."));
+C.push(p("On an untrained closed loop with the clamp removed and a persistent input, the measured attenuation matches the op-amp law within 1–3 %, and the loop rings and grows at K = 2.15 as predicted. Trained without the clamp, subtractive feedback was the only unregulated loop that learned content (what 0.99, against 0.13 with no feedback and 0.15 with divisive feedback). It learned on both seeds but did not bound the echo (1.7\u20132.6\u00D7 the input), and its effect on primacy differed between seeds, because at a stable loop gain it removes only about a quarter of sustained echo. A guaranteed bound still needs the clamp."));
 
 C.push(h2("6.9  Pretrained Models"));
 C.push(p("The side channels were attached to frozen Hugging Face models (experiments/pretrained_loop.py) and trained alone on a needle task with a gap of about 500 tokens and block attention windows of 64 tokens, on two RTX 5090s. Qwen3 is pure attention; Qwen3.5 is a 3:1 Gated DeltaNet hybrid whose GDN layers already carry the past."));

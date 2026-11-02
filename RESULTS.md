@@ -120,10 +120,11 @@ On a varied stream it barely changes the echo, because a lagged, smoothed copy c
 |---|---:|---:|---:|---:|
 | None | 0.133 | 2.16 | 7.2 | 0.11 / 0.09 |
 | Divisive | 0.152 | 2.99 | 189 | 0.11 / 0.13 |
-| Subtractive (inverted copy) | **0.990** | 2.60 | 10.3 | 0.05 / 0.54 |
+| Subtractive (inverted copy), seed 0 | **0.990** | 2.60 | 10.3 | 0.05 / 0.54 |
+| Subtractive (inverted copy), seed 1 | **0.998** | 1.71 | 6.9 | 0.40 / 0.38 |
 | Full design (clamp + divisive + projection + saturation) | **1.000** | **0.35** | **0.53** | 0.25 / 0.18 |
 
-Subtractive feedback is the only unclamped loop that learned content, and it keeps recall at long gaps (0.45 at 300–500). It does not bound the echo: at a stable loop gain ($K \approx 0.33$ here) it removes only about a quarter of sustained echo. A guaranteed bound still needs the clamp.
+Subtractive feedback is the only unclamped loop that learned content, on both seeds. It does not bound the echo (1.7–2.6× the input): at a stable loop gain ($K \approx 0.31$–$0.33$ here) it removes only about a quarter of sustained echo. A guaranteed bound still needs the clamp. Its effect on recency differs between seeds (0.54 and 0.38 older).
 
 ### 4.4 Do new tokens dominate?
 
@@ -133,14 +134,15 @@ A trained recency task (an older, different event precedes the target) was learn
 |---|---:|---:|
 | Undamped closed loop | 0.25 | 0.61 |
 | Damped closed loop | 0.06 | **0.84** |
-| Subtractive feedback, no clamp | 0.05 | 0.54 |
+| Subtractive feedback, no clamp, seed 0 | 0.05 | 0.54 |
+| Subtractive feedback, no clamp, seed 1 | 0.40 | 0.38 |
 | Full design without contrast | 0.32 | 0.63 |
 | Full design | 0.25 | 0.18 |
 | **Full design, DG write keys, direct read** | **0.68** | 0.31 |
 | **Full design, DG write keys, DG read** | **0.68** | 0.29 |
 | Open loop (stores the pre-injection stream), seed 1 | 0.45 | 0.38 |
 
-**Closed loops favour the first event.** A closed loop re-stores its own echo every circuit, and each re-stored copy starts its decay again, so damping each trace does not damp content the loop keeps rehearsing: the older event, rehearsed longer, wins. This is primacy by self-rehearsal, the mechanism psychology proposes for the primacy effect. The episode-minus-prior contrast reduces it (0.63 → 0.18 older), plausibly because rehearsed content becomes part of the prior $\mu_t$ and is subtracted. Sparse dentate-gyrus write keys give the only clear recency win, presumably because the two events no longer collide in memory. The open loop, which stores the stream from before injection as the acetylcholine switch does, does not re-store its echo and shows little primacy (0.38 older against 0.54–0.84 for closed loops without the contrast; different seed). The subtractive inverted copy did not break primacy, contrary to the high-pass prediction, for the gain reason in 4.3.
+**Closed loops favour the first event.** A closed loop re-stores its own echo every circuit, and each re-stored copy starts its decay again, so damping each trace does not damp content the loop keeps rehearsing: the older event, rehearsed longer, wins. This is primacy by self-rehearsal, the mechanism psychology proposes for the primacy effect. The episode-minus-prior contrast reduces it (0.63 → 0.18 older), plausibly because rehearsed content becomes part of the prior $\mu_t$ and is subtracted. Sparse dentate-gyrus write keys give the only clear recency win, presumably because the two events no longer collide in memory. The open loop, which stores the stream from before injection as the acetylcholine switch does, does not re-store its echo and shows little primacy (0.38 older against 0.54–0.84 for closed loops without the contrast; different seed). The subtractive inverted copy did not reliably break primacy, contrary to the high-pass prediction: one seed favoured the older event and the other was even, consistent with the small usable loop gain in 4.3.
 
 ### 4.5 Read path and cue noise
 
@@ -156,7 +158,7 @@ The Treves–Rolls prediction, that a direct dense cue completes degraded patter
 
 ### 4.6 Learning speed
 
-*What* is learned in a sudden late jump. Steps to cross 0.5: damped 500, undamped 750–1,000, full design 1,000 (both seeds), full design without contrast 500, DG keys 500, subtractive 2,000, open memory loop 1,250. Unregulated clamped sinusoids (no feedback, divisive only) did not cross in 3,000 steps. With a 1,500-step one-cycle schedule the full design never crossed, because the learning rate had decayed before the jump; 3,000 steps were needed.
+*What* is learned in a sudden late jump. Steps to cross 0.5: damped 500, undamped 750–1,000, full design 1,000 (both seeds), full design without contrast 500, DG keys 500, subtractive 2,000 and 1,000 (two seeds), open memory loop 1,250 at 1,500 steps and 1,000 at 3,000. Unregulated clamped sinusoids (no feedback, divisive only) did not cross in 3,000 steps. With a 1,500-step one-cycle schedule the full design never crossed, because the learning rate had decayed before the jump; 3,000 steps were needed.
 
 ### 4.7 Pretrained models
 
