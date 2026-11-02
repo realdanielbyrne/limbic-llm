@@ -91,7 +91,9 @@ def loop_kernel(T: int, tau: int, kind: str = "osc", rho: float = 0.7, amp: floa
     if kind not in {"osc", "exp", "flat"}:
         raise ValueError(kind)
     amp = min(float(amp), 1.0)                                   # clamp: feedback never exceeds new input
-    i = torch.arange(T, device=device, dtype=dtype)
+    # index arithmetic in float32: in bf16, arange(512) has only 385 distinct values, which
+    # merges positions and lets the causal mask admit future tokens
+    i = torch.arange(T, device=device, dtype=torch.float32)
     d = i[:, None] - i[None, :]
     circuits = d / tau
     if kind == "flat":
@@ -100,17 +102,17 @@ def loop_kernel(T: int, tau: int, kind: str = "osc", rho: float = 0.7, amp: floa
         w = amp * rho ** (circuits - 1).clamp_min(0)
         if kind == "osc":
             w = w * torch.cos(2 * math.pi * circuits).clamp_min(0)
-    return torch.where(d >= tau, w, torch.zeros_like(w))
+    return torch.where(d >= tau, w, torch.zeros_like(w)).to(dtype)
 
 
 def decay_kernel(T: int, rho: float, omega: float = 0.0, device=None, dtype=torch.float32,
                  strict: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
     """(cos, sin) parts of (1 − ρ) ρ^{t−s} e^{iω(t−s)} for s ≤ t (s < t if strict)."""
-    i = torch.arange(T, device=device, dtype=dtype)
+    i = torch.arange(T, device=device, dtype=torch.float32)        # float32 indices (see loop_kernel)
     d = i[:, None] - i[None, :]
     mask = d > 0 if strict else d >= 0
     base = torch.where(mask, (1 - rho) * rho ** d.clamp_min(0), torch.zeros_like(d))
-    return base * torch.cos(omega * d), base * torch.sin(omega * d)
+    return (base * torch.cos(omega * d)).to(dtype), (base * torch.sin(omega * d)).to(dtype)
 
 
 # ------------------------------------------------------------------- time channel
@@ -279,9 +281,9 @@ class HippocampalLoop(nn.Module):
             ybar = None
             if use_hist and start > tau:
                 d = (torch.arange(start, stop, device=h.device)[:, None]
-                     - torch.arange(start, device=h.device)[None, :]).to(h.dtype)
+                     - torch.arange(start, device=h.device)[None, :]).float()
                 kE = torch.where(d >= tau, (1 - self.energy_rho) * self.energy_rho ** (d - tau),
-                                 torch.zeros_like(d))
+                                 torch.zeros_like(d)).to(h.dtype)
                 E = torch.cat(energies, 1) @ kE.T
                 if self.feedback == "subtractive":
                     ybar = kE.unsqueeze(0) @ torch.cat(injs, 1)

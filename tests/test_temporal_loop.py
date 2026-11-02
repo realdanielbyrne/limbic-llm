@@ -232,3 +232,21 @@ def test_cue_noise_only_affects_reads_and_dg_read_ignores_wq():
         noisy = m(h)[0]
     assert torch.equal(clean[:, :4], noisy[:, :4])               # nothing is read in the first circuit
     assert not torch.allclose(clean, noisy)
+
+
+@pytest.mark.parametrize("loop", ["open", "closed"])
+def test_bf16_stays_causal_over_long_sequences(loop):
+    """In bf16, arange(512) merges positions; index arithmetic must stay in float32."""
+    torch.manual_seed(5)
+    T, t0 = 512, 505
+    m = HippocampalLoop(16, d_key=8, tau=16, loop=loop).to(torch.bfloat16)
+    clock = TimeChannel(16).to(torch.bfloat16)
+    with torch.no_grad():
+        clock.out.weight.normal_()
+        h = torch.randn(1, T, 16, dtype=torch.bfloat16)
+        h2 = h.clone()
+        h2[:, t0:] = torch.randn(1, T - t0, 16, dtype=torch.bfloat16)   # (a constant shift is removed by LayerNorm)
+        a, _ = m(clock(h)[0])
+        b, _ = m(clock(h2)[0])
+    assert torch.equal(a[:, :t0], b[:, :t0])
+    assert torch.unique(loop_kernel(T, 16, dtype=torch.bfloat16).nonzero()[:, 0]).numel() == T - 16

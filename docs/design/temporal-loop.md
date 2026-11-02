@@ -80,7 +80,7 @@ $$L_j(t) = (1-\rho_j)\sum_{s\le t}\rho_j^{\,t-s}u_s,\qquad C_j + iS_j = (1-\rho_
 
 for $\tau_j \in \{4, 8, \dots, 256\}$, through a zero-initialised projection into the stream. After a single event, each $L_j$ decodes elapsed time exactly (tested).
 
-**Implementation.** Both are computed in parallel form. The closed loop is exact in chunks of τ, because nothing returns within one circuit; a test checks it against a token-by-token reference. Because the kernel is a sum of damped complex exponentials, the same feedback has an O(1)-state recurrent form, as in RetNet and LRU, for streaming.
+**Implementation.** Both are computed in parallel form. The closed loop is exact in chunks of τ, because nothing returns within one circuit; a test checks it against a token-by-token reference. The kernel is a sum of damped complex exponentials, so a loop whose relevance factorises as a feature-map inner product, $a(t,s) = \varphi(q_t)^\top\varphi(k_s)$, has a fixed-size recurrent state, as RetNet and LRU do. The exponential relevance $e^{\,b(\hat q_t\cdot\hat k_s - 1)}$ used here does not factorise, so this implementation keeps every past position: its memory grows as $O(T)$. A fixed-state version replaces the relevance with a feature map, which leads back to linear attention and Gated DeltaNet. (Correction: an earlier version of this note claimed an $O(1)$ form for the loop as implemented.)
 
 ## 3. Plug-in or new architecture?
 
