@@ -687,3 +687,50 @@ In the unit test a 0.55/0.45 mix of two stored sparse patterns settles onto the 
 - Replicate W1g at tap 21 with 2 pairs on seeds 1 and 2, to establish P18.
 - Diagnose the 3-pair failure: G's DG width and sparsity (more active units or a larger expansion within budget), and 6000 steps.
 - W1h, revised: A written only where G writes strongly (shared β gate), or with a refractory window of the last w positions excluded from settling.
+
+---
+
+## Round 4: the 3-code failure diagnosed, and an event-gated goal field (W1i) (2 Nov 2026)
+
+**Daniel's direction.** Diagnose the 3-code failure first, explore the event-gated writes (option 1, never tried) in parallel, and do not re-run W1g's 2-pair win.
+
+**1. Diagnosis: the 2-pair "win" was a positional shortcut** (`experiments/evolve/diag_goal.py`; P18 and P19 corrected). On 3-pair data, the 2-pair W1g model's digit-1 accuracy by queried fact is 1.00 / 0.08 / 0.92 (first / middle / last). It retrieves the first and the last fact only, which covers every 2-pair query. The fixed layout makes this possible: the facts sit right after BOS, in order. The middle fact of 3 is in neither store, which explains P19. The review (F3) found the diagnostic's cosine-based attribution of which fact each store returns unreliable, so the conclusion rests on the accuracy by queried fact alone.
+
+**2. A task without the shortcut.** `--needle-scatter` places the facts at random positions with filler before, between and after them. Gaps run 269–502 tokens, and facts no longer straddle window blocks. Fact order is kept, so rank still carries information: use 3+ pairs and read accuracy by queried rank (`experiments/evolve/eval_by_query.py`). On it, W1g's start store stays near chance (digit 1 0.97 / 0.47), and so does the baseline without a start store (0.97 / 0.53).
+
+**3. W1i, an event-gated goal field** (`experiments/evolve/w1i_events.py`). It is W1's chain store plus a goal field G:
+- **Keys:** drifting temporal context, where each token's key magnitude acts as learned salience.
+- **Writes:** only at learned events, ε_t = e_t(1 − r_{t−1}), with a refractory trace and no decay.
+- **Read and write:** G is read with the current context and written with the previous one.
+
+A toy check set the design. Writing only at each fact's first digit, with a salient name, selects the first, middle and last of 3 facts. Writing at every token always returns the last (it is now a unit test).
+
+**Results** (tap 21, 3 pairs, 3000 steps, one seed)
+
+| Layout | Exact | Digit 1 by queried rank (first / middle / last) | Exact by rank |
+|---|---|---|---|
+| Scattered | **0.883** | **0.99 / 0.99 / 1.00** | 0.76 / 0.92 / 0.98 |
+| Fixed | 0.766 | 0.94 / 0.94 / 0.96 | 0.74 / 0.75 / 0.83 |
+
+Controls: windowed base 0.00; full attention 0.992 (scattered).
+
+**The events trained toward the S&A picture.** Mean write strength fell from 0.12 at initialisation to 0.04 over all tokens, and reaches 0.23 at the facts' first digits: about 6× enriched.
+
+**Tap 14 fails at 3000 steps** (exact 0.34; digit 1 1.32 / 0.45), with the loss still falling. Every start-selection mechanism so far needs block 21, where the name is most decodable (P17).
+
+**What it shows.** Choosing the start of a stored chain by content, the missing-key step, works when the goal field is written rarely, at events, under a context key in which the name is salient. The two alternatives fail: writing at every token (overwrite), and a separate key projection without event gating (positional shortcut). That is Samsonovich & Ascoli's design point carried into an LLM side memory. The remaining error is in the chain: exact match falls with distance (0.76 for the farthest fact against 0.98 for the nearest).
+
+**Review** (two reviewers, adversarially verified). No leak was found. Fixes:
+- a wiring test through W1i's real `_read`;
+- the unused gate removed;
+- honest docstrings: the events are not sparse at initialisation, and scattering keeps rank;
+- facts kept inside one window block;
+- `--text-file` filler supported.
+
+The scattered runs above started before the block fix, so about 4% of their facts straddled a block. That makes the task slightly harder.
+
+**Proposed round 5** (for the checkpoint)
+- W1i at tap 14 with 6000 steps, and with 4–5 pairs at tap 21: where does content selection break?
+- Seeds 1–2 for P21. That is a replication of the new result, not of W1g's.
+- The long-gap chain: why exact match falls for distant facts (decay of the chain store S, or the event field's write strength).
+- W1i on the CPU stability and recency suites (W1c), and on WikiText (W1d, no LM regression).
