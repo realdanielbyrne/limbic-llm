@@ -666,3 +666,24 @@ It is a linear fast-weight sequence store. The project's own `limbic_llm/ca3.py`
 In the unit test a 0.55/0.45 mix of two stored sparse patterns settles onto the majority pattern (cosine > 0.95). Without settling it stays a mix (0.77).
 
 **Runs** (`results/evolve/round3/`, Qwen3 with every layer windowed, 3000 steps). W1g with 2 and 3 pairs at taps 14 and 21, a no-goal ablation and a 1-pair check. Then W1h at the same settings. Results are added to the register as they land.
+
+**Round-3 results** (Qwen3, every layer windowed, 3000 steps, one seed each; digit-1 loss / accuracy, exact)
+
+| Arm | Tap 14 | Tap 21 |
+|---|---|---|
+| W1 / no-goal, 2 pairs | 0.892 / 0.46, 0.42 (5 heads) | 0.65 / 0.53, 0.49 (round 2, 8 heads) |
+| **W1g, 2 pairs** | 0.855 / 0.48, 0.43 | **0.002 / 1.00, 0.984** |
+| W1g, 3 pairs | 1.374 / 0.38, 0.20 | 1.004 / 0.38, 0.28 |
+| W1h (W1g + settling), 2 pairs | 0.79 / 0.52, 0.48 | 0.66 / 0.49, 0.45 |
+| W1h, 3 pairs | 1.26 / 0.41, 0.24 | 1.004 / 0.37, 0.27 |
+| W1g, 1 pair | exact 1.000 | — |
+
+**What it shows**
+1. **A start store with conjunctive DG keys can select the queried code (P18).** At tap 21 with 2 pairs the coin flip becomes exact recall: 0.984, with digit 1 at 0.002. That is the first arm to solve the missing-key step. It is one seed at one setting, so it needs a replication.
+2. **It is fragile (P18, P19).** It does not work at tap 14, where the name is slightly less decodable (0.95 against 0.98–1.00), and it does not extend to 3 pairs within 3000 steps.
+3. **CA3 settling as built hurts (P20).** It turns the 2-pair success back into a coin flip. The autoassociative store contains every earlier position, including the query's own "<name> is", the most recent and most similar patterns, so the cue completes onto the query rather than the stored fact. Biologically, CA3 retrieval runs with encoding suppressed (the acetylcholine switch), so recent input does not dominate the attractor landscape. That suggests gating what A stores (write only at G's write events, or exclude a recent refractory window) rather than storing everything.
+
+**Proposed round 4** (for the checkpoint)
+- Replicate W1g at tap 21 with 2 pairs on seeds 1 and 2, to establish P18.
+- Diagnose the 3-pair failure: G's DG width and sparsity (more active units or a larger expansion within budget), and 6000 steps.
+- W1h, revised: A written only where G writes strongly (shared β gate), or with a refractory window of the last w positions excluded from settling.
