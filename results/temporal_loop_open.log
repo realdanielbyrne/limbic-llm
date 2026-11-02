@@ -1,0 +1,2 @@
+[memory         ] step   500 loss 2.216 what 0.133 when 0.842 (141s)
+[memory         ] step  1000 loss 0.156 what 0.998 when 0.889 (275s)

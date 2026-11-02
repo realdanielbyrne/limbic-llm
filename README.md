@@ -53,13 +53,24 @@ Small CPU models (0.2–0.4 M parameters, single seed), so these are sanity chec
 
 **Memory capacity.** Standard Gated DeltaNet loses recall once the number of stored pairs exceeds its key dimension (0.43 → 0.13). Successor-bound addressing turns the state into exact RAM, with perfect recall up to 32 pairs.
 
+**A regulated temporal loop and a clock of elapsed time.** On a task that asks what happened and how long ago, beyond a 16-token window, the loop carries content and the clock carries elapsed time; each alone leaves the other at baseline.
+
+| Model | What (chance 0.125) | When (prior 0.333) |
+|---|---:|---:|
+| Windowed attention | 0.11 | 0.34 |
+| Memory loop | 1.00 | 0.85 |
+| Clock | 0.10 | 0.88 |
+| Loop + clock (3,000 steps; others 1,500) | **1.00** | **0.92** |
+
+Closed loops that feed their output back into memory run away when undamped (echo 14× the input, peak 63×). The clamped, damped loop with CA1 control holds the echo at about 0.3× across 520 tokens and still learns the task on two seeds. Two findings shaped the design. A closed loop rehearses, so the *first* event captures it however strongly each trace is damped; subtracting the prior and sparse dentate-gyrus keys counter this. And CA1's inverted copy obeys the op-amp law, $y = A\Delta/(1+A\beta)$, but only below a loop gain of 1.68, because it arrives a circuit late. On frozen Qwen3.5-2B, the side channels restore exact needle recall 500 tokens back (0.00 → 1.00) with help from its Gated DeltaNet layers. See [RESULTS.md §4](RESULTS.md#4-temporal-loop-what-when-stability-and-feedback).
+
 ## Install
 
 ```bash
 git clone https://github.com/realdanielbyrne/limbic-llm
 cd limbic-llm
 pip install -e ".[dev]"      # needs torch >= 2.1
-pytest -q                    # 70 tests
+pytest -q                    # 98 tests (12 need the [pretrained] extra)
 ```
 
 ## Quick start
@@ -148,6 +159,16 @@ python experiments/assoc_recall.py --steps 3000      # one-shot recall across a 
 python experiments/continual.py --steps 600          # sequential learning: naive vs. replay
 python experiments/gdn_capacity.py --pairs 8,16,32   # linear-memory capacity under load
 python experiments/temporal_loop.py --suite all      # what/when recall and closed-loop stability
+python experiments/temporal_loop.py --suite feedback # CA1 feedback: none, divisive, subtractive
+python experiments/temporal_loop.py --suite ablations # contrast, DG keys, direct vs DG read
+python experiments/loop_systems.py                   # the op-amp test on an untrained loop
+```
+
+Side channels on a frozen pretrained model (needs `pip install -e ".[pretrained]"` and a GPU for real models):
+
+```bash
+python experiments/pretrained_loop.py --model Qwen/Qwen3.5-2B-Base --dtype bfloat16 --device cuda \
+    --task needle --window 64 --window-layers attention --seq-len 512 --steps 3000
 ```
 
 The temporal-loop experiment takes flags for each excitatory variant, so a single model can be built from the command line:
@@ -167,6 +188,10 @@ python experiments/temporal_loop.py --name mine --memory --time \
 | `--contrast` | Inject episode minus prior instead of the raw retrieval |
 | `--dg-keys` | Sparse dentate-gyrus write keys, dense entorhinal read query |
 | `--memory`, `--time` | Turn the loop and the clock on or off |
+| `--feedback none\|divisive\|subtractive` | CA1 → CA3 back-projection: energy-divisive, or an inverted copy of earlier injections |
+| `--clamp`, `--project`, `--saturate` | The other parts of CA1 control, each switchable |
+| `--forward-gain`, `--fb-beta` | Open-loop gain $A$ and feedback fraction $\beta$ |
+| `--read direct\|dg` | Retrieval cue straight from the stream (EC → CA3) or through the dentate-gyrus code |
 
 Logs and JSON results are in [`results/`](results/).
 
@@ -183,7 +208,8 @@ Three design changes came out of debugging, each covered by a test.
 * **CA2 as identity steering.** Per-speaker activation-steering vectors ([Turner et al.](https://arxiv.org/abs/2308.10248)) at the CA2 point, tested on multi-speaker recall.
 * **A calibrated CA1.** Novelty trained with a proper scoring rule, in the spirit of decision models such as [JEV](https://jevai.net) and [LAYA](https://github.com/NandhaKishorM/laya), with a JEPA-style predictive target.
 * **Big-loop recurrence.** A looped HippocampalBlock whose exit gate is driven by CA1 novelty, after [Ouro](https://arxiv.org/abs/2510.25741).
-* **A full Limbic LLM.** The temporal loop and the clock on a frozen pretrained decoder: tap at a third of the depth, inject at half, consolidate into adapters. The blueprint is in the [design note](docs/design/temporal-loop.md#4-a-full-limbic-llm).
+* **A full Limbic LLM.** The temporal loop and the clock on a frozen pretrained decoder: tap at a third of the depth, inject at half, consolidate into adapters. The blueprint is in the [design note](docs/design/temporal-loop.md#4-a-full-limbic-llm); first results on Qwen3 and Qwen3.5 are in RESULTS.md §4.7.
+* **Multi-band horizons.** Damping sets a memory span of about $\tau/\ln(1/\rho)$ tokens; several bands with different $\rho$, to keep both recency and long recall.
 * **Pattern separation under similar keys.** A recall task with overlapping keys and a sweep of DG sparsity.
 * **Pretrained models.** Inserting HippocampalBlock or GatedDeltaMemory into an existing LLM.
 
@@ -207,8 +233,8 @@ Three design changes came out of debugging, each covered by a test.
 limbic_llm/         memory modules and models
   dentate_gyrus.py  ca3.py  ca2.py  ca1.py  subiculum.py  hippocampal_block.py
   neural_memory.py  titans_hybrid.py  gated_delta.py  temporal_loop.py  replay.py  models.py
-experiments/        recall, continual-learning, capacity and temporal-loop experiments
-tests/              70 tests
+experiments/        recall, continual learning, capacity, temporal loop, op-amp sweep, pretrained models
+tests/              98 tests
 results/            experiment logs and JSON
 docs/               design document, diagrams, bibliography, notebook
 ```

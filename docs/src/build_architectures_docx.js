@@ -22,11 +22,11 @@ function h1(text) {
     spacing: { before: 480, after: 200 }, border: { bottom: { style: BorderStyle.SINGLE, size: 2, color: MED_BLUE } } });
 }
 function h2(text) {
-  return new Paragraph({ heading: HeadingLevel.HEADING_2,
+  return new Paragraph({ heading: HeadingLevel.HEADING_2, keepNext: true,
     children: [new TextRun({ text, font: "Georgia", size: 26, bold: true, color: DARK_BLUE })], spacing: { before: 360, after: 160 } });
 }
 function h3(text) {
-  return new Paragraph({ children: [new TextRun({ text, font: "Georgia", size: 23, bold: true, color: ACCENT_TEAL })], spacing: { before: 260, after: 120 } });
+  return new Paragraph({ keepNext: true, children: [new TextRun({ text, font: "Georgia", size: 23, bold: true, color: ACCENT_TEAL })], spacing: { before: 260, after: 120 } });
 }
 function p(text) {
   return new Paragraph({ children: [new TextRun({ text, font: "Calibri", size: 22, color: BODY })],
@@ -142,6 +142,8 @@ const toc = [
   [false, "", "6.5  Plug-in or New Architecture?"],
   [false, "", "6.6  A Full Limbic LLM"],
   [false, "", "6.7  Experiment: What, When, and Loop Stability"],
+  [false, "", "6.8  The Op-amp Test: Divisive or Subtractive Feedback"],
+  [false, "", "6.9  Pretrained Models"],
   [true, "7.", "Implementation Strategy I: Direct Hippocampal Architecture"],
   [true, "8.", "Implementation Strategy II: Titans-Hippocampal Hybrid"],
   [true, "9.", "limbic-llm: Implementation and Results"],
@@ -156,7 +158,7 @@ for (const [major, num, title] of toc) {
     new TextRun({ text: title, font: "Calibri", size: major ? 22 : 21, bold: major, color: major ? NAVY : BODY })] }));
 }
 C.push(spacer(200));
-C.push(note("New in version 3: Section 6, closing the loop \u2014 dynamic activation addition, how the biological loop stays stable, the direct entorhinal path to CA3, CA1 negative feedback as an op-amp, clamped damped re-entry, a clock of elapsed time, the plug-in versus new-architecture question, a full Limbic LLM blueprint, and the what-when and loop-stability experiment. Version 2 added Gated DeltaNet (4.7), recent inspirations (Section 5), limbic-llm results (Section 9), prior art (Section 10) and the bibliography (Section 13).", ACCENT_AMBER));
+C.push(note("New in version 3: Section 6, closing the loop \u2014 dynamic activation addition, how the biological loop stays stable, the direct entorhinal path to CA3, CA1 negative feedback as an op-amp, clamped damped re-entry, a clock of elapsed time, the plug-in versus new-architecture question, a full Limbic LLM blueprint, the what-when, loop-stability and recency experiments, the op-amp test of CA1 feedback (6.8), and first results on pretrained Qwen3 and Qwen3.5 (6.9). Version 2 added Gated DeltaNet (4.7), recent inspirations (Section 5), limbic-llm results (Section 9), prior art (Section 10) and the bibliography (Section 13).", ACCENT_AMBER));
 
 // ═══ 1. INTRODUCTION
 C.push(h1("1. Introduction and Motivation"));
@@ -352,25 +354,68 @@ C.push(bullet(" replaying high-novelty episodes offline into adapters on the fro
 C.push(p("Training would start with the side-loop parameters alone, on long documents with the context window deliberately truncated so that memory is the only route to distant information, then a light joint fine-tune, then consolidation for continual learning."));
 C.push(h2("6.7  Experiment: What, When, and Loop Stability"));
 C.push(p("In the what-when task an event token (8 types) is followed by 20–140 filler tokens and a query. The model must say what happened (chance 0.125) and when, in four log-spaced elapsed-time bins. The bins cover 15, 25, 40 and 40 of the 120 possible gaps, so a model that only learns the prior scores 0.333 on when. Attention sees only 16 tokens and there is no absolute position embedding, so content can only arrive through the memory loop and elapsed time only through the side channels. The stability suite trains closed loops, which write their own feedback back into memory, on 160-token sequences and then runs them on 520-token sequences, measuring the injection as a fraction of the incoming signal."));
-const TL = (() => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "results", "temporal_loop_all.json"), "utf8")).results; } catch (e) { return null; } })();
-const f3 = x => (x === null || x === undefined) ? "—" : Number(x).toFixed(3);
-if (TL) {
-  const label = { window: "Window attention only", memory: "Memory loop", time: "Time channel", memory_time: "Memory loop + time channel",
-    closed_flat: "Closed loop, undamped (flat)", closed_exp: "Closed loop, damped (exp)", closed_osc: "Closed loop, clamped damped sinusoid",
-    closed_osc_ca1: "Clamped damped sinusoid + CA1 control" };
-  const ww = ["window", "memory", "time", "memory_time"].filter(k => TL[k]);
-  C.push(table(["Model", "What (chance 0.125)", "When (prior 0.333)"], ww.map(k => [label[k], f3(TL[k].what), f3(TL[k].when)]), [5160, 2100, 2100]));
+const RES = name => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "results", name), "utf8")); } catch (e) { return null; } };
+const f2 = x => (x === null || x === undefined || Number.isNaN(x)) ? "—" : Number(x).toFixed(2);
+const f3 = x => (x === null || x === undefined || Number.isNaN(x)) ? "—" : Number(x).toFixed(3);
+const R = n => { const d = RES(n); return d ? d.results : {}; };
+const ALL = R("temporal_loop_all.json"), LONG0 = R("temporal_loop_long.json"), LONG1 = R("temporal_loop_long_seed1.json");
+const PROBE = R("temporal_loop_probe.json"), FB = R("temporal_loop_feedback.json"), AB = R("temporal_loop_ablations.json"), OPEN = R("temporal_loop_open.json");
+if (ALL.window) {
+  C.push(h3("Which channel carries which answer"));
+  const ww = [["Windowed attention only", ALL.window], ["Memory loop", ALL.memory], ["Time channel only", ALL.time],
+    ["Memory loop + time channel", ALL.memory_time], ["Memory loop + time channel, 3,000 steps", LONG0.memory_time]].filter(r => r[1]);
+  C.push(table(["Model (1,500 steps unless noted)", "What (chance 0.125)", "When (prior 0.333)"], ww.map(([l, r]) => [l, f3(r.what), f3(r.when)]), [5160, 2100, 2100]));
   C.push(spacer(80));
-  const st = ["closed_flat", "closed_exp", "closed_osc", "closed_osc_ca1"].filter(k => TL[k]);
-  C.push(table(["Closed loop (520-token run)", "What", "Inj. 16–128", "Inj. 128–320", "Inj. 320–519", "Max"],
-    st.map(k => TL[k].diverged_at ? [label[k], "diverged", "—", "—", "—", "—"] :
-      [label[k], f3(TL[k].what), f3(TL[k].long.inj_ratio_16_128), f3(TL[k].long.inj_ratio_128_320), f3(TL[k].long.inj_ratio_320_519), f3(TL[k].long.inj_ratio_max)]),
-    [3360, 1000, 1250, 1250, 1250, 1250], 16));
+  C.push(p("The loop carries content and the clock carries elapsed time; each alone leaves the other answer at baseline. The combined model learned what only with the longer schedule, so its 1,500-step failure was the timing of a sudden late jump in accuracy, not a missing capability."));
+  C.push(h3("Closed-loop stability"));
+  const st = [["Undamped (flat), 3,000 steps", PROBE.closed_flat], ["Damped (exp), 3,000 steps", PROBE.closed_exp],
+    ["Clamped sinusoid, no control, 3,000 steps", FB.closed_osc], ["Full design, seed 0, 3,000 steps", LONG0.closed_osc_ca1],
+    ["Full design, seed 1, 3,000 steps", LONG1.closed_osc_ca1]].filter(r => r[1]);
+  C.push(table(["Closed loop", "What", "Echo 16–128", "Echo 128–320", "Echo 320–519", "Max"],
+    st.map(([l, r]) => [l, f3(r.what), f2(r.long.inj_ratio_16_128), f2(r.long.inj_ratio_128_320), f2(r.long.inj_ratio_320_519), f2(r.long.inj_ratio_max)]),
+    [3560, 960, 1210, 1210, 1210, 1210], 16));
   C.push(spacer(80));
-  C.push(p(fs.existsSync(path.join(__dirname, "temporal_loop_findings.txt")) ? fs.readFileSync(path.join(__dirname, "temporal_loop_findings.txt"), "utf8").trim() : ""));
-} else {
-  C.push(note("Results pending: run python experiments/temporal_loop.py --suite all."));
+  C.push(p("Echo is the injection as a fraction of the incoming signal on 520-token sequences. Only the full design keeps it below the new input everywhere, and it stays stationary across the run. Undamped feedback grows with length; damping alone overshoots in the first circuits; the clamped sinusoid without control resonates. None diverged numerically, because the next layer’s LayerNorm rescales the stream. The cost is forgetting: at gaps of 300–500 tokens recall is 0.40 undamped, 0.00 damped and 0.04–0.10 for the full design."));
+  C.push(h3("Do new tokens dominate?"));
+  const pr = [["Undamped closed loop", PROBE.closed_flat], ["Damped closed loop", PROBE.closed_exp], ["Subtractive feedback, no clamp", FB.closed_osc_sub],
+    ["Full design without contrast", AB.closed_osc_ca1_nocontrast], ["Full design", PROBE.closed_osc_ca1],
+    ["Full design, DG keys, direct read", AB.closed_osc_ca1_dg], ["Full design, DG keys, DG read", AB.closed_osc_ca1_dgread],
+    ["Open loop (stores the pre-injection stream), seed 1", OPEN.memory]].filter(r => r[1] && r[1].long && r[1].long.probe_newer_named !== undefined);
+  C.push(table(["Model, probed zero-shot with an older event first", "Names newer", "Names older"],
+    pr.map(([l, r]) => [l, f2(r.long.probe_newer_named), f2(r.long.probe_older_named)]), [5560, 1900, 1900]));
+  C.push(spacer(80));
+  C.push(p("A trained recency task was learned by no model in 3,000 steps, so each model trained on single events was probed instead. Closed loops favour the first event: they re-store their own echo every circuit, and each re-stored copy starts its decay again, so damping each trace does not damp content the loop keeps rehearsing. This is primacy by self-rehearsal. Subtracting the prior reduces it, plausibly because rehearsed content becomes part of the prior; sparse dentate-gyrus write keys give the only clear recency win."));
 }
+
+C.push(h2("6.8  The Op-amp Test: Divisive or Subtractive Feedback"));
+C.push(p("The CA1 control used so far is divisive: it divides the gain by the energy of recent injections, which at high gain only compresses. An op-amp subtracts a fraction of its own output, so the closer analogue is a subtractive back-projection carrying an inverted copy of earlier injections, a self-negative in the language of activation addition:"));
+C.push(eq("y_{t} = A (Δ_{t} − β ȳ_{t}),     y = AΔ / (1 + Aβ) → Δ/β"));
+C.push(p("A lagged, smoothed copy can only cancel what persists from circuit to circuit, so subtractive feedback is a high-pass filter on the injection: sustained echo is attenuated by 1/(1 + K), with K = Agβ, while new content passes. Because the copy arrives a circuit late, the loop is stable only while the characteristic polynomial below keeps its roots inside the unit circle; for τ = 16 and an inhibition decay of 0.9 per token that requires K < 1.68, with a ringing period of about 44 tokens, which is why op-amps need compensation."));
+C.push(eq("z^{τ} − ρ_{E} z^{τ−1} + K(1 − ρ_{E}) = 0"));
+const SYS = RES("loop_systems.json");
+if (SYS) {
+  const pers = SYS.rows.filter(r => r.vocab === 1);
+  const pairs = [];
+  for (let i = 0; i + 1 < pers.length; i += 2) pairs.push([pers[i], pers[i + 1]]);
+  C.push(table(["K = Agβ", ...pairs.map(([n, s]) => f2(s.K))],
+    [["Subtractive / no feedback", ...pairs.map(([n, s]) => f3(s.inj_late / n.inj_late))], ["1/(1 + K)", ...pairs.map(([n, s]) => f3(1 / (1 + s.K)))]],
+    [3360, 1500, 1500, 1500, 1500]));
+  C.push(spacer(80));
+}
+C.push(p("On an untrained closed loop with the clamp removed and a persistent input, the measured attenuation matches the op-amp law within 1–3 %, and the loop rings and grows at K = 2.15 as predicted. Trained without the clamp, subtractive feedback was the only unregulated loop that learned content (what 0.99, against 0.13 with no feedback and 0.15 with divisive feedback). It did not bound the echo (2.6× the input) or break primacy, because at a stable loop gain it removes only about a quarter of sustained echo. A guaranteed bound still needs the clamp."));
+
+C.push(h2("6.9  Pretrained Models"));
+C.push(p("The side channels were attached to frozen Hugging Face models (experiments/pretrained_loop.py) and trained alone on a needle task with a gap of about 500 tokens and block attention windows of 64 tokens, on two RTX 5090s. Qwen3 is pure attention; Qwen3.5 is a 3:1 Gated DeltaNet hybrid whose GDN layers already carry the past."));
+const PQ = n => { const d = RES(n); return d ? d.results : null; };
+const prow = [["Qwen3-1.7B-Base, all layers windowed", PQ("pretrained_qwen3_needle.json")],
+  ["Qwen3.5-2B-Base, attention windowed, tap block 12", PQ("pretrained_qwen35_needle.json")],
+  ["Qwen3.5-2B-Base, attention windowed, tap block 22", PQ("pretrained_qwen35_needle_layer22.json")]].filter(r => r[1]);
+if (prow.length) {
+  C.push(table(["Model (exact match)", "Windowed", "Windowed + side", "Full attention"],
+    prow.map(([l, r]) => [l, f2(r.windowed.exact), f2(r["windowed+side"].exact), f2(r.full.exact)]), [4560, 1600, 1600, 1600]));
+  C.push(spacer(80));
+}
+C.push(p("Qwen3.5’s GDN layers alone did not recall the needle, which suggests native GDN memory keeps too weak a trace for exact recall at this distance. With the side channels at block 12 recall was exact; moving the tap to block 22 removed it, so the success depends on GDN layers after the tap. The loop could not see the needle itself: with ρ = 0.7 and τ = 16 its span is τ/ln(1/ρ) ≈ 45 tokens, so the Qwen3 failure reflects a setting rather than evidence against the loop. The working hypothesis is a chain in which GDN layers before the tap carry a weak trace, the loop re-presents it, and GDN layers after the tap integrate it. Damping trades memory for recency, so the loop’s horizon has to match the task, and several bands with different ρ may be needed."));
 
 // ═══ 7. STRATEGY I
 C.push(h1("7. Implementation Strategy I: Direct Hippocampal Architecture"));
