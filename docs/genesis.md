@@ -142,7 +142,7 @@ Small models (about 0.1M parameters, CPU), mostly single seeds; final numbers ar
 | Does the full design still learn? | Yes, given 3000 steps. *What* 1.00 on two seeds, *when* 0.98–1.00. "What" is learned in a sudden late jump whose timing varies. |
 | Do new tokens dominate in a closed loop? | Not by damping alone. Probed with an older and a newer event, the undamped loop names the older event 61% of the time and the damped loop 84%. A closed loop re-stores its own echo every circuit, so per-trace damping does not damp rehearsed content (primacy by self-rehearsal). The full design with the contrast drops to 18%. |
 | Is the CA1 inverted copy an op-amp? | Yes, for persistent echo. On an untrained loop, subtractive/none = 0.787, 0.647, 0.475, 0.373 against $1/(1+K)$ = 0.788, 0.650, 0.482, 0.383. It rings above $K = 1.68$, as predicted. |
-| Pretrained models | First GPU runs, superseded because of a bf16 training bug, now fixed. On Qwen3.5-2B with only attention windowed, the loop restored exact needle recall at about 500 tokens (1.00 vs 0.00), but neither GDN alone nor the loop alone did. Reruns are in progress. |
+| Pretrained models | On Qwen3.5-2B with only attention windowed, the side channels restore exact needle recall at about 500 tokens (1.00 vs 0.00), reproduced after the bf16 fix. Moving the tap from block 12 to block 22 drops it to 0.00, so the success depends on the Gated DeltaNet layers after the tap. The loop failed on Qwen3, but its kernel ($\rho = 0.7$, $\tau = 16$) gives a weight of about $10^{-19}$ at a 500-token lag: the needle was out of the loop's reach. |
 
 ## 7. Corrections made along the way
 
@@ -155,10 +155,12 @@ Small models (about 0.1M parameters, CPU), mostly single seeds; final numbers ar
 | CA1 control proves the feedback is stabilising | The hard clamp guarantees the bound by construction; the feedback had to be tested separately |
 | A sliding window makes memory the only route | Information hops $W-1$ tokens per layer, reaching $L(W-1)$; block windows are strict |
 | The first GPU runs trained the side channels | Side channels in bf16 lost Adam updates near 1; they now train in float32 |
+| The pretrained needle runs tested the loop's memory | With $\rho = 0.7$ and $\tau = 16$, the kernel's e-folding span is $\tau/\ln(1/\rho) \approx 45$ tokens, and its weight is exactly 0 for lags of 501–503 (the clamped half of the cosine). The horizon has to be set for the gap. |
 
 ## 8. Open questions
 
-- **Does Qwen3.5 recall through the loop reading its GDN trace, or through the loop rehearsing the needle into later GDN layers?** A late tap (layer 22) separates the two.
+- **How does Qwen3.5 recall the needle?** The late tap shows the success needs Gated DeltaNet layers after the tap. The loop cannot see 500 tokens back with its default kernel, so the needle must reach the tap through the GDN layers before it. The working hypothesis is a chain: GDN layers before the tap carry a weak trace, the loop re-presents it, and GDN layers after the tap integrate it for the attention layers to read.
+- **How long a memory should the loop have?** Damping makes new input dominate but sets a horizon of about $\tau/\ln(1/\rho)$ tokens. Several bands with different $\rho$, as in the blueprint, may be needed to have both.
 - Does subtractive feedback break closed-loop primacy, as the high-pass argument predicts?
 - Does the direct entorhinal → CA3 read beat a dentate-gyrus read when the cue is noisy (Treves & Rolls)?
 - What is the compensation for the delayed CA1 feedback: theta timing, slow GABA$_\text{B}$ inhibition, or the clamp?
