@@ -409,13 +409,15 @@ C.push(p("The side channels were attached to frozen Hugging Face models (experim
 const PQ = n => { const d = RES(n); return d ? d.results : null; };
 const prow = [["Qwen3-1.7B-Base, all layers windowed", PQ("pretrained_qwen3_needle.json")],
   ["Qwen3.5-2B-Base, attention windowed, tap block 12", PQ("pretrained_qwen35_needle.json")],
-  ["Qwen3.5-2B-Base, attention windowed, tap block 22", PQ("pretrained_qwen35_needle_layer22.json")]].filter(r => r[1]);
+  ["Qwen3.5-2B-Base, attention windowed, tap block 22", PQ("pretrained_qwen35_needle_layer22.json")],
+  ["Qwen3-1.7B-Base, all windowed, horizon kernel", PQ("pretrained_qwen3_needle_horizon.json")],
+  ["Qwen3.5-2B-Base, all windowed, horizon kernel", PQ("pretrained_qwen35_needle_allwin_horizon.json")]].filter(r => r[1]);
 if (prow.length) {
   C.push(table(["Model (exact match)", "Windowed", "Windowed + side", "Full attention"],
     prow.map(([l, r]) => [l, f2(r.windowed.exact), f2(r["windowed+side"].exact), f2(r.full.exact)]), [4560, 1600, 1600, 1600]));
   C.push(spacer(80));
 }
-C.push(p("Qwen3.5’s GDN layers alone did not recall the needle, which suggests native GDN memory keeps too weak a trace for exact recall at this distance. With the side channels at block 12 recall was exact; moving the tap to block 22 removed it, so the success depends on GDN layers after the tap. The loop could not see the needle itself: with ρ = 0.7 and τ = 16 its span is τ/ln(1/ρ) ≈ 45 tokens, so the Qwen3 failure reflects a setting rather than evidence against the loop. The working hypothesis is a chain in which GDN layers before the tap carry a weak trace, the loop re-presents it, and GDN layers after the tap integrate it. Damping trades memory for recency, so the loop’s horizon has to match the task, and several bands with different ρ may be needed."));
+C.push(p("Qwen3.5’s GDN layers alone did not recall the needle, which suggests native GDN memory keeps too weak a trace for exact recall at this distance. With the side channels at block 12 recall was exact; moving the tap to block 22 removed it, so the success depends on GDN layers after the tap. The loop could not see the needle itself: with ρ = 0.7 and τ = 16 its span is τ/ln(1/ρ) ≈ 45 tokens, so the Qwen3 failure reflected a setting rather than evidence against the loop. With a horizon that covers the gap (exp kernel, \u03C1 = 0.95, \u03C4 = 32) and every layer windowed, the loop alone carried needle information 500 tokens back in both models: digit loss fell from the answer-format floor of 1.84 to 1.38 (Qwen3) and 1.24 (Qwen3.5), with token accuracy 0.46\u20130.55, though exact recall of all four digits stayed near zero. The working hypothesis is a chain in which GDN layers before the tap carry a weak trace, the loop re-presents it, and GDN layers after the tap integrate it. Damping trades memory for recency, so the loop’s horizon has to match the task, and several bands with different ρ may be needed."));
 
 // ═══ 7. STRATEGY I
 C.push(h1("7. Implementation Strategy I: Direct Hippocampal Architecture"));

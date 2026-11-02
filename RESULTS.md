@@ -168,9 +168,18 @@ Side channels on frozen Hugging Face models, needle task with a gap of about 500
 | Qwen3.5-2B-Base, attention windowed, GDN intact, tap at block 12 | 0.00 | **1.00** | 1.00 |
 | Qwen3.5-2B-Base, same, tap at block 22 | 0.00 | 0.00 | 1.00 |
 
+With a loop horizon that covers the gap (`--kernel exp --rho 0.95 --tau 32`, weight 0.47 at a 500-token lag; 3,000 steps), every layer windowed, so the loop is the only long-range path. Digit loss against the answer-format floor $0.8\ln 10 = 1.842$:
+
+| Model, all layers windowed | Windowed | Side, default kernel | Side, horizon kernel | Full attention |
+|---|---:|---:|---:|---:|
+| Qwen3-1.7B-Base, loss / token accuracy / exact | 3.07 / 0.11 / 0.00 | 1.84 / 0.29 / 0.00 | **1.38 / 0.46 / 0.00** | 0.01 / 1.00 / 1.00 |
+| Qwen3.5-2B-Base, loss / token accuracy / exact | 3.04 / 0.13 / 0.00 | 1.69 / 0.32 / 0.00 | **1.24 / 0.55 / 0.02** | 0.03 / 1.00 / 1.00 |
+
+The 1.69 entry is from the superseded bf16 run (an anti-causal leak; see the handoff note).
+
 * **Qwen3.5's Gated DeltaNet layers alone do not recall the needle** (0.00). This suggests native GDN memory keeps a trace too weak for exact recall at this distance, and that the hybrid relies on its attention layers for exact recall.
 * **With the side channels tapping block 12, recall is exact.** Moving the tap to block 22 removes it, so the success depends on the GDN layers after the tap.
-* **The loop could not see the needle itself.** With $\rho = 0.7$ and $\tau = 16$ its span is $\tau/\ln(1/\rho) \approx 45$ tokens and its weight at a 500-token lag is about $10^{-19}$ (exactly 0 at lags 501–503, the clamped half of the cosine). So the Qwen3 failure is a setting, not evidence against the loop, and on Qwen3.5 the needle must reach the tap through the GDN layers before it. The working hypothesis is a chain: GDN layers before the tap carry a weak trace, the loop re-presents it, and GDN layers after the tap integrate it. Reruns with a horizon that covers the gap are queued.
+* **The loop could not see the needle itself.** With $\rho = 0.7$ and $\tau = 16$ its span is $\tau/\ln(1/\rho) \approx 45$ tokens and its weight at a 500-token lag is about $10^{-19}$ (exactly 0 at lags 501–503, the clamped half of the cosine). So the Qwen3 failure is a setting, not evidence against the loop, and on Qwen3.5 the needle must reach the tap through the GDN layers before it. The working hypothesis is a chain: GDN layers before the tap carry a weak trace, the loop re-presents it, and GDN layers after the tap integrate it. With a horizon that covers the gap, the loop alone carries needle information 500 tokens back in both models (loss well below the format floor, token accuracy 0.46–0.55), though not yet exact recall.
 * The first GPU runs had the side channels in bf16, where Adam updates near 1 round away; the table uses the float32 reruns.
 
 ### What this shows
