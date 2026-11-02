@@ -97,9 +97,17 @@ def main():
     ap.add_argument("--out", default="results/gdn_capacity.json")
     args = ap.parse_args()
     modes, loads = args.modes.split(","), [int(p) for p in args.pairs.split(",")]
-    results = {m: {p: run(m, p, args) for p in loads} for m in modes}
     out = Path(args.out); out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps({"args": vars(args), "results": results}, indent=2))
+    # resume: keep finished runs from an earlier (possibly interrupted) sweep
+    results = json.loads(out.read_text())["results"] if out.exists() else {}
+    for m in modes:
+        for p in loads:
+            if str(p) in results.get(m, {}):
+                print(f"[{m:8s} P={p:2d}] already done, skipping", flush=True)
+                continue
+            results.setdefault(m, {})[str(p)] = run(m, p, args)
+            out.write_text(json.dumps({"args": vars(args), "results": results}, indent=2))
+    results = {m: {int(p): r for p, r in results[m].items()} for m in modes}
     print("\nrecall (chance = 1/16 = 0.062)")
     print("mode      " + "".join(f"  P={p:<4d}" for p in loads))
     for m in modes:
