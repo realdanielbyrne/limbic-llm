@@ -630,3 +630,39 @@ ln 2 = 0.69 and ln 3 = 1.10.
 3. L2 and L4 on Qwen3.5.
 4. A read-side W1b arm and L6.
 5. A2 with the RV2.S3 arms before A6 runs at scale.
+
+---
+
+## Round 3: is W1 really CA3? The probe, the start store (W1g) and CA3 settling (W1h) (2 Nov 2026)
+
+**Challenge (Daniel).** "I don't see the analog to CA3. Where is the recurrence, where is the sparsity gating, where is the high gain on connections?" Correct, and recorded as B16. W1 has CA3's one-shot heteroassociative *storage rule* (v_t filed under a_{t−1}). It has none of CA3's dynamics:
+- no recurrence in activity: the read `S·a` is one linear lookup with no settling;
+- no sparse gating of CA3 activity: DG mode makes only the address sparse;
+- no high-gain connections: the store is contractive, and the only gain is the CA1 clamp.
+
+It is a linear fast-weight sequence store. The project's own `limbic_llm/ca3.py` (a modern Hopfield network with `n_iter` "settling") does not fill the gap either. It iterates a softmax read with the cue clamped and has no k-WTA, inhibition or gain, and it costs about 21–55M parameters at Qwen width.
+
+**Re-plan after the literature review (RV2, PR #4).** Rounds 1–2 are the missing-key problem of Samsonovich & Ascoli (RV2.F1): the chain (their *J*) works, and start selection fails. The review's reading is that start selection is read-side. It also found that W1b.a's gdn mode began with identity convolutions (B12). The order agreed with Daniel: diagnose first, then a separate start store (option 2), then CA3 settling on top (option 3).
+
+**1. Probe** (`experiments/evolve/probe_cue.py`; register P17). The queried name is linearly decodable at the query's space token: 0.95 at block 14 and 0.98–1.00 at block 21, against chance 0.04. It is decodable at the facts' space tokens too (1.00). W1's trained addresses there collapse: the cosine between the two facts is 0.785 and 0.88, and the query address picks the queried fact at chance. **The information is present; the address projection discards it**, because successor binding for digits 2–4 rewards token identity.
+
+**2. B12 control** (P14 revised). gdn mode with the key convolution started on the previous token learns the chain: digits 2–4 at 0.88, 0.73 and 0.42, still improving. With a random start it does not. So the token shift carries the chain, and explicit binding learns it faster. Digit 1 stays a coin flip in both.
+
+**3. Two designs rejected in unit tests before any GPU run**
+- **A drifting-context goal store** (temporal-context keys written at every token). Consecutive positions have almost identical keys, so under the delta rule each write overwrites the previous one. The first digit is overwritten by digit 2 at once, and 47% of the read was the current token's own value. Samsonovich & Ascoli avoid this by writing their goal field rarely, in hindsight.
+- **A start store with a *linear* key projection.** Even when the key sees the name, "space + Name1" and "space + Name2" share the space component (cosine 0.5). The later fact then overwrites half of the earlier one, and the store picks the wrong fact (margin −0.19). Meanwhile the chain store, keyed by token identity, reliably returns the *most recent* fact. That is the same mechanism as the coin flip on the GPU.
+
+**4. W1g (start store, built).** A second successor store G with its own **dentate-gyrus key projection**: 2× expansion, then 5% k-WTA, so it forms conjunctive codes. It sits beside W1's chain store S and shares its values and output path. In the one-hot test the DG codes pick the queried fact (mean margin +0.39 over 8 random projections) where the linear key fails. This is pattern separation of conjunctions, the DG's role in the Treves–Rolls account. 5 heads, 4.03M parameters.
+
+**5. W1h (CA3 settling, built).** `--w1g-settle K` settles G's cue in an autoassociative store A of earlier positions (b_{t−1} → b_{t−1}) before G is read:
+
+  x^{k+1} = norm(kWTA(g·A x^k + γ·b_t))
+
+- **Recurrence:** K reads per position.
+- **Sparse activity gating:** k-WTA at every step.
+- **High gain:** g starts at 4.
+- **Divisive normalisation** keeps it stable.
+
+In the unit test a 0.55/0.45 mix of two stored sparse patterns settles onto the majority pattern (cosine > 0.95). Without settling it stays a mix (0.77).
+
+**Runs** (`results/evolve/round3/`, Qwen3 with every layer windowed, 3000 steps). W1g with 2 and 3 pairs at taps 14 and 21, a no-goal ablation and a 1-pair check. Then W1h at the same settings. Results are added to the register as they land.
