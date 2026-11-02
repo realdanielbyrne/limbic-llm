@@ -19,9 +19,9 @@ All earlier pretrained numbers are **superseded**, and the runs below are being 
 | `pretrained_qwen35_needle_allwin` (all layers, 3000 steps) | **done** (fixed) |
 | `pretrained_qwen35_needle_layer22` (attention only, tap at block 22, 3000 steps) | **done** (fixed) |
 | `pretrained_qwen3_lm` | **done** (fixed rerun) |
-| `pretrained_qwen35_lm` | running (rerun). The bf16 run was **stopped** at step 600 of 1000 and never wrote a JSON. |
-| `pretrained_qwen3_needle_horizon` (`--kernel exp --rho 0.95 --tau 32`, 3000 steps) | queued |
-| `pretrained_qwen35_needle_allwin_horizon` (same kernel, all layers windowed, 3000 steps) | queued |
+| `pretrained_qwen35_lm` | **done** (fixed rerun). The bf16 run was **stopped** at step 600 of 1000 and never wrote a JSON. |
+| `pretrained_qwen3_needle_horizon` (`--kernel exp --rho 0.95 --tau 32`, 3000 steps) | running, GPU 1 |
+| `pretrained_qwen35_needle_allwin_horizon` (same kernel, all layers windowed, 3000 steps) | running, GPU 0 |
 
 The horizon runs use a loop kernel that reaches the needle: w(Δ) = ρ^(Δ/τ−1), which is 0.472 at a lag of 500 and 0.470 at 503 (`limbic_llm/temporal_loop.py:100`). The default `osc` kernel's weight is 0 at that gap.
 
@@ -73,6 +73,9 @@ Training set: 1,155,524 tokens. Eval set: 116,893 tokens in 114 sequences. Each 
 | run | windowed layers | windowed | windowed+side | full | gap closed | gain |
 |---|---|---|---|---|---|---|
 | `pretrained_qwen3_lm` | 28/28 | 14.62 / 2.683 | 12.01 / 2.486 | 9.01 / 2.199 | 41% | 0.3681 |
+| `pretrained_qwen35_lm` | 6/24 attention (GDN intact) | 16.28 / 2.790 | 11.22 / 2.417 | 9.83 / 2.286 | **74%** | 0.3744 |
+
+- **Qwen3.5 (GDN intact):** windowing only the 6 attention layers costs more perplexity (9.83 → 16.28) than windowing all of Qwen3 (9.01 → 14.62), even though GDN still reaches the whole sequence. The side channels recover 74% of that loss gap, against 41% on Qwen3. The same domain-adaptation caveat applies. The larger recovery fits the needle result: with the tap at block 12 and GDN layers after it, the loop's re-injection can be carried forward and used.
 
 - The gain trained (0.2689 → 0.368), and the injection ratio rose to 0.254 from about 0.20 in the needle runs.
 - The result is close to the superseded bf16 run (11.91, 43%).
