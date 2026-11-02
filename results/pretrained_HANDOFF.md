@@ -18,7 +18,7 @@ All earlier pretrained numbers are **superseded**, and the runs below are being 
 | `pretrained_qwen35_needle` (attention only, 3000 steps) | **done** (fixed) |
 | `pretrained_qwen35_needle_allwin` (all layers, 3000 steps) | **done** (fixed) |
 | `pretrained_qwen35_needle_layer22` (attention only, tap at block 22, 3000 steps) | **done** (fixed) |
-| `pretrained_qwen3_lm` | running, GPU 1 (rerun) |
+| `pretrained_qwen3_lm` | **done** (fixed rerun) |
 | `pretrained_qwen35_lm` | running (rerun). The bf16 run was **stopped** at step 600 of 1000 and never wrote a JSON. |
 | `pretrained_qwen3_needle_horizon` (`--kernel exp --rho 0.95 --tau 32`, 3000 steps) | queued |
 | `pretrained_qwen35_needle_allwin_horizon` (same kernel, all layers windowed, 3000 steps) | queued |
@@ -65,6 +65,18 @@ Each cell is exact / token_acc / loss. "gain" is the final loop gain; the initia
 - **Qwen3.5 with all layers windowed:** with every Gated DeltaNet layer windowed too, the loop on its own fails exactly as on Qwen3. The training loss stays flat at about 1.84 for all 3000 steps (1.831 at the end), and exact match is 0. The late drop to 1.60 in the bf16 1000-step run did not reproduce. Combined with the kernel calculation below, this is expected: no route remains to a needle about 500 tokens back.
 - **Qwen3.5 with the tap moved to block 22:** exact match drops from 1.0 to 0.0, and training loss plateaus around 1.7–1.8, like the failing runs. With the tap at 12, the loop's output passes through 9 more Gated DeltaNet layers. At 22 only blocks 22–23 come after it, and block 23 is windowed attention. So the success depends on Gated DeltaNet layers after the tap, not just on a trace that already exists when the loop reads its input. This supports the "the loop feeds the needle into the GDN layers after it" reading, not "the loop reads a trace the GDN layers already hold".
 - **Why the loop cannot recall alone (Qwen3), confirmed by calculation:** with the default `--kernel osc --rho 0.7 --tau 16`, the loop weight is w(Δ) = ρ^(Δ/τ−1)·[cos(2πΔ/τ)]₊ (`limbic_llm/temporal_loop.py:100-102`). That gives 1.0 at Δ=16, 0.08 at 128, 0.005 at 256, about 4e-19 at 500, and **exactly 0 at Δ = 501–503** (the needle gap falls on the clamped half of the cosine). The loop cannot see the needle on this task, whatever the training. Its kernel limits it to roughly the last 100–200 tokens. On Qwen3.5 with tap 12, it can only be passing along recent content that the earlier Gated DeltaNet layers have already carried forward.
+
+### Language modelling: float32 side channels, WikiText-103, seq 1024, window 256, batch 4, 1000 steps, grad checkpointing
+
+Training set: 1,155,524 tokens. Eval set: 116,893 tokens in 114 sequences. Each cell is perplexity / loss. Gap closed = (windowed − side) / (windowed − full), measured on loss.
+
+| run | windowed layers | windowed | windowed+side | full | gap closed | gain |
+|---|---|---|---|---|---|---|
+| `pretrained_qwen3_lm` | 28/28 | 14.62 / 2.683 | 12.01 / 2.486 | 9.01 / 2.199 | 41% | 0.3681 |
+
+- The gain trained (0.2689 → 0.368), and the injection ratio rose to 0.254 from about 0.20 in the needle runs.
+- The result is close to the superseded bf16 run (11.91, 43%).
+- **Interpretation caveat:** with the default `osc` kernel (ρ 0.7, τ 16), the loop's weight falls by e every ~45 tokens and is about 0.005 at 256. So it reaches little beyond the 256-token window. Much of this 41% is probably local or domain adaptation (only this condition trains on WikiText), not memory from beyond the window. A run with the horizon kernel, or one with the loop's memory ablated, would separate the two.
 
 ## Superseded results: bf16 bug (do not cite)
 
