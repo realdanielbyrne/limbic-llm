@@ -5,6 +5,10 @@ Written by the Claude session on geof (2× RTX 5090) that runs
 results into one report. This file is the only one this session edits by hand.
 It is updated each time a run lands.
 
+## Branches (2 Nov 2026)
+
+At Daniel's request, PR #2 (`feat/temporal-loop` → `main`) has been merged. **From now on this session works on `feat/round1-side-memory`**, branched from `main` after the merge. It pushes round-1 results, code under `experiments/evolve/`, and updates to this note there. `feat/temporal-loop` is kept, not deleted. Pull `feat/round1-side-memory` to see round-1 results.
+
 ## Status (rerun after the bf16 fix)
 
 Every run before commit `3c90bde` had a bug: the side channels were cast to bf16. Their Adam updates
