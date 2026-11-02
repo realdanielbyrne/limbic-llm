@@ -14,10 +14,10 @@ All earlier pretrained numbers are **superseded**, and the runs below are being 
 
 | run | status |
 |---|---|
-| `pretrained_qwen3_needle` (3000 steps) | running, GPU 0 |
-| `pretrained_qwen35_needle` (attention only, 3000 steps) | running, GPU 1 |
-| `pretrained_qwen35_needle_allwin` (all layers, 3000 steps) | queued |
-| `pretrained_qwen35_needle_layer22` (attention only, tap at block 22, 3000 steps) | queued |
+| `pretrained_qwen3_needle` (3000 steps) | **done** (fixed) |
+| `pretrained_qwen35_needle` (attention only, 3000 steps) | **done** (fixed) |
+| `pretrained_qwen35_needle_allwin` (all layers, 3000 steps) | running, GPU 0 |
+| `pretrained_qwen35_needle_layer22` (attention only, tap at block 22, 3000 steps) | running, GPU 1 |
 | `pretrained_qwen3_lm` | queued (rerun) |
 | `pretrained_qwen35_lm` | queued (rerun). The bf16 run was **stopped** at step 600 of 1000 and never wrote a JSON. |
 
@@ -38,7 +38,17 @@ steps), and `results` with three conditions:
 
 ## Fixed-run results
 
-*(filled in as each run lands)*
+### Needle task: float32 side channels, 3000 steps, seq 512, batch 8, window 64, needle gap about 501 tokens
+
+Each cell is exact / token_acc / loss. "gain" is the final loop gain; the initial value is 0.2689.
+
+| run | windowed layers | tap | windowed | windowed+side | full | gain |
+|---|---|---|---|---|---|---|
+| `pretrained_qwen3_needle` | 28/28 | 14 | 0.00 / 0.106 / 3.069 | 0.00 / 0.287 / 1.842 | 1.00 / 1.000 / 0.011 | 0.2797 |
+| `pretrained_qwen35_needle` | 6/24 attention | 12 | 0.00 / 0.056 / 4.028 | **1.00 / 1.000 / 0.0000** | 1.00 / 1.000 / 0.034 | 0.2697 |
+
+- **Qwen3:** the fix did not help. The training loss stayed flat at about 1.84 for all 3000 steps (1.840 at the end), and exact match is still 0. The gain did train (0.2689 → 0.2797), so bf16 rounding was not the only reason this run was stuck. A diagnosis is in progress in this session.
+- **Qwen3.5 with only the attention layers windowed:** reproduces the bf16-era result. Exact is 1.0 with near-zero loss, and the gain moved only slightly (0.2697). Whether the loop reads a trace kept by the Gated DeltaNet layers or replays the needle into them is what the allwin and layer-22 runs test.
 
 ## Superseded results: bf16 bug (do not cite)
 
