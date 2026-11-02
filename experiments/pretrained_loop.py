@@ -22,11 +22,11 @@ whose handling of custom 4D masks differs across transformers versions (4.x GPT-
 attention; flash-attention kernels ignore dense masks, so models load with ``--attn-impl sdpa`` and
 ``check_window`` verifies at start-up, on the first windowed mixer, that the mask is honoured.
 
-  sliding  (default) position t attends to [t − W + 1, t]. Information can hop W − 1 tokens per
+  sliding  position t attends to [t − W + 1, t]. Information can hop W − 1 tokens per
            layer, so the strict reach of the windowed base is L·(W − 1) for L windowed layers
            (756 tokens for GPT-2 small at W = 64), not W. The script prints it and warns when a
            needle gap is shorter.
-  block    non-overlapping blocks of W tokens. Nothing crosses a block boundary except through the
+  block    (default) non-overlapping blocks of W tokens. Nothing crosses a block boundary except through the
            side channels, whatever the depth; the strict version of "memory is the only route".
   segment  block semantics by folding the batch: each W-token segment runs as its own sequence
            (positions restart, each segment gets its own sink token), and the tap hook unfolds the
@@ -602,7 +602,9 @@ def evaluate(lm: HookedLM, batches: list, window: int, side: bool, task: str) ->
 def train(lm: HookedLM, task, args) -> list:
     params = [p for p in lm.side.parameters() if p.requires_grad]
     opt = torch.optim.AdamW(params, lr=args.lr, weight_decay=0.01)
-    sched = torch.optim.lr_scheduler.OneCycleLR(opt, args.lr, total_steps=max(args.steps, 2), pct_start=0.1)
+    warm = max(1, args.steps // 10)                               # linear warm-up, cosine decay
+    sched = torch.optim.lr_scheduler.LambdaLR(
+        opt, lambda i: min(1.0, (i + 1) / warm) * 0.5 * (1 + math.cos(math.pi * i / args.steps)))
     rng, curve, t0 = random.Random(args.seed), [], time.time()
     log_every = args.log_every or max(1, args.steps // 10)
     for step in range(1, args.steps + 1):
@@ -641,7 +643,9 @@ def parse_args(argv=None):
     m.add_argument("--layer", type=int, default=None, help="tap/inject block (default n_layers // 2)")
     w = ap.add_argument_group("attention window")
     w.add_argument("--window", type=int, default=64, help="0: full attention")
-    w.add_argument("--window-mode", choices=["sliding", "block", "segment"], default="sliding")
+    w.add_argument("--window-mode", choices=["sliding", "block", "segment"], default="block",
+                   help="block (strict: nothing crosses a block except via the side channels), "
+                        "sliding (leaks L·(W−1) tokens through depth), segment (fallback)")
     w.add_argument("--window-layers", choices=["all", "attention"], default="all",
                    help="attention: leave linear-attention (GDN) layers unwindowed")
     w.add_argument("--sink", action=argparse.BooleanOptionalAction, default=True,
@@ -718,7 +722,9 @@ def main(argv=None):
         evals = [task.batch(min(args.batch, args.eval_n - i), rng) for i in range(0, args.eval_n, args.batch)]
         gaps = [g for b in evals for g in b[2]]
         print(f"needle gap {min(gaps)}–{max(gaps)} tokens")
-        if args.window and min(gaps) <= lm.reach():
+        if args.window and not math.isfinite(lm.reach()):
+            print("note: linear-attention layers are not windowed, so the windowed base keeps their memory")
+        elif args.window and min(gaps) <= lm.reach():
             print(f"warning: gap ≤ reach {lm.reach()}: the windowed base can still see the value through "
                   "stacked windows; use --window-mode block or a longer --seq-len for a strict test")
     else:
