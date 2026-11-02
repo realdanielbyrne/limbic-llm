@@ -1,12 +1,30 @@
-[closed_osc_ca1_nocontrast] step   500 loss 0.384 what 0.996 when 0.812 (139s)
-[closed_osc_ca1_nocontrast] step  1000 loss 0.076 what 0.996 when 0.914 (284s)
-[closed_osc_ca1_nocontrast] step  1500 loss 0.045 what 0.998 when 0.924 (443s)
-[closed_osc_ca1_nocontrast] step  2000 loss 0.027 what 1.000 when 0.916 (588s)
-[closed_osc_ca1_nocontrast] step  2500 loss 0.140 what 1.000 when 0.949 (725s)
-[closed_osc_ca1_nocontrast] step  3000 loss 0.031 what 1.000 when 0.949 (857s)
+# Reconstructed from results/temporal_loop_ablations.json. The original log was truncated: git rewrote the
+# tracked file while the run was still writing to it. The JSON is authoritative; loss and timing are not stored there.
+# args: {"suite": "ablations", "models": null, "name": "custom", "task": "single", "memory": true, "time": true, "kernel": "osc", "rho": 0.7, "amp": 1.0, "loop": "open", "ca1_control": true, "contrast": true, "dg_keys": false, "read": "direct", "feedback": null, "clamp": null, "project": null, "saturate": null, "forward_gain": 1.0, "fb_beta": 1.0, "tau": 16, "window": 16, "d": 64, "d_key": 32, "steps": 3000, "batch": 32, "lr": 0.003, "eval_every": 500, "seed": 0, "out": null}
+[closed_osc_ca1_nocontrast] step   500 what 0.996 when 0.812
+[closed_osc_ca1_nocontrast] step  1000 what 0.996 when 0.914
+[closed_osc_ca1_nocontrast] step  1500 what 0.998 when 0.924
+[closed_osc_ca1_nocontrast] step  2000 what 1.000 when 0.916
+[closed_osc_ca1_nocontrast] step  2500 what 1.000 when 0.949
+[closed_osc_ca1_nocontrast] step  3000 what 1.000 when 0.949
 [closed_osc_ca1_nocontrast] long rollout {"what_gap_20_140": 1.0, "what_gap_140_300": 0.421, "what_gap_300_500": 0.15, "probe_newer_named": 0.324, "probe_older_named": 0.625, "cue_noise_0.0": 1.0, "cue_noise_0.5": 1.0, "cue_noise_1.0": 0.996, "cue_noise_2.0": 0.969, "inj_ratio_16_128": 0.262, "inj_ratio_128_320": 0.278, "inj_ratio_320_519": 0.255, "inj_ratio_max": 0.43, "gain": 0.477}
-[closed_osc_ca1_dg] step   500 loss 0.216 what 0.998 when 0.895 (201s)
-[closed_osc_ca1_dg] step  1000 loss 0.322 what 1.000 when 0.883 (410s)
-[closed_osc_ca1_dg] step  1500 loss 0.008 what 1.000 when 0.971 (610s)
-[closed_osc_ca1_dg] step  2000 loss 0.011 what 1.000 when 0.986 (808s)
+[closed_osc_ca1_dg] step   500 what 0.998 when 0.895
+[closed_osc_ca1_dg] step  1000 what 1.000 when 0.883
+[closed_osc_ca1_dg] step  1500 what 1.000 when 0.971
+[closed_osc_ca1_dg] step  2000 what 1.000 when 0.986
+[closed_osc_ca1_dg] step  2500 what 1.000 when 0.998
+[closed_osc_ca1_dg] step  3000 what 1.000 when 0.996
+[closed_osc_ca1_dg] long rollout {"what_gap_20_140": 1.0, "what_gap_140_300": 0.579, "what_gap_300_500": 0.45, "probe_newer_named": 0.684, "probe_older_named": 0.309, "cue_noise_0.0": 1.0, "cue_noise_0.5": 1.0, "cue_noise_1.0": 0.957, "cue_noise_2.0": 0.84, "inj_ratio_16_128": 0.22, "inj_ratio_128_320": 0.306, "inj_ratio_320_519": 0.322, "inj_ratio_max": 0.467, "gain": 0.548}
+[closed_osc_ca1_dgread] step   500 what 0.584 when 0.896
+[closed_osc_ca1_dgread] step  1000 what 0.998 when 0.941
+[closed_osc_ca1_dgread] step  1500 what 0.998 when 0.977
+[closed_osc_ca1_dgread] step  2000 what 1.000 when 0.986
+[closed_osc_ca1_dgread] step  2500 what 0.998 when 0.982
+[closed_osc_ca1_dgread] step  3000 what 0.998 when 0.984
+[closed_osc_ca1_dgread] long rollout {"what_gap_20_140": 1.0, "what_gap_140_300": 0.684, "what_gap_300_500": 0.3, "probe_newer_named": 0.68, "probe_older_named": 0.289, "cue_noise_0.0": 1.0, "cue_noise_0.5": 1.0, "cue_noise_1.0": 1.0, "cue_noise_2.0": 0.941, "inj_ratio_16_128": 0.367, "inj_ratio_128_320": 0.362, "inj_ratio_320_519": 0.362, "inj_ratio_max": 0.552, "gain": 0.614}
+
+baselines: what 0.125 (chance), when 0.333 (majority bin)
+closed_osc_ca1_nocontrast what 1.000  when 0.949  inj late 0.255
+closed_osc_ca1_dg what 1.000  when 0.996  inj late 0.322
+closed_osc_ca1_dgread what 0.998  when 0.984  inj late 0.362
 finished
