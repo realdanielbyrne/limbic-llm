@@ -140,11 +140,14 @@ def layer_sweep(model, blocks, tok, harmful, harmless, args) -> list[dict]:
 
 
 @torch.no_grad()
-def generate(model, tok, ids, mask, ctrl, args):
+def generate(model, tok, ids, mask, ctrl, args, decision: torch.Tensor | None = None):
+    """Greedy generation with the controller; ``decision`` (B,) is an external per-prompt score,
+    set after ``reset()`` (which clears it)."""
     dev = model.get_input_embeddings().weight.device
     ctrl.reset()
     ctrl.record = True
     ctrl.pending_mask = mask
+    ctrl.pending_decision = decision
     out = model.generate(input_ids=ids.to(dev), attention_mask=mask.to(dev), max_new_tokens=args.max_new_tokens,
                          do_sample=False, pad_token_id=pad_id(tok))
     new = out[:, ids.shape[1]:].cpu()
@@ -240,7 +243,7 @@ def arm_specs(arms: list[str], args) -> list[tuple[str, str, float | None]]:
         if a == "none":
             out.append((a, a, None))
             continue
-        vals = (caps or [args.cap]) if a.startswith("graded") else (gains or [args.gain])
+        vals = list(dict.fromkeys((caps or [args.cap]) if a.startswith("graded") else (gains or [args.gain])))
         swept = bool(caps) if a.startswith("graded") else bool(gains)
         out += [(f"{a}@{v:g}" if swept else a, a, v) for v in vals]
     return out
@@ -271,10 +274,12 @@ def operating_points(report_arms: dict, specs, target: float) -> dict:
                         "degenerate": r["harmful"]["degenerate"], "ppl": r.get("ppl")})
         pts.sort(key=lambda p: p["value"])
         matched = None
-        by_h = sorted(pts, key=lambda p: p["harmful"])
-        for a, b in zip(by_h, by_h[1:]):
-            if a["harmful"] <= target <= b["harmful"] and b["harmful"] > a["harmful"]:
-                w = (target - a["harmful"]) / (b["harmful"] - a["harmful"])
+        # first crossing along the sweep: harmful refusal need not be monotone in the gain, since
+        # degenerate responses stop counting as refusals past the saturation knee (RV1.A3)
+        for a, b in zip(pts, pts[1:]):
+            lo, hi = sorted((a["harmful"], b["harmful"]))
+            if lo <= target <= hi:
+                w = 0.0 if hi == lo else (target - a["harmful"]) / (b["harmful"] - a["harmful"])
                 lerp = lambda k: None if a[k] is None or b[k] is None else a[k] + w * (b[k] - a[k])
                 matched = {"harmful": target, **{k: lerp(k) for k in ("value", "contrast", "borderline",
                                                                        "harmless", "degenerate", "ppl")}}

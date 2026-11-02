@@ -338,3 +338,10 @@ def test_sweeps_report_matched_operating_points(tmp_path):
             for v, p in pts}
     m = run.operating_points(arms, [(k, "g", v) for k, (v, _) in zip(arms, pts)], 0.8)["g"]["matched"]
     assert abs(m["borderline"] - 0.34) < 1e-9 and abs(m["value"] - 0.22) < 1e-9
+    # non-monotone curve (harmful refusal falls past the knee): the first crossing along the sweep
+    pts = [(0.1, 0.5, 0.1), (0.2, 0.9, 0.3), (0.4, 0.7, 0.9)]
+    arms = {f"g@{v:g}": {**{k: {"refusal": 0.0, "degenerate": 0.0} for k in run.SETS}, "ppl": None} for v, _, _ in pts}
+    for v, h, b in pts:
+        arms[f"g@{v:g}"]["harmful"]["refusal"], arms[f"g@{v:g}"]["borderline"]["refusal"] = h, b
+    m = run.operating_points(arms, [(f"g@{v:g}", "g", v) for v, _, _ in pts], 0.8)["g"]["matched"]
+    assert abs(m["value"] - 0.175) < 1e-9 and abs(m["borderline"] - 0.25) < 1e-9

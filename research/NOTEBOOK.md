@@ -885,6 +885,8 @@ gives the score $s_t = [a_t]_+$, which drives the usual integral $E_t = \lambda 
 - DSEM was checked on its ACL Findings 2025 page, and PID steering on arXiv (v3, 16 May 2026).
 - The STU-PID withdrawal could not be re-checked: arXiv rate-limited the fetch, and a mirror still lists only v1. It stands as RV1 reports it.
 
+**Independent check.** A separate agent reviewed the diff against the old code. It judged A1, A3–A8, C1, C3, C6 and D4 resolved, A2/D2 resolved as a measurement, and C2 and D1 partly resolved. C2's sampling protocol and margin exist only on paper until the reasoning runner is built, and J1's second score source is not wired into `run.py`. It also found three bugs, now fixed: `operating_points` interpolated between points that are not neighbours on a non-monotone sweep (now the first crossing along the sweep), duplicate sweep values collided, and `run.generate` could not pass an external decision (`reset()` cleared it). It also found that `capped_frac` was meaningless outside the graded mode (now null there). It found no Qwen3-, bf16- or CUDA-specific break, and confirmed the data rule.
+
 **Status.** A1, A2 and A6 are ready for geof. For A6 the spot checks put the onset near g = 0.3, so sweep past it:
 
 ```bash

@@ -23,7 +23,7 @@ Score source (RV1.C3, RV1.D4). ``conditional`` and ``graded`` need a score: a pr
 dict {w, b, mu, sd}, or ``score_fn(h) -> (B, T)`` probabilities (for example a
 temperature-scaled head). A model-agnostic text classifier or a guard model gives
 one score per prompt, not per token: pass ``external_decision=True`` and set
-``pending_decision`` (B,) before each generation; that source can drive only the
+``pending_decision`` (B,) after ``reset()``, before each generation; that source can drive only the
 ``conditional`` mode. Constructing a mode without the score it needs raises.
 
 Direction modes:
@@ -132,7 +132,7 @@ class SteeringController(nn.Module):
         self.n_seen: torch.Tensor | None = None        # (B,) real tokens seen so far (for gist_skip)
         self.cond: torch.Tensor | None = None          # (B,) conditional-mode decision
         self.pending_mask: torch.Tensor | None = None  # (B, T) padding mask for the next (prefill) call
-        self.pending_decision: torch.Tensor | None = None  # (B,) external per-prompt score in [0, 1]
+        self.pending_decision: torch.Tensor | None = None  # (B,) external per-prompt score; set after reset()
         self.prefill_mask: torch.Tensor | None = None  # (B, T) the mask the prefill call used
         self.calls = 0
         self.trace: list[dict] = []
@@ -260,7 +260,8 @@ class SteeringController(nn.Module):
         s_gen_mean = torch.where(n_gen > 0, (s_dec * gen_mask).sum(1) / n_gen.clamp_min(1),
                                  torch.full((B,), float("nan")))
         return {"gain_mean": g.sum(1) / n, "gain_max": g.max(1).values,
-                "capped_frac": ((g >= 0.95 * max(self.cap, 1e-9)).float() * rmask).sum(1) / n,
+                "capped_frac": (((g >= 0.95 * max(self.cap, 1e-9)).float() * rmask).sum(1) / n if self.mode == "graded"
+                                else torch.full((B,), float("nan"))),   # only the graded mode has a cap
                 "gain_prompt_mean": (pre["g"] * pm).sum(1) / pm.sum(1).clamp_min(1),
                 "E_final": E.gather(1, last[:, None])[:, 0],
                 "s_prompt": pre["s"][:, -1], "s_gen_mean": s_gen_mean,
