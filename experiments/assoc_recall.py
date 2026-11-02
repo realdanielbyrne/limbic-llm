@@ -28,7 +28,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from hippoformer import BaselineLM, HippocampalLM, TitansHippocampalLM, lm_loss, novelty_alignment_loss  # noqa: E402
+from limbic_llm import BaselineLM, HippocampalLM, TitansHippocampalLM, lm_loss, novelty_alignment_loss  # noqa: E402
 from tasks import AssociativeRecall  # noqa: E402
 
 

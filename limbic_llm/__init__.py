@@ -1,4 +1,4 @@
-"""hippoformer — hippocampally inspired memory modules for sequence models.
+"""limbic-llm: hippocampally inspired memory modules for sequence models.
 
 Strategy I  (direct trisynaptic circuit): DentateGyrus, CA3Autoassociative,
             CA2Modulator, CA1Comparator, Subiculum, HippocampalBlock, HippocampalLM

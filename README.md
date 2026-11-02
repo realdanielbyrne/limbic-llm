@@ -1,12 +1,14 @@
-# hippoformer
+# limbic-llm
 
 Hippocampally inspired memory modules for sequence models in PyTorch. Each part of the hippocampal trisynaptic circuit is built as a neural-network component, and the package offers two ways to put them together:
 
 * **Strategy I (direct circuit).** EC → DG → CA3 → CA2 → CA1 → Subiculum as one residual block, with a one-shot episodic store in CA3.
 * **Strategy II (Titans hybrid).** The Titans long-term memory (Behrouz, Zhong & Mirrokni, 2024, [arXiv:2501.00663](https://arxiv.org/abs/2501.00663)) extended with a dentate-gyrus write path, a CA1 comparator, and novelty-scaled memory learning rates.
-* **Gated DeltaNet memory.** The linear, momentum-free special case of the Titans memory (Yang, Kautz & Hatamizadeh, 2024, [arXiv:2412.06464](https://arxiv.org/abs/2412.06464)), usable as a token mixer, as the memory inside Titans layers, or with dentate-gyrus addressing.
+* **Gated DeltaNet memory.** The linear, momentum-free special case of the Titans memory (Yang, Kautz & Hatamizadeh, 2025, [arXiv:2412.06464](https://arxiv.org/abs/2412.06464)), usable as a token mixer, as the memory inside Titans layers, or with dentate-gyrus addressing.
 
 Both strategies can feed a replay-consolidation loop for continual learning, in the spirit of complementary learning systems.
+
+The package was first called *hippoformer*; it was renamed because an ICLR 2026 paper already uses that name (Li et al., 2026). The bibliography is in [REFERENCES.md](REFERENCES.md), with BibTeX in [`docs/references.bib`](docs/references.bib).
 
 ```
                     ┌──────────── temporoammonic skip (EC III → CA1) ─────────────┐
@@ -48,7 +50,7 @@ pytest -q                   # 51 tests: shapes, causality, sparsity, memory, rep
 **Strategy I as a standalone LM, or as context augmentation in front of cortex layers**
 
 ```python
-from hippoformer import HippocampalLM, lm_loss, novelty_alignment_loss
+from limbic_llm import HippocampalLM, lm_loss, novelty_alignment_loss
 
 model = HippocampalLM(vocab=32000, d_model=256, n_heads=8,
                       n_ec=2, n_hpc=1, n_neocortex=4,    # n_neocortex=0 gives standalone mode
@@ -64,7 +66,7 @@ out2 = model(next_tokens, state=out.state)            # carry the episodic store
 **Strategy II (Titans + hippocampus)**
 
 ```python
-from hippoformer import TitansHippocampalLM
+from limbic_llm import TitansHippocampalLM
 
 model = TitansHippocampalLM(vocab=32000, d_model=256, n_heads=8, n_layers=4,
                             variant="mac",             # "mac" | "mag" | "mal"
@@ -76,7 +78,7 @@ model = TitansHippocampalLM(vocab=32000, d_model=256, n_heads=8, n_layers=4,
 **Gated DeltaNet (linear CA3-style memory)**
 
 ```python
-from hippoformer import GatedDeltaLM, TitansHippocampalLM
+from limbic_llm import GatedDeltaLM, TitansHippocampalLM
 
 # token mixer stack; attn_every=4 gives the 3:1 DeltaNet:attention mix of Qwen3-Next
 lm = GatedDeltaLM(vocab=32000, d_model=256, n_heads=8, n_layers=8, attn_every=4,
@@ -93,7 +95,7 @@ Gated DeltaNet is exactly one SGD step on the Titans loss $\tfrac12\lVert Sk_t -
 **Drop the block into your own transformer**
 
 ```python
-from hippoformer import HippocampalBlock
+from limbic_llm import HippocampalBlock
 blk = HippocampalBlock(d_model=512, n_heads=8)
 out = blk(x, store=prev_store, context=speaker_embedding)   # x: (B, T, 512)
 x, prev_store = out.hidden, out.store
@@ -102,7 +104,7 @@ x, prev_store = out.hidden, out.store
 **Replay consolidation**
 
 ```python
-from hippoformer import PrioritizedReplayBuffer, Consolidator, sequence_priority
+from limbic_llm import PrioritizedReplayBuffer, Consolidator, sequence_priority
 buf = PrioritizedReplayBuffer(capacity=10_000)
 cons = Consolidator(model, buf, slow_params=model.neocortex.parameters(), lr=1e-4)
 
@@ -148,4 +150,4 @@ These three changes came out of debugging. Each is covered by a test.
 
 ## References
 
-Behrouz, Zhong & Mirrokni (2024), Titans: Learning to Memorize at Test Time. Yang, Kautz & Hatamizadeh (2024), Gated Delta Networks: Improving Mamba2 with Delta Rule. Schlag, Irie & Schmidhuber (2021), Linear Transformers Are Secretly Fast Weight Programmers. Ramsauer et al. (2020), Hopfield Networks is All You Need. McClelland, McNaughton & O'Reilly (1995), complementary learning systems. Wilson & McNaughton (1994), replay during sleep. Lisman & Grace (2005), the hippocampal–VTA loop and CA1 novelty detection. Perez et al. (2018), FiLM. Howard & Kahana (2002), temporal context model. Buzzega et al. (2020), Dark Experience Replay.
+See [REFERENCES.md](REFERENCES.md) for the full bibliography, grouped by circuit component, and [`docs/references.bib`](docs/references.bib) for BibTeX.

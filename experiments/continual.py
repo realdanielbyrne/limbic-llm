@@ -24,7 +24,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from hippoformer import (Consolidator, HippocampalLM, PrioritizedReplayBuffer, lm_loss,  # noqa: E402
+from limbic_llm import (Consolidator, HippocampalLM, PrioritizedReplayBuffer, lm_loss,  # noqa: E402
                          novelty_alignment_loss, sequence_priority)
 from tasks import FactTask  # noqa: E402
 

@@ -31,7 +31,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from hippoformer import GatedDeltaLM, lm_loss  # noqa: E402
+from limbic_llm import GatedDeltaLM, lm_loss  # noqa: E402
 from tasks import AssociativeRecall  # noqa: E402
 
 MODES = {

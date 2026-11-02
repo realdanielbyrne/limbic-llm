@@ -4,7 +4,7 @@ import pytest
 import torch
 import torch.nn.functional as F
 
-from hippoformer import (GatedDeltaLM, GatedDeltaMemory, GatedDeltaNet, TitansHippocampalLM,
+from limbic_llm import (GatedDeltaLM, GatedDeltaMemory, GatedDeltaNet, TitansHippocampalLM,
                          gated_delta_chunked, gated_delta_scan, kwta, lm_loss)
 
 torch.manual_seed(0)

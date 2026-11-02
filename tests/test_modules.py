@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from hippoformer import (
+from limbic_llm import (
     CA1Comparator, CA2Modulator, CA3Autoassociative, Consolidator, DentateGyrus, EpisodicStore,
     HippocampalBlock, HippocampalLM, NeuralMemory, PrioritizedReplayBuffer, TitansHippocampalLM,
     BaselineLM, lm_loss, novelty_alignment_loss,
