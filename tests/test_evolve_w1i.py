@@ -21,12 +21,13 @@ def side(*flags):
 
 @pytest.mark.parametrize("chain", ["tied", "dg"])
 @pytest.mark.parametrize("refractory", ["0.7", "0"])
+@pytest.mark.parametrize("budget", ["0", "2"])
 @pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
-def test_strictly_causal(chain, refractory, dtype):
+def test_strictly_causal(chain, refractory, budget, dtype):
     """E1: perturbing h[:, t0:] leaves the output before t0 bitwise unchanged, also for bf16-rounded
     float32 input (the pipeline casts the tap activations to float32 before the side channels)."""
     m = side("--w1i-heads=2", "--w1i-dhead=16", f"--w1i-refractory={refractory}", "--w1i-event-bias=1",
-             f"--w1i-chain-addressing={chain}")
+             f"--w1i-chain-addressing={chain}", f"--w1i-budget={budget}", "--w1i-budget-window=16")
     with torch.no_grad():
         m.loop.gain_logit.fill_(2.0)
         m.loop.goal_logit.fill_(2.0)
@@ -119,3 +120,22 @@ def test_read_wires_the_goal_field_as_described(monkeypatch):
     q, k, beta = calls[1]
     assert torch.equal(q, c) and torch.equal(k, loop._shift(c)) and torch.equal(beta, eps)
     assert not hasattr(loop, "g_beta")                              # writes come from the events only
+
+
+def test_write_budget_caps_writes_per_window():
+    """The budget caps the writes in any W-token window at B. It counts attempted events, so a
+    detector that fires at every token is starved after its first writes: dense firing earns
+    nothing, which is the sparsity pressure."""
+    loop = EventLoop(D, heads=1, d_head=16, refractory=0.0, budget=2.0, budget_window=16)
+    with torch.no_grad():
+        loop.event.weight.zero_()
+        loop.event.bias.fill_(10.0)                                 # e ≈ 1 at every token
+    eps = loop.event_strength(torch.zeros(1, 80, D))[0, 0]
+    windows = torch.stack([eps[t:t + 16].sum() for t in range(0, 64)])
+    assert windows.max() <= 2.0 and eps[0] > 0.9                   # the first write passes; capped at B
+    assert eps[20:].max() < 1e-6                                    # constant firing is starved
+    off = EventLoop(D, heads=1, d_head=16, refractory=0.0)
+    with torch.no_grad():
+        off.event.weight.zero_()
+        off.event.bias.fill_(10.0)
+    assert off.event_strength(torch.zeros(1, 80, D))[0, 0][:16].sum() > 15   # no budget: every token writes

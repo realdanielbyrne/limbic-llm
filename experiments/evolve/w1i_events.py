@@ -16,6 +16,10 @@ tokens the facts share. Both are learned here:
     e_t = σ(w_e · x_t + b_e)                        event detector (b_e = −2: e ≈ 0.12 everywhere at init)
     r_t = Σ_{s≤t} λ^{t−s}(1−λ) e_s                  recent-event trace
     ε_t = e_t (1 − r_{t−1})                          refractory: no re-write right after an event
+    ε_t ← ε_t · clamp(1 − u_t / B, 0, 1)             optional write budget: u_t = Σ e_s over the previous
+                                                    W tokens, so at most about B writes per W tokens.
+                                                    It counts *attempted* events, so a detector that
+                                                    fires everywhere is starved: a sparsity pressure
     G:  v_t filed under c_{t−1} with strength ε_t, no decay (α ≈ 1, learned)
     o_t = S_t a_t + σ(g) · G_t c_t                  S is W1's chain store, unchanged
 
@@ -55,6 +59,9 @@ def split_args(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
     ap.add_argument("--w1i-event-bias", type=float, default=-2.0, help="initial event-detector bias")
     ap.add_argument("--w1i-refractory", type=float, default=0.7, help="λ of the recent-event trace (0 = off)")
     ap.add_argument("--w1i-goal-gain", type=float, default=0.0, help="initial logit of the G read weight")
+    ap.add_argument("--w1i-budget", type=float, default=0.0,
+                    help="write budget B: at most about B event writes per --w1i-budget-window tokens (0 = off)")
+    ap.add_argument("--w1i-budget-window", type=int, default=64)
     return ap.parse_known_args(argv)
 
 
@@ -70,7 +77,8 @@ class EventLoop(StartLoop):
 
     def __init__(self, d_model: int, heads: int = 5, d_head: int = 64, taus=(2.0, 4.0, 8.0),
                  event_bias: float = -2.0, refractory: float = 0.7, goal_gain: float = 0.0,
-                 chain_addressing: str = "tied", chain_expansion: int = 2, chunk: int = 64) -> None:
+                 chain_addressing: str = "tied", chain_expansion: int = 2, budget: float = 0.0,
+                 budget_window: int = 64, chunk: int = 64) -> None:
         super().__init__(d_model, chain_addressing, heads, d_head,
                          key_expansion=chain_expansion if chain_addressing == "dg" else 1,
                          goal_expansion=1, goal_gain=goal_gain, chunk=chunk)
@@ -82,6 +90,7 @@ class EventLoop(StartLoop):
         nn.init.constant_(self.g_alpha.bias, -9.0)                         # no decay to start (α ≈ 1)
         del self.g_beta                                                    # writes come from the events
         self.refractory = refractory
+        self.budget, self.budget_window = budget, budget_window
 
     def goal_context(self, x: torch.Tensor) -> torch.Tensor:
         """c_t = norm(Σ_{s≤t} ρ^{t−s} b_s), b = W_c x unnormalised (magnitude = salience). (B,H,T,dk)."""
@@ -90,15 +99,22 @@ class EventLoop(StartLoop):
         return F.normalize(torch.einsum("hts,bhsk->bhtk", K, b), dim=-1)
 
     def event_strength(self, x: torch.Tensor) -> torch.Tensor:
-        """ε_t = e_t (1 − r_{t−1}), (B, H, T)."""
+        """ε_t = e_t (1 − r_{t−1}) [· clamp(1 − u_t / B, 0, 1)], (B, H, T)."""
         e = torch.sigmoid(self.event(x)).transpose(1, 2).float()         # (B, H, T)
-        if not self.refractory:
-            return e
-        lam = torch.full((e.shape[1],), self.refractory, device=x.device)
-        K = causal_decay(e.shape[2], lam, x.device) * (1 - self.refractory)
-        r = torch.einsum("hts,bhs->bht", K, e)
-        r_prev = torch.cat([torch.zeros_like(r[..., :1]), r[..., :-1]], -1)
-        return e * (1 - r_prev).clamp(0, 1)
+        eps = e
+        if self.refractory:
+            lam = torch.full((e.shape[1],), self.refractory, device=x.device)
+            K = causal_decay(e.shape[2], lam, x.device) * (1 - self.refractory)
+            r = torch.einsum("hts,bhs->bht", K, e)
+            r_prev = torch.cat([torch.zeros_like(r[..., :1]), r[..., :-1]], -1)
+            eps = eps * (1 - r_prev).clamp(0, 1)
+        if self.budget:                                                    # writes used in the last W tokens
+            c = F.pad(e.cumsum(-1), (1, 0))                                # c[t] = Σ_{s<t} e_s
+            T, W = e.shape[-1], self.budget_window
+            lo = torch.arange(T, device=x.device).sub(W).clamp_min(0)
+            u = c[..., :T] - c[..., lo]                                    # Σ_{t−W ≤ s < t} e_s
+            eps = eps * (1 - u / self.budget).clamp(0, 1)
+        return eps
 
     def _read(self, x: torch.Tensor) -> torch.Tensor:
         m, (B, T, _) = self.mem, x.shape
@@ -124,7 +140,8 @@ class W1iSide(nn.Module):
         w = w or split_args([])[0]
         self.time = TimeChannel(d_model) if getattr(args, "time", True) else None
         self.loop = EventLoop(d_model, w.w1i_heads, w.w1i_dhead, tuple(w.w1i_taus), w.w1i_event_bias,
-                              w.w1i_refractory, w.w1i_goal_gain, w.w1i_chain_addressing, w.w1i_chain_expansion)
+                              w.w1i_refractory, w.w1i_goal_gain, w.w1i_chain_addressing, w.w1i_chain_expansion,
+                              w.w1i_budget, w.w1i_budget_window)
 
     def forward(self, h: torch.Tensor) -> tuple[torch.Tensor, LoopStats]:
         if self.time is not None:
