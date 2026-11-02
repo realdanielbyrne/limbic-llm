@@ -54,6 +54,12 @@ This file holds the current state of the project: every result with its status a
 | P4a | The loop recovers whole digits, not partial information about each one | Qwen3 1.381 / 0.461 equals one digit known and three at chance, $(3/5)\ln 10$ / 0.46; Qwen3.5 lies between one and two digits | 1 | Supported. Mechanism: key and value come from the same position, so nothing moves the lookup to the next digit. This motivates W1 |
 | P5 | The side channels improve WikiText perplexity on windowed models | Qwen3, all windowed: 14.6 → 12.0 (full 9.0; 41% of the loss gap). Qwen3.5, attention windowed: 16.3 → 11.2 (full 9.8; 74%) | 1 each | Open (confounded with domain adaptation, since only that condition trains) |
 | P6 | The default kernel helps Qwen3.5 when every layer is windowed | Float32 rerun at the floor, 1.843 / 0.289. The earlier 1.69 was the bf16 leak | 1 | Refuted |
+| P7 | The horizon loop recovers the *first* digit | Per-digit loss 0.001 / 2.30 / 2.30 / 2.30 (`gen01/g1_qwen3_horizon_perpos.json`); reproduces P4a exactly | 1 | Supported |
+| P8 | The horizon loop's one-pair recall uses the query | With 2 stored pairs, digit 1 goes back to near chance (loss 2.17, acc 0.23) (`gen01/g1_qwen3_horizon_pairs2.json`) | 1 | Refuted: query-independent |
+| P9 | With enough steps the horizon loop alone gives exact recall on Qwen3.5 with every layer windowed | 6000 steps: exact 1.000, loss 0.001 (`gen01/g1_qwen35_allwin_horizon_6k.json`). The 3000-step run was undertrained | 1 | Supported (1 pair only; see P8) |
+| P10 | **W1 (GDN side memory, successor-bound keys) gives exact recall on Qwen3 with every layer windowed** | Dense keys: exact 1.000, loss 0.0001, solved by step 1,200. DG keys: exact 1.000, loss 0.0001, 0.008 by step 600, 13% fewer parameters (`gen01/g1_w1_tied.json`, `g1_w1_dg.json`) | 1 | Supported (1 pair) |
+| P11 | W1 selects the queried pair | 2 pairs: exact 0.55 (dense) / 0.43 (DG). Digits 2–4 at 0.94–0.99, but digit 1 at 0.57 / 0.51 with loss 0.74 / 0.76 ≈ ln 2: a coin flip between the two stored codes. The chain is retrieved; the start is not selected (`gen01/g1_w1_*_pairs2.json`) | 1 | Partly: sequence recall yes, start selection no |
+| P12 | A horizon kernel improves LM perplexity over the default kernel | Qwen3 WikiText 12.0 → 11.5 (41% → 49% of the gap) (`gen01/g1_qwen3_lm_horizon.json`) | 1 | Supported, weakly; still confounded (O4) |
 
 ### Corrections and fixed bugs
 
@@ -78,17 +84,19 @@ This file holds the current state of the project: every result with its status a
 |---|---|---|---|---|
 | g0–g7 | Control and the `flat` kernel arms (no time, no contrast, 2 pairs, taps 6 and 22) | The kernel (D2) against a downstream block (D3) | H | g2 covered by the horizon runs (P4); the rest Planned |
 | C1–C6 | Per-position logging, value probes at layers 6/14/22, loop instrumentation, eval-time ablations, window checks, held-out gaps | D3, D4, E6, E7 | H | Planned |
-| C1a | Per-digit loss and accuracy logging (the first piece of C1) | Which digit the loop recovers (P4a) | **H** (cheap) | Planned |
-| g2b | Rerun `pretrained_qwen35_needle_allwin_horizon` with more steps | Undertraining: it left the floor only near step 2,700 of 3,000 | **H** (cheap) | Planned |
+| C1a | Per-digit loss and accuracy logging (the first piece of C1) | Which digit the loop recovers (P4a) | **H** (cheap) | Done (`experiments/evolve/run.py`; P7) |
+| g2b | Rerun `pretrained_qwen35_needle_allwin_horizon` with more steps | Undertraining: it left the floor only near step 2,700 of 3,000 | **H** (cheap) | Done (P9) |
+| g5 | Horizon kernel with 2 pairs | Whether one-pair recall uses the query | H | Done (P8) |
 
 ### Round 1 shortlist (scaling the small-model wins)
 
 | ID | Experiment | Hypothesis | Metric | Priority | Status |
 |---|---|---|---|---|---|
-| W1 | GDN side memory with successor-bound keys, plus the clock, on Qwen3-1.7B, all layers windowed | M5 transfers to a frozen 2B model with a fixed-size state, and the address shift lifts recall from one digit (P4a) to all four | Needle digit CE and exact match; stability; recency probe | H | Planned |
+| W1 | GDN side memory with successor-bound keys, plus the clock, on Qwen3-1.7B, all layers windowed | M5 transfers to a frozen 2B model with a fixed-size state, and the address shift lifts recall from one digit (P4a) to all four | Needle digit CE and exact match; stability; recency probe | H | Done on the needle (P10, P11); stability and recency need a W1 adapter for the CPU suite |
+| W1b | W1 with context-bearing addresses so the *first* digit is selected by the queried name: (a) GDN short-conv keys (`addressing="gdn"`), (b) addresses from a causal conv or n-gram of the last few tokens, (c) a tap at a later block. 2 and 3 pairs | P11's coin flip is caused by addresses that encode mainly the current token (the space after "is" is the same in both facts) | Digit-1 accuracy with 2–3 pairs; exact | **H** | Planned (round 2) |
 | W2 | The clock on a GDN hybrid (Qwen3.5) with elapsed-time questions in long documents | T1 transfers | "When" accuracy | M | Planned |
 | W3 | Replay consolidation into LoRA adapters on the MLPs of a frozen model, against uniform replay and no replay | M3 holds, and novelty priority beats uniform | Backward transfer, capability | M | Planned |
-| W4 | `--dg-keys` (and `--read dg`) with the horizon kernel on Qwen | T13 transfers; less interference | Needle with 2+ pairs; recency probe | M | Planned |
+| W4 | `--dg-keys` (and `--read dg`) with the horizon kernel on Qwen | T13 transfers; less interference | Needle with 2+ pairs; recency probe | M | Partly covered by W1 with DG keys (P10: faster learning, not better selection in P11) |
 
 ### Design gaps (design review, 2 Nov)
 
@@ -153,6 +161,6 @@ The gist arm is positive feedback. S1 must include it before R2 runs at high gai
 |---|---|---|---|
 | O1 | Replay controls: uniform replay; sleep only against awake replay | M | Planned |
 | O2 | Multi-seed replication of T11–T15 | H | Planned |
-| O3 | Decide whether the pretrained track requires a fixed-size state (round-0 decision). Recommended yes by both sessions, keeping the O(T) loop with the horizon kernel as the reference arm | H | Awaiting Daniel |
-| O4 | Separate memory from domain adaptation in P5: horizon kernel, and an arm with the loop's memory ablated | M | Planned |
+| O3 | Decide whether the pretrained track requires a fixed-size state (round-0 decision). Recommended yes by both sessions, keeping the O(T) loop with the horizon kernel as the reference arm | H | Adopted for round 1 (Daniel approved the plan, 2 Nov); W1 meets it |
+| O4 | Separate memory from domain adaptation in P5: horizon kernel, and an arm with the loop's memory ablated | M | Horizon arm done (P12); memory-ablated arm Planned |
 | O5 | Qwen3.5 eval-time ablations: zero the injection early or late to locate the GDN route (round-0 C4) | M | Planned |

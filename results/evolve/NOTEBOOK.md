@@ -367,3 +367,61 @@ A graded controller maps *probability* to gain, so calibration, not just ranking
 - **J3 Revisit M2.** A calibrated CA1 (proper scoring, warm-up) as the novelty signal for Titans' learning rate. Does calibration remove the harmful interaction?
 - **J4 Reasoning gate.** A calibrated "on track" decision that predicts eventual correctness from a partial trace. It sets the gist gain (boost while on track, release towards backtracking) and could stop thinking early. Run with R3 and compare with PID control.
 - **J5 Depth-loop exit.** A calibrated halting decision for a looped upper block (D-b), compared with Ouro's learned gate and its hidden-state-difference rule.
+
+---
+
+## Round 1: diagnostics on the horizon loop, and candidate W1 (2 Nov 2026)
+
+**Setup.** Branch `feat/round1-side-memory`. Runs go through [`experiments/evolve/run.py`](../../experiments/evolve/run.py), which wraps `pretrained_loop.main` unchanged and adds per-digit loss, a checkpoint of the side channels, and `--candidate` to swap the side-channel module. Results are in `results/evolve/gen01/`. Settings: needle task (gap about 500 tokens), seq 512, block window 64 on every layer unless noted, batch 8, 3000 steps, bf16 base, float32 side channels. One seed per run.
+
+**Candidate W1** ([`experiments/evolve/w1_gdn.py`](../../experiments/evolve/w1_gdn.py)) is round-0 direction 1, combined with shortlist wins 1 and 2.
+- It runs the clock first, then a Gated DeltaNet memory at the tap. The memory writes v_t under the *previous* position's address a_{t−1} (successor binding) and reads with a_t.
+- It injects through the same CA1 control as the loop: error-only, ‖inj‖ = g‖h‖ with g ≤ 0.9σ(gain), saturating. It stores the stream before injection (open loop).
+- Its state is fixed-size: 8×64×64 floats for dense keys, 4×64×256 for DG keys.
+- Tests (`tests/test_evolve_w1.py`) cover:
+  - strict causality, with bitwise-identical earlier outputs under fp32 and bf16 input (E1);
+  - a length-independent state (E2);
+  - the parameter budget at Qwen width (E3);
+  - successor retrieval on CPU: a repeated context reads out the value that followed it, at cos 0.57 with dense keys and 0.85 with DG keys.
+
+**Results** (exact / loss, then per-digit loss for digits 1–4; chance is ln 10 = 2.30)
+
+| Run | Model | Side channels | Exact | Loss | Digits 1–4 |
+|---|---|---|---|---|---|
+| horizon, per digit | Qwen3, all windowed | O(T) loop, exp ρ 0.95 τ 32 | 0.00 | 1.381 | **0.001**, 2.30, 2.30, 2.30 |
+| horizon, 2 pairs | Qwen3, all windowed | same | 0.00 | 1.809 | 2.17, 2.29, 2.28, 2.30 |
+| horizon, 6000 steps | Qwen3.5, all windowed | same | **1.00** | 0.001 | ≤ 0.002 |
+| **W1 dense** | Qwen3, all windowed | GDN, successor keys (4.28M params) | **1.00** | **0.0001** | 0.000 ×4 |
+| **W1 DG** | Qwen3, all windowed | GDN, DG keys (3.74M params) | **1.00** | **0.0001** | 0.000 ×4 |
+| W1 dense, 2 pairs | Qwen3, all windowed | as above | 0.55 | 0.187 | **0.74**, 0.05, 0.11, 0.03 |
+| W1 DG, 2 pairs | Qwen3, all windowed | as above | 0.43 | 0.231 | **0.76**, 0.11, 0.15, 0.14 |
+| horizon, LM | Qwen3 WikiText-103 | O(T) loop, horizon kernel | ppl 11.53 (default kernel 12.01, full 9.01): 49% of the gap, against 41% | | |
+
+**What it shows**
+1. **The horizon loop knows the first digit and nothing after it (P7).** Even that comes through a query-independent path. With two stored pairs it falls back to near chance (P8), the outcome round-0 arm g5 was built to detect.
+2. **Successor binding supplies the missing shift (P10).** W1 recalls all four digits exactly on Qwen3 with every layer windowed. Its loss is lower than full attention's (0.0001 against 0.011), its state is fixed-size, and it uses fewer parameters than the loop. DG keys learn about twice as fast: loss 0.008 at step 600, against step 900–1200 for dense keys.
+3. **W1 retrieves the chain but cannot choose where it starts (P11).** With two pairs, digits 2–4 are 94–99% correct, but digit 1 is a coin flip: loss ≈ ln 2, accuracy 0.51–0.57. The first digit is keyed by the address of the space after "is", the same token in both facts. That address encodes the current token far more than the name three tokens earlier. DG keys do not help here, which fits: pattern separation sharpens retrieval but cannot add context the address does not carry.
+4. **On Qwen3.5 the O(T) loop also reaches exact recall with every layer windowed (P9).** It needs 6000 steps, breaking at about step 2400. This was one pair only, so P8's caveat applies.
+5. **The horizon kernel helps language modelling slightly (P12).** That suggests some memory from beyond the window, but the domain-adaptation confound (O4) is still open.
+
+**Fitness status for W1**
+
+| Criterion | Status |
+|---|---|
+| Reach | Passed with one pair; partial with two (exact 0.43–0.55) |
+| Stability and recency (must pass) | **Not yet measured.** `experiments/temporal_loop.py` cannot host W1 yet. W1 is an open loop under the same clamp as the loop, and its injection ratio was 0.31–0.33, so it cannot run away. Recency is untested. |
+| Rules E1–E3 | Pass (tests) |
+| E6 (held-out gaps, random offsets, natural filler) | Not yet run. Needs round-0 item C6 |
+
+**Surprises**
+- W1's loss is *below* full attention's.
+- The O(T) loop on Qwen3.5 needed twice the steps of W1 on Qwen3.
+- DG keys did not help start selection.
+
+**Proposed round 2** (for the checkpoint)
+- **W1b: give the address context so the queried name selects the start.** Three arms, each scored with 2 and 3 pairs:
+  - (a) GDN's own short-conv keys (`addressing="gdn"`, which mixes the last 4 tokens);
+  - (b) addresses from a learned causal conv or n-gram over the last few tokens, the idea behind Qwen3.8-Flash-Next's n-gram embedding;
+  - (c) a later tap, where the residual at "is" carries more of the name.
+- A W1 adapter for the CPU stability and recency suite, so W1 can be scored on the two must-pass criteria.
+- C6 held-out evaluation: gaps of 373, 757 and 1013 tokens, random needle offsets, natural-text filler.
