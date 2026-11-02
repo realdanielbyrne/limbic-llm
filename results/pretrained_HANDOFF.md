@@ -19,10 +19,21 @@ All earlier pretrained numbers are **superseded**, and the runs below are being 
 | `pretrained_qwen35_needle_allwin` (all layers, 3000 steps) | **done** (fixed) |
 | `pretrained_qwen35_needle_layer22` (attention only, tap at block 22, 3000 steps) | **done** (fixed) |
 | `pretrained_qwen3_lm` | running, GPU 1 (rerun) |
-| `pretrained_qwen35_lm` | queued (rerun). The bf16 run was **stopped** at step 600 of 1000 and never wrote a JSON. |
+| `pretrained_qwen35_lm` | running (rerun). The bf16 run was **stopped** at step 600 of 1000 and never wrote a JSON. |
+| `pretrained_qwen3_needle_horizon` (`--kernel exp --rho 0.95 --tau 32`, 3000 steps) | queued |
+| `pretrained_qwen35_needle_allwin_horizon` (same kernel, all layers windowed, 3000 steps) | queued |
+
+The horizon runs use a loop kernel that reaches the needle: w(Δ) = ρ^(Δ/τ−1), which is 0.472 at a lag of 500 and 0.470 at 503 (`limbic_llm/temporal_loop.py:100`). The default `osc` kernel's weight is 0 at that gap.
 
 The rerun JSONs overwrite the old files in place. Git history keeps the bf16 versions (commits
 `0f5cc8c`, `775e0f2`, `a741b80`, `2297571`).
+
+## Round-0 diagnosis and evolution notebook
+
+See [`results/evolve/NOTEBOOK.md`](evolve/NOTEBOOK.md) and [`results/evolve/round0_plan.md`](evolve/round0_plan.md). For the report:
+
+- The Qwen3 windowed+side eval loss, 1.8421, equals 0.8·ln10, the answer-format floor exactly. The side channels learned the leading space and the digit distribution, and carry no information about the value.
+- **Caution:** the bf16 run's all-windowed drop (eval 1.692) was an **anti-causal leak**, not long-range transfer. `torch.arange(512, dtype=bfloat16)` has only 385 distinct values; positions 505–511 become [504, 506, 508, 508, 508, 510, 512]. So the `d >= 0` masks in `loop_kernel` and `decay_kernel` (`limbic_llm/temporal_loop.py:94`, `:109-111`) let some answer positions see their own targets. This session verified it on CPU. The kernels take their dtype from the activations, so any bf16 use of `HippocampalLoop` or `TimeChannel` hits this. The float32 fix (`3c90bde`) avoids it in `pretrained_loop.py`.
 
 ## Files this session owns
 
