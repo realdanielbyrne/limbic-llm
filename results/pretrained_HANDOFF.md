@@ -50,9 +50,13 @@ Needle task (gap about 500 tokens), seq 512, window 64, every layer windowed unl
 | `g1_qwen35_allwin_horizon_6k` | same loop, Qwen3.5, 6000 steps | **1.00** | 0.001 | 0.002, 0.001, 0.001, 0.001 | Loss broke at ~2400 and reached 0.006 by 3600. The 3000-step run was undertrained |
 | **`g1_w1_tied`** | **W1**: GDN side memory, successor-bound dense keys + clock (4.28M params) | **1.00** | **0.0001** | 0.000 × 4 | Solved by step 1200. Fixed-size state (rule E2) |
 | **`g1_w1_dg`** | **W1**, DG k-WTA keys (4 heads, key expansion 4; 3.74M params) | **1.00** | **0.0001** | 0.000 × 4 | Learns faster: loss 0.73 at step 300, 0.008 at 600 |
+| `g1_w1_tied_pairs2` | W1 dense, 2 stored pairs | 0.55 | 0.187 | **0.74**, 0.05, 0.11, 0.03 | Digit 1 is a coin flip (≈ ln 2); the chain after it is retrieved |
+| `g1_w1_dg_pairs2` | W1 DG, 2 stored pairs | 0.43 | 0.231 | **0.76**, 0.11, 0.15, 0.14 | Same; DG keys do not help choose the start |
 | full attention (reference) | — | 1.00 | 0.011 | — | |
 
-**Pending:** W1 with 2 stored pairs (the test that rules out query-independent shortcuts) and the horizon-kernel LM run (O4).
+LM, `g1_qwen3_lm_horizon`: Qwen3 WikiText with the horizon kernel. Perplexity 11.53 against 12.01 with the default kernel and 9.01 with full attention, so 49% of the loss gap is closed against 41%.
+
+The round-1 write-up is in `results/evolve/NOTEBOOK.md` ("Round 1"). The register now has entries P7–P12 and the new item W1b.
 
 ## Review of the alignment, CoT and CA1 decision tracks (2 Nov, round 1)
 
