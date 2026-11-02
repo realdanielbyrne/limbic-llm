@@ -3,7 +3,7 @@ requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "hippoformer"
+name = "limbic-llm"
 version = "0.1.0"
 description = "Hippocampally inspired memory modules (DG/CA3/CA2/CA1/Subiculum, Titans hybrid, replay consolidation) for PyTorch"
 readme = "README.md"
@@ -16,7 +16,7 @@ dependencies = ["torch>=2.1"]
 dev = ["pytest>=7"]
 
 [tool.setuptools.packages.find]
-include = ["hippoformer*"]
+include = ["limbic_llm*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

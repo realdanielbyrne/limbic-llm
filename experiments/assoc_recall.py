@@ -8,6 +8,8 @@ Compares, at matched width and similar depth:
   titans_seq     plain Titans MAC + sequential (heteroassociative) writes only
   titans_seq_dg  ablation: + DG sparse writes
   titans_seq_ca1 ablation: + CA1 comparator + novelty-scaled lr
+  titans_gdn     Titans MAC with a linear Gated DeltaNet memory (sequential writes)
+  titans_gdn_dg  + DG-sparse addresses
   titans_hippo   Strategy II (Titans MAC + DG writes + CA1 comparator + novelty-lr)
 
 Usage:  python experiments/assoc_recall.py --steps 1500 --models all
@@ -26,7 +28,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from hippoformer import BaselineLM, HippocampalLM, TitansHippocampalLM, lm_loss, novelty_alignment_loss  # noqa: E402
+from limbic_llm import BaselineLM, HippocampalLM, TitansHippocampalLM, lm_loss, novelty_alignment_loss  # noqa: E402
 from tasks import AssociativeRecall  # noqa: E402
 
 
@@ -51,6 +53,13 @@ def build(name: str, vocab: int, d: int, local: int):
     if name == "titans_seq_ca1":  # ablation: + CA1 comparator and novelty-scaled lr
         return TitansHippocampalLM(vocab, d, 4, n_layers=2, use_dg=False, use_ca1=True, novelty_lr=True,
                                    sequential=True, **common)
+    if name == "titans_gdn":      # Titans MAC with a linear Gated DeltaNet memory
+        return TitansHippocampalLM(vocab, d, 4, n_layers=2, use_dg=False, use_ca1=False, novelty_lr=False,
+                                   sequential=True, memory_type="gated_delta", mem_heads=4, **common)
+    if name == "titans_gdn_dg":   # + DG-sparse addresses
+        return TitansHippocampalLM(vocab, d, 4, n_layers=2, use_dg=True, use_ca1=False, novelty_lr=False,
+                                   sequential=True, memory_type="gated_delta", mem_heads=4,
+                                   dg_expansion=8, dg_sparsity=0.05, **common)
     if name == "titans_hippo":
         return TitansHippocampalLM(vocab, d, 4, n_layers=2, use_dg=True, use_ca1=True,
                                    novelty_lr=True, sequential=True, dg_expansion=4, dg_sparsity=0.05,

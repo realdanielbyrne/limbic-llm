@@ -1,0 +1,34 @@
+flowchart TB
+  tok["tokens (B, T)"]:::io --> emb["Embedding<br/>token + learned position"]
+  emb --> pick{{"choose a model"}}:::pick
+
+  subgraph BASE["BaselineLM"]
+    b1["TransformerLayer × N<br/>full or sliding-window<br/>attention"]
+  end
+
+  subgraph S1["HippocampalLM · Strategy I"]
+    ec["EC<br/>TransformerLayer"] --> hb["HippocampalBlock<br/>DG → CA3 → CA2<br/>→ CA1 → Subiculum"]
+    hb --> cx["Neocortex<br/>TransformerLayer × N"]
+    hb -.->|read / write| st1[("CA3 episodic store<br/>kept across segments")]:::store
+  end
+
+  subgraph S2["TitansHippocampalLM · Strategy II"]
+    tl["TitansHippocampalLayer × N<br/>MAC / MAG / MAL<br/>persistent tokens, CA1,<br/>window attention"]
+    tl -.->|read / write| mem[("memory_type<br/>NeuralMemory: deep MLP<br/>GatedDeltaMemory: linear")]:::store
+  end
+
+  subgraph G["GatedDeltaLM"]
+    gd["GDN block × N<br/>addressing gdn / tied / dg<br/>optional attention<br/>every N-th layer"]
+    gd -.->|update| gst[("matrix memory S_t<br/>constant size")]:::store
+  end
+
+  pick --> b1 & ec & tl & gd
+  b1 & cx & tl & gd --> head["LM head<br/>LayerNorm → Linear → logits (B, T, V)"]:::io
+  head --> loss["lm_loss: next-token cross-entropy<br/>+ novelty_alignment_loss"]:::train
+  loss -.-> rb[("PrioritizedReplayBuffer<br/>priority = novelty")]:::store
+  rb -.-> sl["Consolidator.sleep()<br/>replay into slow parameters"]:::train
+
+  classDef io fill:#0a0b05,stroke:#0a0b06,color:#0a0b07
+  classDef store fill:#0a0b08,stroke:#0a0b09,color:#0a0b0a
+  classDef train fill:#0a0b0b,stroke:#0a0b0c,color:#0a0b0d
+  classDef pick fill:#0a0b0e,stroke:#0a0b06,color:#0a0b07

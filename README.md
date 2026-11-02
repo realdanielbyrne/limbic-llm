@@ -1,125 +1,208 @@
-# hippoformer
+# limbic-llm
 
-Hippocampally inspired memory modules for sequence models in PyTorch. Each part of the hippocampal trisynaptic circuit is built as a neural-network component, and the package offers two ways to put them together:
+[![tests](https://github.com/realdanielbyrne/limbic-llm/actions/workflows/tests.yml/badge.svg)](https://github.com/realdanielbyrne/limbic-llm/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)
+![PyTorch 2.1+](https://img.shields.io/badge/pytorch-2.1%2B-ee4c2c.svg)
 
-* **Strategy I (direct circuit).** EC → DG → CA3 → CA2 → CA1 → Subiculum as one residual block, with a one-shot episodic store in CA3.
-* **Strategy II (Titans hybrid).** The Titans long-term memory (Behrouz, Zhong & Mirrokni, 2024, [arXiv:2501.00663](https://arxiv.org/abs/2501.00663)) extended with a dentate-gyrus write path, a CA1 comparator, and novelty-scaled memory learning rates.
+**Hippocampus-inspired memory for language models, in PyTorch.**
 
-Both strategies can feed a replay-consolidation loop for continual learning, in the spirit of complementary learning systems.
+The hippocampus learns new facts in a single exposure without overwriting old ones, and retrieves them from partial cues. limbic-llm builds each stage of the hippocampal circuit as a neural-network module and tests whether the brain's design choices help sequence models remember beyond their attention window and learn continually without forgetting.
 
+It is a research library, not a pretrained LLM: memory modules you can drop into a transformer, plus small language models for controlled experiments.
+
+## What's inside
+
+* **Strategy I, the direct circuit.** EC → DG → CA3 → CA2 → CA1 → Subiculum as one residual block, with a one-shot episodic store in CA3.
+* **Strategy II, a Titans hybrid.** The Titans test-time memory ([Behrouz et al., 2024](https://arxiv.org/abs/2501.00663)) with a dentate-gyrus write path, a CA1 comparator and novelty-scaled learning rates.
+* **Gated DeltaNet memory.** The linear special case of the Titans memory ([Yang et al., 2025](https://arxiv.org/abs/2412.06464)), with exact per-token updates, a fast chunkwise kernel and dentate-gyrus addressing.
+* **Replay consolidation.** A novelty-prioritized replay buffer and an offline "sleep" phase that trains only the slow parameters, after the complementary learning systems theory.
+
+```mermaid
+flowchart LR
+  x["x from EC"] --> dg["DG<br/>pattern separation<br/>expand, k-WTA"]
+  dg --> ca3["CA3<br/>pattern completion"]
+  store[("episodic store<br/>h_t → h_t+1")] --> ca3
+  ca3 --> ca2["CA2<br/>context side channel"]
+  ca2 -->|retrieved memory| ca1["CA1<br/>comparator, novelty n_t"]
+  x -->|temporoammonic skip| ca1
+  ca1 --> sub["Subiculum<br/>output gain"]
+  sub --> out["x + Δ"]
+  x -->|residual| out
+  ca3 -.->|novelty-gated write| store
+  ca1 -.->|replay priority| rb[("replay buffer → sleep")]
 ```
-                    ┌──────────── temporoammonic skip (EC III → CA1) ─────────────┐
-                    │                                                             ▼
- tokens ─► EC ─► DG (expand ×r, k-WTA) ─► CA3 (Hopfield + episodic store) ─► CA2 (FiLM) ─► CA1 comparator ─► Subiculum ─► cortex ─► logits
-                                              ▲                                              │ novelty n_t
-                                              └──────── novelty-gated one-shot write ◄──────┘
-                                                                                             └─► replay priority ─► sleep consolidation
-```
+
+## Results
+
+Small CPU models (0.2–0.4 M parameters, single seed), so these are sanity checks rather than benchmarks. Full details are in [RESULTS.md](RESULTS.md).
+
+**One-shot recall beyond the attention window.** The model sees 6 key→value pairs, 40 filler tokens, then is queried on every key. Local models see 16 tokens at a time; chance is 0.06.
+
+| Model | Recall |
+|---|---:|
+| Windowed attention, no memory | 0.06 |
+| Full attention, sees everything | 0.49 |
+| Strategy I (HippocampalLM) | 0.41 |
+| Titans (deep memory) | 0.48 |
+| **Titans with a Gated DeltaNet memory** | **1.00** |
+| Titans with Gated DeltaNet + DG addresses | 0.99 |
+
+**Continual learning.** Learning three fact sets in sequence, naive training forgets badly (backward transfer −0.73). Novelty-prioritized replay with a sleep phase removes the forgetting (backward transfer 0.00).
+
+**Memory capacity.** Standard Gated DeltaNet loses recall once the number of stored pairs exceeds its key dimension (0.43 → 0.13). Successor-bound addressing turns the state into exact RAM, with perfect recall up to 32 pairs.
 
 ## Install
 
 ```bash
-pip install -e .            # requires torch >= 2.1
-pytest -q                   # 29 tests: shapes, causality, sparsity, memory, replay, regressions
+git clone https://github.com/realdanielbyrne/limbic-llm
+cd limbic-llm
+pip install -e ".[dev]"      # needs torch >= 2.1
+pytest -q                    # 51 tests
 ```
 
-## Component map
+## Quick start
 
-| Region | Module | Computation |
-|---|---|---|
-| EC | `TransformerLayer` (in `HippocampalLM.ec`) | Contextual embedding $x_t$ |
-| DG | `DentateGyrus` | $y = g \odot \mathbb{1}[h \in \text{top-}k(h)] \odot \text{ReLU}(h)$, with $h = W_{\text{exp}}\,\text{LN}(x)$ and $k = \lceil s \cdot d r \rceil$ |
-| DG neurogenesis | `DentateGyrus.grow / tick` | Reserve units are switched on with plasticity $1 + \beta e^{-\text{age}/\tau}$ |
-| CA3 | `CA3Autoassociative` | $\xi \leftarrow V^\top \text{softmax}(\beta K \xi)$ over $[\text{store}; h_{\le t}]$, iterated `n_iter` times |
-| CA3 store | `EpisodicStore`, `CA3Autoassociative.write` | Writes the top-$m$ most novel transitions $(h_t \mapsto h_{t+1})$ into the lowest-salience slots; salience decays by $\gamma$ (LTD) and grows with retrieval (reconsolidation) |
-| CA2 | `CA2Modulator` | $y = x \odot (1+\gamma(c)) + \beta(c)$; $c$ is an external context or a temporal context $c_t = (1-\rho)\sum_s \rho^{t-s} x_s$ |
-| CA1 | `CA1Comparator` | $\phi = [a; r; a \odot r; \lvert a-r \rvert]$, $\text{fused} = W\phi$, $n_t = \sigma(\text{MLP}(\phi))$ |
-| Subiculum | `Subiculum` | SwiGLU output scaled by a novelty-dependent gain $\text{softplus}(a\,n_t + b)$ |
-| Titans LMM | `NeuralMemory` | $\ell = \lVert M(k_t) - v_t \rVert^2$, $S_t = \eta S_{t-1} - \theta_t \nabla\ell$, $M_t = (1-\alpha)M_{t-1} + S_t$; with `sequential=True`, $v_t = W_V x_{t+1}$ |
-| Replay | `PrioritizedReplayBuffer`, `Consolidator` | $P(i) \propto p_i^{a}$; replay loss is CE $+\ \tau^2\,\text{KL}(\text{stored}\,\Vert\,\text{current})$; `sleep()` updates only the slow parameters |
-
-## Usage
-
-**Strategy I as a standalone LM, or as context augmentation in front of cortex layers**
+**A language model with a hippocampal memory block**
 
 ```python
-from hippoformer import HippocampalLM, lm_loss, novelty_alignment_loss
+from limbic_llm import HippocampalLM, lm_loss, novelty_alignment_loss
 
 model = HippocampalLM(vocab=32000, d_model=256, n_heads=8,
-                      n_ec=2, n_hpc=1, n_neocortex=4,    # n_neocortex=0 gives standalone mode
-                      segment=128, ca3_capacity=512, ca3_write=32,
-                      dg_expansion=8, dg_sparsity=0.04)
-out = model(tokens)                                   # out.logits, out.novelty, out.state
+                      n_ec=2, n_hpc=1, n_neocortex=4,      # n_neocortex=0 for standalone mode
+                      segment=128, ca3_capacity=512, ca3_write=32)
+out = model(tokens)                                      # logits, novelty, memory state
 tl = lm_loss(out.logits[:, :-1], tokens[:, 1:], reduction="none")
 loss = tl.mean() + 0.1 * novelty_alignment_loss(out.novelty[:, :-1], tl)
 
-out2 = model(next_tokens, state=out.state)            # carry the episodic store across a stream
+out2 = model(next_tokens, state=out.state)               # memory carries across calls
 ```
 
-**Strategy II (Titans + hippocampus)**
+**Titans with hippocampal additions, or with a Gated DeltaNet memory**
 
 ```python
-from hippoformer import TitansHippocampalLM
+from limbic_llm import TitansHippocampalLM
 
 model = TitansHippocampalLM(vocab=32000, d_model=256, n_heads=8, n_layers=4,
-                            variant="mac",             # "mac" | "mag" | "mal"
-                            chunk=64, window=64, n_persistent=16,
-                            use_dg=True, use_ca1=True, novelty_lr=True, sequential=True)
-# all four flags False gives plain Titans, so ablations are one flag each
+                            variant="mac",                 # "mac" | "mag" | "mal"
+                            use_dg=True, use_ca1=True, novelty_lr=True, sequential=True,
+                            memory_type="gated_delta")     # or "titans" for the deep memory
+```
+
+Each hippocampal addition is a single flag, and all four off gives plain Titans, so ablations are one change each.
+
+**A Gated DeltaNet language model, optionally hybrid with attention**
+
+```python
+from limbic_llm import GatedDeltaLM
+
+lm = GatedDeltaLM(vocab=32000, d_model=256, n_heads=8, n_layers=8,
+                  attn_every=4,                            # 3:1 DeltaNet:attention, as in Qwen3-Next
+                  addressing="dg", key_expansion=8)        # "gdn" | "tied" | "dg"
 ```
 
 **Drop the block into your own transformer**
 
 ```python
-from hippoformer import HippocampalBlock
-blk = HippocampalBlock(d_model=512, n_heads=8)
-out = blk(x, store=prev_store, context=speaker_embedding)   # x: (B, T, 512)
+from limbic_llm import HippocampalBlock
+
+block = HippocampalBlock(d_model=512, n_heads=8)
+out = block(x, store=prev_store)                          # x: (B, T, 512)
 x, prev_store = out.hidden, out.store
 ```
 
 **Replay consolidation**
 
 ```python
-from hippoformer import PrioritizedReplayBuffer, Consolidator, sequence_priority
-buf = PrioritizedReplayBuffer(capacity=10_000)
-cons = Consolidator(model, buf, slow_params=model.neocortex.parameters(), lr=1e-4)
+from limbic_llm import PrioritizedReplayBuffer, Consolidator, sequence_priority
 
-buf.add(seq, sequence_priority(out.novelty, tl), out.logits)   # while awake
-loss = task_loss + cons.replay_loss(batch_size=16)             # interleaved replay
-cons.sleep(steps=200)                                          # offline consolidation
+buffer = PrioritizedReplayBuffer(capacity=10_000)
+consolidator = Consolidator(model, buffer, slow_params=model.neocortex.parameters(), lr=1e-4)
+
+buffer.add(seq, sequence_priority(out.novelty, tl), out.logits)   # while awake
+loss = task_loss + consolidator.replay_loss(batch_size=16)         # interleaved replay
+consolidator.sleep(steps=200)                                      # offline consolidation
 ```
 
-`replay.orthogonal_projection(params, bases)` is a gradient-projection hook for sleep updates. It protects subspaces from earlier tasks, which is the place to plug in ICA-identified functional networks.
+## How the circuit maps to code
+
+| Region | Role | Module | Computation |
+|---|---|---|---|
+| Entorhinal cortex | Input encoding | `TransformerLayer` | Contextual embedding $x_t$ |
+| Dentate gyrus | Pattern separation | `DentateGyrus` | Expand, keep the top $k = \lceil s \cdot d r\rceil$ units, optional neurogenesis |
+| CA3 | Pattern completion | `CA3Autoassociative` | $\xi \leftarrow V^\top \text{softmax}(\beta K \xi)$ over a store of $h_t \mapsto h_{t+1}$ transitions |
+| CA2 | Context side channel | `CA2Modulator` | $y = x \odot (1+\gamma(c)) + \beta(c)$ |
+| CA1 | Comparator | `CA1Comparator` | $[a;\ r;\ a \odot r;\ \lvert a-r \rvert]$ → fused output and novelty $n_t$ |
+| Subiculum | Output | `Subiculum` | Output gain $\text{softplus}(a\,n_t + b)$ |
+| Titans memory | Test-time learning | `NeuralMemory` | $S_t = \eta S_{t-1} - \theta_t \nabla\ell$, $M_t = (1-\alpha)M_{t-1} + S_t$ |
+| Gated DeltaNet | Linear associative memory | `GatedDeltaNet`, `GatedDeltaMemory` | $S_t = \alpha_t S_{t-1}(I - \beta_t k_t k_t^\top) + \beta_t v_t k_t^\top$ |
+| Replay | Consolidation | `PrioritizedReplayBuffer`, `Consolidator` | Priority from novelty; sleep updates slow parameters only |
+
+Gated DeltaNet is exactly one gradient step on the Titans loss $\tfrac12\lVert Sk_t - v_t\rVert^2$ at the decayed state $\alpha_t S_{t-1}$. Its decay gate $\alpha_t$ is the forgetting term, its write gate $\beta_t$ is encoding strength, and $v_t - \alpha_t S_{t-1}k_t$ is the prediction error CA1 computes. With one-hot keys and $\alpha = \beta = 1$ the state is exact RAM, as in [Qwenputer](https://divagr.com/blog/qwenputer), which is the limit that dentate-gyrus pattern separation approaches.
 
 ## Experiments
 
 ```bash
-python experiments/assoc_recall.py --steps 3000     # one-shot recall across a gap longer than attention
-python experiments/continual.py --steps 600         # sequential fact tasks: naive vs. replay
+python experiments/assoc_recall.py --steps 3000      # one-shot recall across a long gap
+python experiments/continual.py --steps 600          # sequential learning: naive vs. replay
+python experiments/gdn_capacity.py --pairs 8,16,32   # linear-memory capacity under load
 ```
 
-**Associative recall.** The model studies 6 random key→value pairs, sees 40 filler tokens, then is queried on every pair in shuffled order. Only the recalled values are scored, and chance is 1/16. Local models use a 16-token window, segment, or chunk, so the bindings sit outside their attention by the time they're queried.
+Logs and JSON results are in [`results/`](results/).
 
-**Continual learning.** Three tasks, each with its own fixed key→value facts, are learned one after another. Only the first occurrence of a key in a sequence is scored, so the model must hold the facts in its weights. The script reports the accuracy matrix, average final accuracy, and backward transfer (BWT).
+## Lessons from the experiments
 
-Results from a CPU run are in `results/` and summarized in [`RESULTS.md`](RESULTS.md). In short: Strategy I reaches 0.41 recall and Titans 0.48, against 0.06 for windowed attention and 0.49 for full attention. Replay removes catastrophic forgetting (BWT −0.73 → 0.00). The combined Titans+hippocampus hybrid underperforms, and the reasons are discussed there.
+Three design changes came out of debugging, each covered by a test.
 
-## Design decisions the experiments forced
+1. **CA3 must store sequences.** A purely autoassociative store returns the cue itself, so a key cannot recall its value. Binding each pattern to its successor, as in models of CA3 sequence memory, was needed before any memory model rose above chance.
+2. **The Titans meta-gradient is a partial derivative.** When the chunk being written was itself computed from a read of the same memory, differentiating through it made training apply a different update than inference.
+3. **Write scale needs a trust region.** Averaging the memory loss over features shrinks writes by $1/d$; summing, as in the paper, needs a per-sample clip to stay stable. Sparse DG keys were stable even without it.
 
-These three changes came out of debugging. Each is covered by a test.
+## Roadmap
 
-1. **CA3 stores sequences, not just patterns.** A purely autoassociative store returns the cue itself, so a key can't recall its value. The store now holds transitions $h_t \mapsto h_{t+1}$, following the asymmetric-STDP account of CA3 sequence memory (Levy, 1996; Jensen & Lisman, 1996). The same idea gives the `sequential` flag for Titans writes. Without it, neither memory system got above chance on recall.
-2. **The Titans meta-gradient is a partial derivative.** In MAC and MAL, the chunk being written was computed from an earlier read of the same memory. Differentiating $\ell$ with respect to $M$ directly then also flowed through that read path, so training applied a different update than inference (low training loss, chance-level evaluation). The gradient is now taken with respect to a fresh alias of $M$; see `test_titans_train_and_eval_apply_same_memory_update`.
-3. **Memory loss scale and a trust region.** Averaging $\lVert\cdot\rVert^2$ over features shrinks writes by $1/d$, and the memory barely learns. Summing as the paper does can diverge when correlated keys accumulate under momentum. The code sums, and clips each sample's fused chunk update to `max_update_norm`. Sparse DG keys were stable even without the clip, which is pattern separation earning its keep.
+* **CA2 as identity steering.** Per-speaker activation-steering vectors ([Turner et al.](https://arxiv.org/abs/2308.10248)) at the CA2 point, tested on multi-speaker recall.
+* **A calibrated CA1.** Novelty trained with a proper scoring rule, in the spirit of decision models such as [JEV](https://jevai.net) and [LAYA](https://github.com/NandhaKishorM/laya), with a JEPA-style predictive target.
+* **Big-loop recurrence.** A looped HippocampalBlock whose exit gate is driven by CA1 novelty, after [Ouro](https://arxiv.org/abs/2510.25741).
+* **Pattern separation under similar keys.** A recall task with overlapping keys and a sweep of DG sparsity.
+* **Pretrained models.** Inserting HippocampalBlock or GatedDeltaMemory into an existing LLM.
 
-## Implementation notes and simplifications
+## Documentation
 
-* **Titans parallelization.** Inside each chunk, every gradient is taken against the memory state at the start of the chunk, as in the paper's mini-batch scheme. $\theta_t$ is per token, while $\eta$ and $\alpha$ are averaged per chunk, so each chunk applies one fused update.
-* **Meta-gradients.** With `meta_grad=True`, training differentiates through the memory update (second order). Attention is written as explicit softmax because PyTorch's fused CPU kernels have no double-backward. `meta_grad=False` gives a cheaper first-order version.
-* **Causality.** Memory is read before a chunk or segment and written after it. Tests check that perturbing a token never changes logits at earlier positions.
-* **CA3 writes.** Slot choice is not differentiable, but stored patterns keep their autograd graph within a call, so later recall losses train the encoding path. The store is detached between calls (truncated BPTT).
-* **Novelty supervision.** `novelty_alignment_loss` trains CA1's mismatch signal to predict the z-scored next-token loss. Without it, novelty is only shaped indirectly.
+| | |
+|---|---|
+| [`docs/hippocampal_ml_architectures.docx`](docs/hippocampal_ml_architectures.docx) | The design document: circuit-to-ML mappings, Titans and Gated DeltaNet, recent inspirations, results |
+| [`docs/architecture.html`](docs/architecture.html) | Package and data-flow diagrams (download and open in a browser) |
+| [`docs/hippocampus_report.docx`](docs/hippocampus_report.docx) | Background on hippocampal structure and function |
+| [`docs/notebooks/`](docs/notebooks/) | Activation Addition notebook (GPT-2-XL) |
+| [RESULTS.md](RESULTS.md) | Full experimental results |
+| [`docs/implementation-notes.md`](docs/implementation-notes.md) | Implementation details and simplifications |
+| [REFERENCES.md](REFERENCES.md) | Bibliography, grouped by circuit component; BibTeX in [`docs/references.bib`](docs/references.bib) |
 
-## References
+## Repository layout
 
-Behrouz, Zhong & Mirrokni (2024), Titans: Learning to Memorize at Test Time. Ramsauer et al. (2020), Hopfield Networks is All You Need. McClelland, McNaughton & O'Reilly (1995), complementary learning systems. Wilson & McNaughton (1994), replay during sleep. Lisman & Grace (2005), the hippocampal–VTA loop and CA1 novelty detection. Perez et al. (2018), FiLM. Howard & Kahana (2002), temporal context model. Buzzega et al. (2020), Dark Experience Replay.
+```
+limbic_llm/         memory modules and models
+  dentate_gyrus.py  ca3.py  ca2.py  ca1.py  subiculum.py  hippocampal_block.py
+  neural_memory.py  titans_hybrid.py  gated_delta.py  replay.py  models.py
+experiments/        recall, continual-learning and capacity experiments
+tests/              51 tests
+results/            experiment logs and JSON
+docs/               design document, diagrams, bibliography, notebook
+```
+
+## Citing
+
+```bibtex
+@software{byrne2026limbicllm,
+  author = {Byrne, Daniel},
+  title  = {limbic-llm: Hippocampus-Inspired Memory for Language Models},
+  year   = {2026},
+  url    = {https://github.com/realdanielbyrne/limbic-llm}
+}
+```
+
+This project was first called *hippoformer* and was renamed because an ICLR 2026 paper uses that name ([Li et al., 2026](https://mlanthology.org/iclr/2026/li2026iclr-hippoformer/)).
+
+## License
+
+[MIT](LICENSE)

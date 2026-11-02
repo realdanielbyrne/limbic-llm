@@ -1,0 +1,16 @@
+flowchart TB
+  x["x from EC · (B, T, d)"]:::io --> dg["DG · pattern separation<br/>expand ×8, k-WTA keeps 5 %"]
+  dg --> ca3["CA3 · pattern completion<br/>Hopfield attention over<br/>store + current segment"]
+  store[("Episodic store<br/>transitions h_t → h_t+1")]:::store --> ca3
+  ca3 -.->|write top-m novel transitions| store
+  ca3 --> ca2["CA2 · context side channel<br/>FiLM: x(1+γ)+β"]
+  ca2 -->|retrieved memory| ca1["CA1 · comparator<br/>fused output + novelty n_t"]
+  x -->|temporoammonic skip| ca1
+  ca1 -.->|novelty ranks writes| store
+  ca1 --> sub["Subiculum · output gain<br/>softplus(a·n_t + b)"]
+  sub --> add(("+"))
+  x -->|residual| add
+  add --> out["x + Δ · to neocortex"]:::io
+
+  classDef io fill:#0a0b05,stroke:#0a0b06,color:#0a0b07
+  classDef store fill:#0a0b08,stroke:#0a0b09,color:#0a0b0a

@@ -1,0 +1,233 @@
+[
+ {
+  "group": "Memory architectures implemented here",
+  "entries": [
+   {
+    "key": "behrouz2024titans",
+    "text": "Behrouz, A., Zhong, P., & Mirrokni, V. (2024). Titans: Learning to Memorize at Test Time. arXiv preprint arXiv:2501.00663. https://arxiv.org/abs/2501.00663"
+   },
+   {
+    "key": "yang2025gated",
+    "text": "Yang, S., Kautz, J., & Hatamizadeh, A. (2025). Gated Delta Networks: Improving Mamba2 with Delta Rule. In International Conference on Learning Representations. https://arxiv.org/abs/2412.06464"
+   },
+   {
+    "key": "ramsauer2021hopfield",
+    "text": "Ramsauer, H., Schäfl, B., Lehner, J., et al. (2021). Hopfield Networks is All You Need. In International Conference on Learning Representations. https://arxiv.org/abs/2008.02217"
+   },
+   {
+    "key": "krotov2016dense",
+    "text": "Krotov, D., & Hopfield, J. J. (2016). Dense Associative Memory for Pattern Recognition. In Advances in Neural Information Processing Systems."
+   },
+   {
+    "key": "schlag2021linear",
+    "text": "Schlag, I., Irie, K., & Schmidhuber, J. (2021). Linear Transformers Are Secretly Fast Weight Programmers. In International Conference on Machine Learning. https://arxiv.org/abs/2102.11174"
+   },
+   {
+    "key": "vaswani2017attention",
+    "text": "Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., et al. (2017). Attention Is All You Need. In Advances in Neural Information Processing Systems."
+   },
+   {
+    "key": "shazeer2017outrageously",
+    "text": "Shazeer, N., Mirhoseini, A., Maziarz, K., Davis, A., Le, Q., Hinton, G., & Dean, J. (2017). Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer. In International Conference on Learning Representations. https://arxiv.org/abs/1701.06538"
+   },
+   {
+    "key": "perez2018film",
+    "text": "Perez, E., Strub, F., de Vries, H., Dumoulin, V., & Courville, A. (2018). FiLM: Visual Reasoning with a General Conditioning Layer. In Proceedings of the AAAI Conference on Artificial Intelligence."
+   },
+   {
+    "key": "qwenputer2026",
+    "text": "divagr.com (2026). Qwenputer: Gated DeltaNet State as RAM. https://divagr.com/blog/qwenputer."
+   }
+  ]
+ },
+ {
+  "group": "Hippocampal anatomy, physiology and theory",
+  "entries": [
+   {
+    "key": "andersen2007hippocampus",
+    "text": "Andersen, P., Morris, R., Amaral, D., Bliss, T., & O'Keefe, J. (2007). The Hippocampus Book. Oxford University Press."
+   },
+   {
+    "key": "bliss1993synaptic",
+    "text": "Bliss, T. V. P., & Collingridge, G. L. (1993). A Synaptic Model of Memory: Long-Term Potentiation in the Hippocampus. Nature 361, 31–39."
+   },
+   {
+    "key": "okeefe1978hippocampus",
+    "text": "O'Keefe, J., & Nadel, L. (1978). The Hippocampus as a Cognitive Map. Clarendon Press."
+   },
+   {
+    "key": "squire1992memory",
+    "text": "Squire, L. R. (1992). Memory and the Hippocampus: A Synthesis from Findings with Rats, Monkeys, and Humans. Psychological Review 99(2), 195–231."
+   },
+   {
+    "key": "scoville1957loss",
+    "text": "Scoville, W. B., & Milner, B. (1957). Loss of Recent Memory after Bilateral Hippocampal Lesions. Journal of Neurology, Neurosurgery, and Psychiatry 20(1), 11–21."
+   },
+   {
+    "key": "hafting2005microstructure",
+    "text": "Hafting, T., Fyhn, M., Molden, S., Moser, M. B., & Moser, E. I. (2005). Microstructure of a Spatial Map in the Entorhinal Cortex. Nature 436, 801–806."
+   },
+   {
+    "key": "eichenbaum2017integration",
+    "text": "Eichenbaum, H. (2017). On the Integration of Space, Time, and Memory. Neuron 95(5), 1007–1018."
+   },
+   {
+    "key": "spalding2013dynamics",
+    "text": "Spalding, K. L., Bergmann, O., Alkass, K., et al. (2013). Dynamics of Hippocampal Neurogenesis in Adult Humans. Cell 153(6), 1219–1227."
+   },
+   {
+    "key": "levy1996sequence",
+    "text": "Levy, W. B. (1996). A Sequence Predicting CA3 Is a Flexible Associator That Learns and Uses Context to Solve Hippocampal-Like Tasks. Hippocampus 6(6), 579–590."
+   },
+   {
+    "key": "jensen1996hippocampal",
+    "text": "Jensen, O., & Lisman, J. E. (1996). Hippocampal CA3 Region Predicts Memory Sequences: Accounting for the Phase Precession of Place Cells. Learning & Memory 3(2--3), 279–287."
+   },
+   {
+    "key": "hasselmo2006role",
+    "text": "Hasselmo, M. E. (2006). The Role of Acetylcholine in Learning and Memory. Current Opinion in Neurobiology 16(6), 710–715."
+   },
+   {
+    "key": "lisman2005hippocampal",
+    "text": "Lisman, J. E., & Grace, A. A. (2005). The Hippocampal-VTA Loop: Controlling the Entry of Information into Long-Term Memory. Neuron 46(5), 703–713."
+   },
+   {
+    "key": "bein2020mnemonic",
+    "text": "Bein, O., Duncan, K., & Davachi, L. (2020). Mnemonic Prediction Errors Bias Hippocampal States. Nature Communications 11, 3451."
+   },
+   {
+    "key": "hitti2014hippocampal",
+    "text": "Hitti, F. L., & Siegelbaum, S. A. (2014). The Hippocampal CA2 Region Is Essential for Social Memory. Nature 508, 88–92."
+   },
+   {
+    "key": "smith2016targeted",
+    "text": "Smith, A. S., Williams Avram, S. K., Cymerblit-Sabba, A., Song, J., & Young, W. S. (2016). Targeted Activation of the Hippocampal CA2 Area Strongly Enhances Social Memory. Molecular Psychiatry 21(8), 1137–1144."
+   },
+   {
+    "key": "boyle2024tuned",
+    "text": "Boyle, L. M., Posani, L., Irfan, S., Siegelbaum, S. A., & Fusi, S. (2024). Tuned Geometries of Hippocampal Representations Meet the Computational Demands of Social Memory. Neuron 112(8), 1358–1371."
+   },
+   {
+    "key": "howard2002distributed",
+    "text": "Howard, M. W., & Kahana, M. J. (2002). A Distributed Representation of Temporal Context. Journal of Mathematical Psychology 46(3), 269–299."
+   },
+   {
+    "key": "kumaran2012generalization",
+    "text": "Kumaran, D., & McClelland, J. L. (2012). Generalization through the Recurrent Interaction of Episodic Memories: A Model of the Hippocampal System. Psychological Review 119(3), 573–616."
+   },
+   {
+    "key": "koster2018bigloop",
+    "text": "Koster, R., Chadwick, M. J., Chen, Y., Berron, D., Banino, A., Düzel, E., et al. (2018). Big-Loop Recurrence within the Hippocampal System Supports Integration of Information across Episodes. Neuron 99(6), 1342–1354."
+   },
+   {
+    "key": "mcclelland1995why",
+    "text": "McClelland, J. L., McNaughton, B. L., & O'Reilly, R. C. (1995). Why There Are Complementary Learning Systems in the Hippocampus and Neocortex. Psychological Review 102(3), 419–457."
+   },
+   {
+    "key": "wilson1994reactivation",
+    "text": "Wilson, M. A., & McNaughton, B. L. (1994). Reactivation of Hippocampal Ensemble Memories during Sleep. Science 265(5172), 676–679."
+   },
+   {
+    "key": "mcewen1999stress",
+    "text": "McEwen, B. S. (1999). Stress and Hippocampal Plasticity. Annual Review of Neuroscience 22, 105–122."
+   }
+  ]
+ },
+ {
+  "group": "Hippocampus-inspired machine learning (prior art)",
+  "entries": [
+   {
+    "key": "li2026hippoformer",
+    "text": "Li, T., Cao, X., Wang, Y., Yang, X., Zou, X., & Hong, B. (2026). Hippoformer: Integrating Hippocampus-Inspired Spatial Memory with Transformers. In International Conference on Learning Representations. https://mlanthology.org/iclr/2026/li2026iclr-hippoformer/"
+   },
+   {
+    "key": "whittington2020tolman",
+    "text": "Whittington, J. C. R., Muller, T. H., Mark, S., Chen, G., Barry, C., Burgess, N., & Behrens, T. E. J. (2020). The Tolman-Eichenbaum Machine: Unifying Space and Relational Memory through Generalization in the Hippocampal Formation. Cell 183(5), 1249–1263."
+   },
+   {
+    "key": "whittington2022relating",
+    "text": "Whittington, J. C. R., Warren, J., & Behrens, T. E. J. (2022). Relating Transformers to Models and Neural Representations of the Hippocampal Formation. In International Conference on Learning Representations. https://arxiv.org/abs/2112.04035"
+   },
+   {
+    "key": "kapoor2025hicl",
+    "text": "Kapoor, K., Mackey, W., Aloimonos, Y., & Lin, X. (2025). HiCL: Hippocampal-Inspired Continual Learning. arXiv preprint arXiv:2508.16651. https://arxiv.org/abs/2508.16651"
+   },
+   {
+    "key": "das2024larimar",
+    "text": "Das, P., Chaudhury, S., Nelson, E., Melnyk, I., Swaminathan, S., Dai, S., et al. (2024). Larimar: Large Language Models with Episodic Memory Control. arXiv preprint arXiv:2403.11901. https://arxiv.org/abs/2403.11901"
+   },
+   {
+    "key": "gutierrez2024hipporag",
+    "text": "Gutiérrez, B. J., Shu, Y., Gu, Y., Yasunaga, M., & Su, Y. (2024). HippoRAG: Neurobiologically Inspired Long-Term Memory for Large Language Models. In Advances in Neural Information Processing Systems. https://arxiv.org/abs/2405.14831"
+   },
+   {
+    "key": "fountas2025human",
+    "text": "Fountas, Z., Benfeghoul, M., Oomerjee, A., Christopoulou, F., Lampouras, G., Ammar, H. B., & Wang, J. (2025). Human-Inspired Episodic Memory for Infinite Context LLMs. In International Conference on Learning Representations. https://mlanthology.org/iclr/2025/fountas2025iclr-humaninspired/"
+   },
+   {
+    "key": "ahn2025hema",
+    "text": "Ahn, K. (2025). HEMA: A Hippocampus-Inspired Extended Memory Architecture for Long-Context AI Conversations. arXiv preprint arXiv:2504.16754. https://arxiv.org/abs/2504.16754"
+   },
+   {
+    "key": "omidi2025memory",
+    "text": "Omidi, P., Huang, X., Laborieux, A., Nikpour, B., Shi, T., & Eshaghi, A. (2025). Memory-Augmented Transformers: A Systematic Review from Neuroscience Principles to Technical Solutions. arXiv preprint arXiv:2508.10824. https://arxiv.org/abs/2508.10824"
+   }
+  ]
+ },
+ {
+  "group": "CA2 candidates: activation steering",
+  "entries": [
+   {
+    "key": "turner2023activation",
+    "text": "Turner, A. M., Thiergart, L., Leech, G., Udell, D., Vazquez, J. J., Mini, U., & MacDiarmid, M. (2023). Activation Addition: Steering Language Models Without Optimization. arXiv preprint arXiv:2308.10248. https://arxiv.org/abs/2308.10248"
+   }
+  ]
+ },
+ {
+  "group": "CA1 candidates: calibrated decisions and predictive comparison",
+  "entries": [
+   {
+    "key": "typesafe2026jev",
+    "text": "TypeSafe AI (2026). Jev: Structured Decisions for Classification, Routing and Scoring. https://jevai.net."
+   },
+   {
+    "key": "nandhakishor2026laya",
+    "text": "NandhaKishorM (2026). LAYA: Multilingual Single-Pass Decision Engine. https://github.com/NandhaKishorM/laya (Apache-2.0)."
+   },
+   {
+    "key": "huang2026llmjepa",
+    "text": "Huang, H., LeCun, Y., & Balestriero, R. (2026). LLM-JEPA: Large Language Models Meet Joint Embedding Predictive Architectures. In International Conference on Learning Representations. https://mlanthology.org/iclr/2026/huang2026iclr-llmjepa/"
+   },
+   {
+    "key": "balestriero2025lejepa",
+    "text": "Balestriero, R., & LeCun, Y. (2025). LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics. arXiv preprint arXiv:2511.08544. https://arxiv.org/abs/2511.08544"
+   },
+   {
+    "key": "gorganmohammadi2026understanding",
+    "text": "Gorgan Mohammadi, A., Halvagal, M. S., & Zenke, F. (2026). Understanding Neural Circuit Principles for Representation Learning through Joint-Embedding Predictive Architectures. eLife. https://elifesciences.org/reviewed-preprints/110895"
+   }
+  ]
+ },
+ {
+  "group": "Looped and recurrent-depth transformers",
+  "entries": [
+   {
+    "key": "zhu2025scaling",
+    "text": "Zhu, R. J., Wang, Z., Hua, K., Zhang, T., Li, Z., Que, H., et al. (2025). Scaling Latent Reasoning via Looped Language Models. arXiv preprint arXiv:2510.25741. https://arxiv.org/abs/2510.25741"
+   },
+   {
+    "key": "dehghani2019universal",
+    "text": "Dehghani, M., Gouws, S., Vinyals, O., Uszkoreit, J., & Kaiser, Ł. (2019). Universal Transformers. In International Conference on Learning Representations. https://arxiv.org/abs/1807.03819"
+   }
+  ]
+ },
+ {
+  "group": "Continual learning and replay",
+  "entries": [
+   {
+    "key": "buzzega2020dark",
+    "text": "Buzzega, P., Boschini, M., Porrello, A., Abati, D., & Calderara, S. (2020). Dark Experience for General Continual Learning: A Strong, Simple Baseline. In Advances in Neural Information Processing Systems."
+   }
+  ]
+ }
+]

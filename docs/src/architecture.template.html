@@ -1,0 +1,277 @@
+<title>Limbic LLM Architecture</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: a lab-notebook plate. Text sits in a ~68ch reading column; figures break out to a wider plate. */
+:root {
+  /* page */
+  --paper: #f5f6f9;
+  --ink: #1c1a2c;
+  --muted: #5c5973;
+  --rule: #d8d7e3;
+  --accent: #5a3e9f;          /* cresyl violet: computation */
+  --store: #a86d14;           /* Golgi amber: memory stores */
+  --train: #2b7a70;           /* teal: training path */
+  --code-bg: #ebe9f3;
+  /* diagram */
+  --d-node: #ffffff;
+  --d-node-line: #a7a1c8;
+  --d-text: #1c1a2c;
+  --d-edge: #6b6787;
+  --d-io: #ece6fb;
+  --d-io-line: #5a3e9f;
+  --d-io-text: #1c1a2c;
+  --d-store: #fbf0dc;
+  --d-store-line: #b8801f;
+  --d-store-text: #57390a;
+  --d-train: #e1f1ee;
+  --d-train-line: #2b7a70;
+  --d-train-text: #123d37;
+  --d-pick: #f2eefb;
+  --d-cluster: #ecebf4;
+  --d-cluster-line: #d2cfe1;
+  --d-label: #f5f6f9;
+  /* type */
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-ui: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --measure: 68ch;
+  --plate: 1240px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #13121c; --ink: #e7e5f1; --muted: #a19eb7; --rule: #2d2b3f;
+    --accent: #a891e6; --store: #e0ae5c; --train: #69bfb2; --code-bg: #201e2e;
+    --d-node: #1c1b29; --d-node-line: #4a4669; --d-text: #e7e5f1; --d-edge: #8f8ba9;
+    --d-io: #262042; --d-io-line: #a891e6; --d-io-text: #ece8fb;
+    --d-store: #2a2115; --d-store-line: #e0ae5c; --d-store-text: #f3d8a8;
+    --d-train: #13302c; --d-train-line: #69bfb2; --d-train-text: #bde8e0;
+    --d-pick: #211e33; --d-cluster: #181725; --d-cluster-line: #302e45; --d-label: #13121c;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #13121c; --ink: #e7e5f1; --muted: #a19eb7; --rule: #2d2b3f;
+  --accent: #a891e6; --store: #e0ae5c; --train: #69bfb2; --code-bg: #201e2e;
+  --d-node: #1c1b29; --d-node-line: #4a4669; --d-text: #e7e5f1; --d-edge: #8f8ba9;
+  --d-io: #262042; --d-io-line: #a891e6; --d-io-text: #ece8fb;
+  --d-store: #2a2115; --d-store-line: #e0ae5c; --d-store-text: #f3d8a8;
+  --d-train: #13302c; --d-train-line: #69bfb2; --d-train-text: #bde8e0;
+  --d-pick: #211e33; --d-cluster: #181725; --d-cluster-line: #302e45; --d-label: #13121c;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 1rem/1.6 var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+.page {
+  max-width: var(--plate);
+  margin: 0 auto;
+  padding-block: 56px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid;
+  gap: 64px;
+}
+.prose { max-width: var(--measure); min-width: 0; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 600; line-height: 1.05; }
+h2 { font-size: 1.6rem; font-weight: 600; line-height: 1.2; }
+h3 { font-size: 1.1rem; font-weight: 600; }
+p { margin: 0; }
+.eyebrow {
+  font: 500 0.75rem/1 var(--font-mono);
+  text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent);
+}
+code, .mono { font-family: var(--font-mono); font-size: 0.88em; }
+code { background: var(--code-bg); padding: 0.08em 0.35em; border-radius: 4px; }
+a { color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+/* header */
+header { display: grid; gap: 20px; }
+.lede { font-size: 1.15rem; color: var(--ink); max-width: 60ch; }
+.facts {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0; margin: 8px 0 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+}
+.facts div { padding: 14px 20px 14px 0; min-width: 0; }
+.facts dt { font: 500 0.72rem/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.facts dd { margin: 4px 0 0; font-size: 0.95rem; }
+
+/* sections */
+section { display: grid; gap: 20px; min-width: 0; }
+.section-head { display: grid; gap: 8px; }
+.muted { color: var(--muted); }
+
+/* figures */
+figure { margin: 0; display: grid; gap: 14px; min-width: 0; }
+.plate {
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--paper);
+  padding: 20px;
+  -webkit-overflow-scrolling: touch;
+}
+.plate svg { display: block; width: 100%; height: auto; margin: 0 auto;
+  max-width: var(--w); min-width: calc(var(--w) * 0.78); }
+figcaption { font-size: 0.9rem; color: var(--muted); max-width: var(--measure); }
+figcaption b { color: var(--ink); font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 0.85rem; color: var(--muted); list-style: none; margin: 0; padding: 0; }
+.legend li { display: flex; align-items: center; gap: 8px; }
+.sw { width: 18px; height: 12px; border-radius: 3px; border: 1.5px solid; flex: none; }
+.sw.compute { background: var(--d-node); border-color: var(--d-node-line); }
+.sw.io { background: var(--d-io); border-color: var(--d-io-line); }
+.sw.store { background: var(--d-store); border-color: var(--d-store-line); border-radius: 6px / 4px; }
+.sw.train { background: var(--d-train); border-color: var(--d-train-line); }
+.sw.edge { border: 0; border-top: 2px dashed var(--d-edge); height: 0; border-radius: 0; }
+
+.split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (min-width: 980px) { .split { grid-template-columns: minmax(0, 860px) minmax(0, 1fr); } }
+.notes { display: grid; gap: 14px; font-size: 0.95rem; }
+.notes dl { margin: 0; display: grid; gap: 12px; }
+.notes dt { font-family: var(--font-display); font-weight: 600; font-size: 1rem; }
+.notes dt .mono { font-family: var(--font-mono); font-weight: 400; color: var(--muted); font-size: 0.8rem; margin-left: 6px; }
+.notes dd { margin: 2px 0 0; color: var(--muted); }
+
+/* table */
+.table-wrap { overflow-x: auto; border-top: 2px solid var(--ink); }
+table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 0.92rem; }
+th, td { text-align: left; vertical-align: top; padding: 11px 14px 11px 0; border-bottom: 1px solid var(--rule); }
+th { font: 500 0.72rem/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+td:first-child { font-family: var(--font-display); font-weight: 600; white-space: nowrap; }
+td .mono { white-space: nowrap; }
+tr.group td { padding-top: 22px; font-family: var(--font-mono); font-weight: 500; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); border-bottom-color: var(--ink); }
+
+.scope { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 28px; }
+.scope ul { margin: 8px 0 0; padding-left: 1.1em; display: grid; gap: 4px; }
+.scope li::marker { color: var(--accent); }
+.scope .no li::marker { color: var(--muted); }
+
+footer { border-top: 1px solid var(--rule); padding-top: 18px; font-size: 0.85rem; color: var(--muted); display: grid; gap: 4px; }
+
+@media (max-width: 520px) {
+  .page { padding-block: 32px 48px; gap: 48px; }
+  .plate { padding: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+<!-- body -->
+<div class="page">
+  <header>
+    <p class="eyebrow">limbic-llm · architecture</p>
+    <h1>Limbic LLM Architecture</h1>
+    <p class="lede">A PyTorch research library of hippocampus-inspired memory modules, plus four small decoder-only language models that use them. It tests mechanisms on synthetic tasks; it is not a pretrained LLM.</p>
+    <dl class="facts">
+      <div><dt>Model scale</dt><dd>0.2–0.4 M parameters, d<sub>model</sub> = 64</dd></div>
+      <div><dt>Shared by every model</dt><dd>Token + position embedding, LM head, next-token loss</dd></div>
+      <div><dt>Tasks</dt><dd>One-shot recall past the attention window, continual learning</dd></div>
+      <div><dt>Tests</dt><dd>51, covering causality, memory rules and streaming state</dd></div>
+    </dl>
+  </header>
+
+  <section aria-labelledby="overview">
+    <div class="section-head prose">
+      <p class="eyebrow">Figure 1</p>
+      <h2 id="overview">Package overview</h2>
+      <p class="muted">Every model takes the same input and produces logits through the same head. They differ only in how the middle of the network stores and retrieves memory.</p>
+    </div>
+    <figure>
+      <div class="plate" role="img" aria-label="Diagram: tokens are embedded, pass through one of four model families (BaselineLM, HippocampalLM, TitansHippocampalLM, GatedDeltaLM), then a shared LM head and loss, which feeds a replay buffer and offline consolidation.">
+        {{OVERVIEW_SVG}}
+      </div>
+      <ul class="legend" aria-label="Legend">
+        <li><span class="sw compute"></span>Computation</li>
+        <li><span class="sw io"></span>Input and output</li>
+        <li><span class="sw store"></span>Memory that persists across segments or tasks</li>
+        <li><span class="sw train"></span>Training and consolidation</li>
+        <li><span class="sw edge"></span>Memory read, write or replay</li>
+      </ul>
+      <figcaption><b>Three kinds of memory.</b> Strategy I keeps a discrete episodic store of novel transitions. Titans keeps its memory in weights updated by test-time gradient steps. Gated DeltaNet keeps a fixed-size matrix updated by the delta rule, which is the linear special case of the Titans update.</figcaption>
+    </figure>
+  </section>
+
+  <section aria-labelledby="block">
+    <div class="section-head prose">
+      <p class="eyebrow">Figure 2</p>
+      <h2 id="block">Inside the HippocampalBlock</h2>
+      <p class="muted">Strategy I maps the trisynaptic circuit onto one residual block. The block keeps the stream width d, so it drops into any transformer stack.</p>
+    </div>
+    <div class="split">
+      <figure>
+        <div class="plate" role="img" aria-label="Diagram: x passes through DG, CA3 (which reads the episodic store), CA2 and the CA1 comparator, which also receives x by the temporoammonic skip. The subiculum output is added back to x. CA3 writes novel transitions to the store, ranked by CA1 novelty.">
+          {{BLOCK_SVG}}
+        </div>
+      </figure>
+      <div class="notes">
+        <dl>
+          <div><dt>DG<span class="mono">DentateGyrus</span></dt><dd>Expands 8× and keeps the top 5 % of units, so overlapping inputs get nearly orthogonal codes.</dd></div>
+          <div><dt>CA3<span class="mono">CA3Autoassociative</span></dt><dd>Modern-Hopfield retrieval over the store and the current segment. Stores cue → successor pairs, so a key recalls its value.</dd></div>
+          <div><dt>CA2<span class="mono">CA2Modulator</span></dt><dd>FiLM side channel driven by external or temporal context. Starts as the identity.</dd></div>
+          <div><dt>CA1<span class="mono">CA1Comparator</span></dt><dd>Compares retrieved memory with the raw input from the skip path and outputs a novelty signal n<sub>t</sub> ∈ (0, 1).</dd></div>
+          <div><dt>Subiculum<span class="mono">Subiculum</span></dt><dd>SwiGLU output whose gain rises with novelty, added back to the residual stream.</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="map">
+    <div class="section-head prose">
+      <h2 id="map">Module map</h2>
+      <p class="muted">Where each piece lives in the package and what it computes.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Component</th><th>Class</th><th>File</th><th>Computation</th></tr></thead>
+        <tbody>
+          <tr class="group"><td colspan="4">Strategy I: trisynaptic circuit</td></tr>
+          <tr><td>Entorhinal cortex</td><td class="mono">TransformerLayer</td><td class="mono">attention.py</td><td>Contextual embedding x<sub>t</sub></td></tr>
+          <tr><td>Dentate gyrus</td><td class="mono">DentateGyrus</td><td class="mono">dentate_gyrus.py</td><td>Expansion, k-winners-take-all, optional neurogenesis</td></tr>
+          <tr><td>CA3</td><td class="mono">CA3Autoassociative</td><td class="mono">ca3.py</td><td>Hopfield retrieval; novelty-gated, salience-decaying store</td></tr>
+          <tr><td>CA2</td><td class="mono">CA2Modulator</td><td class="mono">ca2.py</td><td>x ⊙ (1 + γ(c)) + β(c)</td></tr>
+          <tr><td>CA1</td><td class="mono">CA1Comparator</td><td class="mono">ca1.py</td><td>Match / mismatch of memory against input; novelty n<sub>t</sub></td></tr>
+          <tr><td>Subiculum</td><td class="mono">Subiculum</td><td class="mono">subiculum.py</td><td>Novelty-scaled output gain</td></tr>
+          <tr class="group"><td colspan="4">Strategy II and Gated DeltaNet</td></tr>
+          <tr><td>Titans memory</td><td class="mono">NeuralMemory</td><td class="mono">neural_memory.py</td><td>S<sub>t</sub> = ηS<sub>t−1</sub> − θ<sub>t</sub>∇ℓ, M<sub>t</sub> = (1 − α)M<sub>t−1</sub> + S<sub>t</sub></td></tr>
+          <tr><td>Titans layer</td><td class="mono">TitansHippocampalLayer</td><td class="mono">titans_hybrid.py</td><td>MAC / MAG / MAL with DG, CA1, novelty-scaled writes</td></tr>
+          <tr><td>Gated DeltaNet</td><td class="mono">GatedDeltaNet</td><td class="mono">gated_delta.py</td><td>S<sub>t</sub> = α<sub>t</sub>S<sub>t−1</sub>(I − β<sub>t</sub>k<sub>t</sub>k<sub>t</sub><sup>⊤</sup>) + β<sub>t</sub>v<sub>t</sub>k<sub>t</sub><sup>⊤</sup></td></tr>
+          <tr><td>Delta memory for Titans</td><td class="mono">GatedDeltaMemory</td><td class="mono">gated_delta.py</td><td>Same rule behind the Titans read / write interface</td></tr>
+          <tr class="group"><td colspan="4">Consolidation</td></tr>
+          <tr><td>Replay buffer</td><td class="mono">PrioritizedReplayBuffer</td><td class="mono">replay.py</td><td>Sample P(i) ∝ p<sub>i</sub><sup>a</sup>, priority from novelty</td></tr>
+          <tr><td>Sleep phase</td><td class="mono">Consolidator</td><td class="mono">replay.py</td><td>Replay with logit distillation into slow parameters only</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="scope">
+    <div class="section-head prose"><h2 id="scope">Scope</h2></div>
+    <div class="scope">
+      <div><h3>Included</h3><ul>
+        <li>Memory modules usable inside other models</li>
+        <li>Four small language models for controlled comparisons</li>
+        <li>Streaming state across calls for every memory type</li>
+        <li>Recall, capacity and continual-learning experiments</li>
+      </ul></div>
+      <div class="no"><h3>Not included</h3><ul>
+        <li>Tokenizer and pretraining data pipeline</li>
+        <li>Text generation loop and sampling</li>
+        <li>Pretrained weights</li>
+        <li>Fused GPU kernels or multi-GPU training</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Diagrams are generated from <code>docs/src/*.mmd</code> by <code>python docs/src/build.py</code>.</p>
+    <p>Background reading in <code>docs/</code>: the hippocampus report, the ML-parallels document and the interactive circuit diagram. Bibliography: <code>REFERENCES.md</code> and <code>docs/references.bib</code>.</p>
+  </footer>
+</div>
