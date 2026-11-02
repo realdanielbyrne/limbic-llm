@@ -1,0 +1,120 @@
+# Evolution protocol: how the side-memory search is run
+
+This is the procedure the GPU session used for rounds 0–5 of the side-memory search (2 Nov 2026). Future sessions should follow it, or change it here, so that rounds stay comparable and every result can be traced.
+
+The search is AlphaEvolve-style:
+- propose candidate side-channel modules;
+- score them on fixed tasks on the GPUs;
+- keep what works;
+- record everything;
+- **stop at a human checkpoint after every round**, where Daniel approves, redirects or vetoes the next one.
+
+It differs from AlphaEvolve in one deliberate way. Most rounds begin with a *diagnosis* of why the best candidate fails, not with a blind batch of mutations. Most of the progress came from diagnoses.
+
+Related records: [`REGISTER.md`](REGISTER.md) is the current state and IDs, [`NOTEBOOK.md`](NOTEBOOK.md) the dated log, [`plans/round0_plan.md`](plans/round0_plan.md) holds the anti-gaming rules E1–E9, and [`HANDOFF.md`](HANDOFF.md) covers coordination between sessions.
+
+---
+
+## 1. The loop (one round)
+
+| Step | What | Tools |
+|---|---|---|
+| 0. Read the state | REGISTER (results P*, backlog W*), the latest NOTEBOOK entry, HANDOFF, any new review in `reviews/`. Pull first: other sessions push to the same branch | `git fetch`, `experiments/evolve/sync.sh` |
+| 1. Question and plan | One question per round, framed as hypothesis → metric. List the arms *and their controls*. Propose at the checkpoint; do not start the GPU work before Daniel approves | NOTEBOOK "Proposed round N" |
+| 2. Diagnose first | Before building, look for the cause with cheap, training-free measurements on the frozen model or on saved checkpoints. Then check the proposed mechanism numerically on a one-hot toy | `probe_cue.py`, `diag_goal.py`, `eval_by_query.py` |
+| 3. Build the candidate | A new module in `experiments/evolve/` with the candidate interface (§3). Reuse `limbic_llm/gated_delta.py` and earlier candidates. Stay within the budget | e.g. `w1i_events.py` |
+| 4. Test before any GPU time | Causality, state size, budget, and a mechanism test **through the module's real code path**. Then a tiny end-to-end run and the full suite | `tests/test_evolve_*.py` |
+| 5. Review (for large changes) | An adversarial review: independent reviewers try to break the code (leaks, wiring, task bugs); a verifier tries to refute each finding. Fix what survives | Workflow; reports in `reviews/` |
+| 6. Run | A jobs file through `queue.sh`, one worker per GPU. Each run writes JSON, `.log` and `.pt` to `results/evolve/round<N>/` | `queue.sh`, `run.py` |
+| 7. Evaluate | Per-digit loss against the chance level ln(pairs); accuracy by queried rank; accuracy by gap; training curves (late jumps); controls | `run.py` output, `eval_by_query.py` |
+| 8. Record as results land | Commit each finished JSON and `.log`, then push. Add a REGISTER result row with its evidence path and backlog status. Correct earlier rows when a result overturns them | `sync.sh`, REGISTER |
+| 9. Checkpoint | A NOTEBOOK entry: setup, results table, what it shows, surprises, corrections, proposed next round. Report to Daniel and **stop** | NOTEBOOK |
+
+## 2. Fitness and rules
+
+- **Reach.** The needle task on Qwen3-1.7B-Base with every layer windowed (block window 64, gaps of about 270–500 tokens).
+  - Score the per-digit loss against chance (ln 10 per digit; ln(pairs) for choosing the start), then exact match.
+  - Use **2 pairs or more**: one pair is passkey retrieval, not binding.
+  - Prefer **3 pairs or more on the scattered layout** (`--needle-scatter 8`). The fixed layout lets a memory solve 2 pairs by position (P18).
+- **Must pass.** Two checks on the CPU suite (`experiments/evolve/cpu_suite.py`), against the full design as reference (echo 0.29–0.35, peak 0.53; older event named 18%):
+  - **bounded echo:** the injection ratio does not grow over the 520-token rollout, and its maximum stays at or below the reference peak of 0.53;
+  - **new tokens dominate:** on the zero-shot recency probe the newer event is named more often than the older one. Report the older share against the reference 0.18.
+- **Anti-gaming rules E1–E9** (`plans/round0_plan.md` §3). In practice:
+  - **E1:** strict causality, bitwise, for fp32 and for bf16-rounded input.
+  - **E2:** a fixed-size state (decision DEC1).
+  - **E3:** at most 4.4M trainable parameters at width 2048.
+  - **E4:** the side channel sees only `h` (no token ids).
+  - **E6:** held-out layouts and seeds.
+- **Controls in every comparison.**
+  - The `windowed` row of every JSON (side channels off) must be 0.00 exact. If not, the window leaks.
+  - `full` is the ceiling.
+  - Include an ablation that removes the new component (e.g. `--w1g-no-goal`).
+  - Keep the same tap, pairs, layout, steps and seed across the arms being compared.
+
+## 3. Candidate interface
+
+A candidate is a module run by `experiments/evolve/run.py --candidate evolve.<module>:<Class>`:
+- `split_args(argv) -> (namespace, rest)` takes the candidate's own flags (prefix them, e.g. `--w1i-*`).
+- `Class(d_model, args, namespace)` builds it. Its `forward(h)` returns `(h + injection, LoopStats(inj_ratio, gain))`.
+- It exposes `.loop` with `gain_logit` and `tau`.
+- Inject through the CA1 control used by every candidate so far: error-only (the component along `h` removed), norm ≤ 0.9·σ(gain)·‖h‖, saturating.
+- `run.py` records the candidate and its flags in the JSON (`candidate`), plus per-digit metrics (`results[cond]["per_pos"]`), and saves the side-channel checkpoint as `.pt` next to the JSON.
+
+## 4. Commands
+
+```bash
+source .venv/bin/activate
+# a round's jobs file: one "name|command" per line
+cat > /tmp/jobs.txt <<'EOF'
+r6_example|python experiments/evolve/run.py --dtype bfloat16 --device cuda --model Qwen/Qwen3-1.7B-Base --task needle --window 64 --seq-len 512 --batch 8 --steps 3000 --needle-scatter 8 --pairs 3 --layer 21 --candidate evolve.w1i_events:W1iSide --out results/evolve/round6/r6_example.json
+EOF
+experiments/evolve/queue.sh /tmp/jobs.txt results/evolve/round6 0 1 &   # one worker per GPU
+# progress: results/evolve/round6/queue.status; append jobs to results/evolve/round6/queue.pending
+python experiments/evolve/eval_by_query.py results/evolve/round6/r6_example.json            # accuracy by queried rank
+python experiments/evolve/eval_by_query.py results/evolve/round6/r6_example.json --pairs 1 \
+    --out results/evolve/round6/r6_example.by_query_pairs1.json                            # distance without interference
+python experiments/evolve/probe_cue.py --blocks 14 21 --pairs 2 3 --out results/evolve/round6/probe_cue.json   # is the cue in h?
+python experiments/evolve/cpu_suite.py --models w1i_time --steps 3000 --out results/evolve/round6/cpu_suite.json  # must-pass (CPU)
+python -m pytest -q tests/test_evolve_w1.py tests/test_evolve_w1g.py tests/test_evolve_w1i.py
+git add results/evolve/round6/r6_example.json results/evolve/round6/r6_example.log && git commit -m "..."
+experiments/evolve/sync.sh                                                                # rebase-safe push
+```
+
+Every script has a default output path, and some skip work already in that file (`cpu_suite.py`) or overwrite it (`probe_cue.py`, a second `eval_by_query.py` run). Always pass `--out` into the current round's folder.
+
+Commit only finished runs: the JSON and its `.log`. Never commit:
+- `.pt` checkpoints (git-ignored, about 13–18 MB each, kept on geof);
+- the queue files (`queue.pending`, `queue.pending.lock`, `queue.status`; not ignored, so stage files by name);
+- logs of runs still in progress (B8).
+
+## 5. Pitfalls met so far (with register IDs)
+
+| Pitfall | What happened | Guard |
+|---|---|---|
+| bf16 side channels | Adam updates rounded away; the gain stuck at its initial value (B3) | Side channels train in float32 |
+| bf16 index arithmetic | `arange` in bf16 merges positions, an anti-causal leak (B4, round-0 D5) | Float32 indices; E1 tested with bf16-rounded input |
+| A horizon too short | The default kernel gave weight 0 at the needle's gap (P3) | Compute the kernel's reach before a run |
+| One pair | Solvable without the query (P8); passkey retrieval | 2–3+ pairs; per-digit loss against ln(pairs) |
+| Positional shortcut | W1g "solved" 2 pairs by remembering the first and the last fact (P18) | Scattered layout; 3+ pairs; accuracy by queried rank |
+| Mean accuracy hides structure | 2/3 accuracy can be first + last | `eval_by_query.py` by rank |
+| A result taken for decay | The long-chain loss was interference between stored codes (P24; one checkpoint, small per-bin counts) | Evaluate with `--pairs 1`, and by gap at a fixed rank |
+| One seed, late jumps | Seed 0 learned selection in a sudden late drop (near step 1,800 with 3 pairs, 2,100 with 5). Seeds 1–2 had not dropped by step 3,000 (P25); whether they do later is pending the 6,000-step reruns | ≥ 2 seeds before claiming; read the curves; consider 6,000 steps |
+| Tests that rebuild the mechanism | A mechanism test reimplemented the path it claimed to test (RV3.w1i-1) | Test through the module's real `_read`, or spy on its calls |
+| Unreliable attribution | Cosine-argmax "which fact did the read return" disagreed with behaviour (RV3.F3) | Base conclusions on behavioural accuracy |
+| Designs that fail on paper | Dense context-keyed writes overwrite each other; a linear key shares the token component across facts | One-hot toy check before building |
+| Scattered-layout window artefacts | Scattered facts could straddle a 64-token window block (RV3.F2) | `ScatterNeedleTask` resamples them (`block=`), fixed in `672406d`. The round-4 scattered runs predate the fix (≈4% straddled), so P21 seed 0 and the round-5 seed reruns ran on slightly different task versions |
+| Shared working tree | Another session's uncommitted edits were in the same files | Check `git status` before committing; name others' work in the message |
+| Command chains | A failed step was hidden by a later one in a pipe | `set -o pipefail`; check `rc=` in `queue.status` |
+
+## 6. Round history
+
+| Round | Question | Candidates and runs | Outcome (register) |
+|---|---|---|---|
+| 0 | Why does the loop fail on Qwen3? | Diagnosis workflow (21 agents) | Kernel reach (D2), the format floor (D1), the bf16 leak (D5) |
+| 1 | Does successor binding transfer to a frozen 2B model? | W1 (GDN side memory) | Exact recall with 1 pair; digit 1 a coin flip with 2 (P10, P11) |
+| 2 | Can context in the address select the start? | W1b.a/b/c | No. Digit-1 loss ≈ ln(pairs) in the identity-initialised arms, higher with the even-average init (0.84 / 1.90, P16); slight selection only at tap 21 with 3 pairs (0.97, P15) (P13–P16) |
+| 3 | Is the cue present? Do a start store and CA3 settling help? | Probe; W1g (DG start store); W1h (settling) | The name is decodable but W1's addresses discard it (P17). W1g "won" 2 pairs, later shown to be a shortcut (P18). Settling hurt as built (P20). W1 is not CA3 (B16) |
+| 4 | Why do 3 pairs fail? Do event-gated writes work? | Diagnostic; scattered task; W1i (S&A goal field) | A positional shortcut explains the failure. W1i selects by content at every rank, on one seed (P21, P22) |
+| 5 | Does W1i replicate and scale; is the chain loss decay? | Seeds 1–2, 4–5 pairs, DG chain keys, tap 14 at 6,000 steps, LM (W1d), CPU suite (W1c) | The chain loss is interference, not decay (P24). Seeds 1–2 did not learn selection by step 3,000 (P25; P21 now Mixed). 5 pairs selected at every rank and 4 pairs only partly (seed 0, P26). DG chain keys did not help (P27). W1i with the clock passes the CPU must-pass checks, one seed (P28). LM perplexity 12.29, a narrow E8 miss, confounded by the tap (P29). Pending: seeds 1–2 at tap 21 and tap 14, 6,000 steps |
+
+Each round's entry in NOTEBOOK has the full tables. Update this table at each checkpoint.

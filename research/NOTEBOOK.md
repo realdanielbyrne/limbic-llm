@@ -734,3 +734,34 @@ The scattered runs above started before the block fix, so about 4% of their fact
 - Seeds 1–2 for P21. That is a replication of the new result, not of W1g's.
 - The long-gap chain: why exact match falls for distant facts (decay of the chain store S, or the event field's write strength).
 - W1i on the CPU stability and recency suites (W1c), and on WikiText (W1d, no LM regression).
+
+---
+
+## Round 5: replication, scale, interference and the must-pass suite (2 Nov 2026; interim)
+
+**Approved plan.** Run the gap-vs-rank check, then round 5 as proposed. The procedure followed in rounds 0–5 is now written down in [`evolution_protocol.md`](evolution_protocol.md), with the queue (`experiments/evolve/queue.sh`) and push (`experiments/evolve/sync.sh`) helpers committed.
+
+**Gap vs rank (P24).** The round-4 seed-0 W1i checkpoint, evaluated with **one** stored code, is exact at 0.99–1.00 at every gap up to 500+. With three codes, at a fixed gap, the earlier-stored code is recalled worse: at gaps 351–400 exact is 0.58 / 0.90 / 0.98 by rank (the rank-0 bin has n = 19). The long-chain loss is retroactive interference between stored chains, not decay. That makes it a capacity limit, not graceful forgetting.
+
+**Results** (W1i, scattered, tap 21 unless noted; 3000 steps; digit-1 loss / accuracy, exact)
+
+| Run | Result | Register |
+|---|---|---|
+| 3 pairs, seed 1 | 0.977 / 0.38, 0.28; no second drop | P25 |
+| 3 pairs, seed 2 | 0.982 / 0.46, 0.39; no second drop | P25 |
+| 4 pairs, seed 0 | 0.865 / 0.63 (chance 0.25), 0.48; loss dropping at step 2,700 | P26 |
+| **5 pairs, seed 0** | **0.146 / 0.97**, 0.703; by rank 0.93 / 0.95 / 0.96 / 0.99 / 0.96 | P26 |
+| DG chain keys, 3 / 4 pairs | 1.05 / 0.48, 0.31; 1.40 / 0.44, 0.24 | P27 |
+| LM (W1d), WikiText-103 | perplexity 12.29 (loop 12.01; horizon 11.53) | P29 |
+| CPU must-pass suite (W1c) | W1i + clock: echo 0.32, steady; recency newer 0.62 / older 0.24; what 1.00, when 0.98. Without the clock, and W1 either way: "what" not learned | P28 |
+
+**What it shows**
+1. **W1i can select among up to 5 stored codes by content,** when the selection is learned. But in 3000 steps only seed 0 learned it, so P21 is now Mixed (1 of 3).
+2. **Selection arrives as a sudden late drop in the loss,** after the chain is learned. Seed 0 made it near step 1,800 with 3 pairs and near 2,100 with 5. Seeds 1–2 had not by step 3,000. Learnability, not capability, is the open problem.
+3. **DG keys on the chain store did not reduce interference.** They did not learn selection at all.
+4. **W1i with the clock passes the must-pass checks** on the small CPU model: bounded echo, and the newer event dominates. It is the first W-family candidate to do so. Its older-event share (0.24) is above the full design's (0.18).
+5. **On WikiText W1i is slightly behind the O(T) loop** (12.29 against 12.01). That is a narrow E8 miss, confounded by the tap.
+
+**Daniel's question: is training a fair test if the memory works at inference?** Yes. Training fits the side channel's parameters once, offline; that is the policy for *how* to remember. The memory state is written by the delta rule during the forward pass, at inference, with no gradients. Every evaluated code is new, so a correct answer was stored and retrieved at inference time. What training does not establish is generality: the policy was trained on this format only.
+
+**Pending:** seeds 1 and 2 at 6000 steps (do they make the late drop?), and tap 14 at 6000 steps.

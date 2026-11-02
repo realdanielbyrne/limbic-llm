@@ -43,6 +43,10 @@ The scripts now default to this layout: the CPU scripts write to `results/synthe
 - **Result files.** Do not edit JSON or logs by hand. Commit logs only for finished runs (B8). A rerun that replaces a file in place must be recorded in the Provenance section of `results/README.md`.
 - **Checkpoints** (`*.pt`) are not committed.
 
+## How to run a round
+
+Follow [`evolution_protocol.md`](evolution_protocol.md): the round loop, controls, the candidate interface, `experiments/evolve/queue.sh` (GPU job queue) and `experiments/evolve/sync.sh` (rebase-safe push), and the pitfalls met in rounds 0–5.
+
 ## Open review items
 
 The open findings of the review of the alignment, CoT and CA1 decision tracks are tracked in the RV1 table of [`REGISTER.md`](REGISTER.md) (report: [`reviews/2026-11-02_alignment_cot_ca1.md`](reviews/2026-11-02_alignment_cot_ca1.md)). They block A2, A6, R2, R3, R4, J1 and J3, and qualify A1, A7, R1 and the S1 gist arm. Fix them before running those.
