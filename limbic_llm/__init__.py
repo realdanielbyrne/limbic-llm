@@ -19,6 +19,7 @@ from .models import BaselineLM, GatedDeltaLM, HippocampalLM, LMOutput, TitansHip
 from .neural_memory import MemoryState, NeuralMemory
 from .replay import Consolidator, PrioritizedReplayBuffer, orthogonal_projection, sequence_priority
 from .subiculum import Subiculum
+from .temporal_loop import HippocampalLoop, TemporalLoopLM, TimeChannel, loop_kernel
 from .titans_hybrid import PersistentMemory, TitansHippocampalLayer, TitansOutput
 
 __version__ = "0.1.0"
