@@ -152,3 +152,19 @@ def test_scattered_facts_stay_inside_one_window_block():
             end = body.index(".", st)
             assert st // 64 == end // 64, (st, end)
     assert task.last_queried in (0, 1, 2)
+
+
+def test_scattered_needle_mixes_natural_and_random_filler():
+    """--needle-mix: with a corpus, a share of sequences use it and the rest use random filler."""
+    import random
+    _, tok = evolve_run.pl.build_tiny("gpt2", seed=0)
+    corpus = tok.encode("the cat sat on the mat and looked at the dog. " * 200)
+    task = evolve_run.ScatterNeedleTask(tok, 512, 3, 1, corpus, min_gap=8, block=64, mix=0.5)
+    rng = random.Random(0)
+    kinds = []
+    for _ in range(40):
+        ids, _, _ = task.sample(rng)
+        kinds.append(task.last_natural)
+        body = bytes(i for i in ids[1:] if i < 256).decode("latin-1")
+        assert ("the cat sat" in body) == task.last_natural
+    assert 10 < sum(kinds) < 30

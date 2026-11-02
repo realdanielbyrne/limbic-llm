@@ -63,9 +63,11 @@ class ScatterNeedleTask(pl.NeedleTask):
     straddle a window-block boundary are resampled, as in the fixed layout, where none do.
     """
 
-    def __init__(self, *a, min_gap: int = 8, tail: int = 256, block: int = 0, **kw) -> None:
+    def __init__(self, *a, min_gap: int = 8, tail: int = 256, block: int = 0, mix: float = 1.0, **kw) -> None:
         super().__init__(*a, **kw)
-        self.min_gap, self.tail, self.block = min_gap, tail, block
+        self.min_gap, self.tail, self.block, self.mix = min_gap, tail, block, mix
+        if self.corpus and mix < 1.0 and self.pool is None:              # random filler for the mixed case
+            self.pool = self.tok.filler_pool()
 
     def sample(self, rng):
         enc = self.tok.encode
@@ -84,8 +86,10 @@ class ScatterNeedleTask(pl.NeedleTask):
             pre = [cuts[0]] + [cuts[i] - cuts[i - 1] + self.min_gap for i in range(1, self.pairs)]
             if not self.block or not self._straddles(pre, facts):
                 break
+        natural = bool(self.corpus) and (self.mix >= 1.0 or rng.random() < self.mix)   # per sequence
+
         def fill(k):
-            if self.corpus:
+            if natural:
                 o = rng.randrange(len(self.corpus) - k)
                 return self.corpus[o:o + k]
             return [self.pool[rng.randrange(len(self.pool))] for _ in range(k)]
@@ -96,7 +100,7 @@ class ScatterNeedleTask(pl.NeedleTask):
             ids += f
         ids += fill(self.seq_len + self.sink - len(ids) - len(query) - len(answer)) + query + answer
         gap = (len(ids) - len(answer)) - value_at[j]
-        self.last_queried, self.last_value_at = j, value_at                # read by eval_by_query.py
+        self.last_queried, self.last_value_at, self.last_natural = j, value_at, natural   # for eval_by_query.py
         return ids, len(answer), gap
 
     def _straddles(self, pre: list[int], facts: list[list[int]]) -> bool:
@@ -124,6 +128,8 @@ def main(argv=None):
     ap.add_argument("--candidate", default=None, help="module:Class replacing SideChannels")
     ap.add_argument("--needle-scatter", type=int, default=0, metavar="MIN_GAP",
                     help="scatter the facts with random filler (at least MIN_GAP tokens apart); 0 = fixed layout")
+    ap.add_argument("--needle-mix", type=float, default=1.0,
+                    help="with --text-file and --needle-scatter: share of sequences with natural filler (rest random)")
     own, rest = ap.parse_known_args(argv)
     cand_ns = None
     pl.evaluate = evaluate
@@ -136,8 +142,8 @@ def main(argv=None):
         parsed = pl.parse_args(rest)
         pl.SideChannels = lambda d_model, **_: Cand(d_model, parsed, cand_ns)
     if own.needle_scatter:                                         # after the candidate took its flags
-        gap, window = own.needle_scatter, pl.parse_args(rest).window
-        pl.NeedleTask = lambda *a, **kw: ScatterNeedleTask(*a, min_gap=gap, block=window, **kw)
+        gap, window, mix = own.needle_scatter, pl.parse_args(rest).window, own.needle_mix
+        pl.NeedleTask = lambda *a, **kw: ScatterNeedleTask(*a, min_gap=gap, block=window, mix=mix, **kw)
     results = pl.main(rest)
     args = pl.parse_args(rest)
     out = Path(args.out or f"results/pretrained/pretrained_loop_{args.task}.json")
@@ -147,6 +153,7 @@ def main(argv=None):
         rec["candidate"] = {"class": own.candidate, "args": vars(cand_ns) if cand_ns else {}}
     if own.needle_scatter:
         rec["needle_scatter"] = own.needle_scatter
+        rec["needle_mix"] = own.needle_mix
     if own.candidate or own.needle_scatter:
         out.write_text(json.dumps(rec, indent=2))
     if _last_lm is not None:

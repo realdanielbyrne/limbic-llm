@@ -74,6 +74,8 @@ def main(argv=None):
     ap.add_argument("--seq-len", type=int, default=None,
                     help="evaluation sequence length, a multiple of the window (default: as trained)")
     ap.add_argument("--text-file", default=None, help="natural-text filler at evaluation only (default: as trained)")
+    ap.add_argument("--random-filler", action="store_true",
+                    help="random-token filler even if the run was trained with --text-file")
     ap.add_argument("--controls", action=argparse.BooleanOptionalAction, default=True,
                     help="also score the windowed base (side channels off) and full attention")
     ap.add_argument("--gap-bins", type=int, nargs="+", default=None,
@@ -103,7 +105,7 @@ def main(argv=None):
     if ra["window_mode"] in ("block", "segment") and L % W:
         raise SystemExit(f"--seq-len {L} must be a multiple of the window {W}")
     corpus = None
-    text_file = args.text_file or ra.get("text_file")
+    text_file = None if args.random_filler else (args.text_file or ra.get("text_file"))
     if text_file:
         corpus = tok.encode(Path(text_file).read_text(encoding="utf-8", errors="replace"))
     scatter = rec.get("needle_scatter", 0)
