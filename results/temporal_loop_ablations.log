@@ -6,3 +6,5 @@
 [closed_osc_ca1_nocontrast] step  3000 loss 0.031 what 1.000 when 0.949 (857s)
 [closed_osc_ca1_nocontrast] long rollout {"what_gap_20_140": 1.0, "what_gap_140_300": 0.421, "what_gap_300_500": 0.15, "probe_newer_named": 0.324, "probe_older_named": 0.625, "cue_noise_0.0": 1.0, "cue_noise_0.5": 1.0, "cue_noise_1.0": 0.996, "cue_noise_2.0": 0.969, "inj_ratio_16_128": 0.262, "inj_ratio_128_320": 0.278, "inj_ratio_320_519": 0.255, "inj_ratio_max": 0.43, "gain": 0.477}
 [closed_osc_ca1_dg] step   500 loss 0.216 what 0.998 when 0.895 (201s)
+[closed_osc_ca1_dg] step  1000 loss 0.322 what 1.000 when 0.883 (410s)
+[closed_osc_ca1_dg] step  1500 loss 0.008 what 1.000 when 0.971 (610s)
