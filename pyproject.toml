@@ -14,6 +14,7 @@ dependencies = ["torch>=2.1"]
 
 [project.optional-dependencies]
 dev = ["pytest>=7"]
+pretrained = ["transformers>=4.57", "datasets"]   # experiments/pretrained_loop.py
 
 [tool.setuptools.packages.find]
 include = ["limbic_llm*"]

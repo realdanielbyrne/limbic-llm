@@ -1,0 +1,29 @@
+[closed_osc_ca1 ] step   500 loss 2.358 what 0.133 when 0.877 (138s)
+[closed_osc_ca1 ] step  1000 loss 1.013 what 0.537 when 0.918 (272s)
+[closed_osc_ca1 ] step  1500 loss 0.150 what 0.986 when 0.936 (411s)
+[closed_osc_ca1 ] step  2000 loss 0.124 what 0.996 when 0.973 (550s)
+[closed_osc_ca1 ] step  2500 loss 0.024 what 0.996 when 0.984 (690s)
+[closed_osc_ca1 ] step  3000 loss 0.014 what 1.000 when 0.977 (823s)
+[closed_osc_ca1 ] long rollout {"what_gap_20_140": 1.0, "what_gap_140_300": 0.474, "what_gap_300_500": 0.1, "inj_ratio_16_128": 0.331, "inj_ratio_128_320": 0.349, "inj_ratio_320_519": 0.349, "inj_ratio_max": 0.533, "gain": 0.593}
+[memory_time    ] step   500 loss 0.563 what 0.998 when 0.789 (139s)
+[memory_time    ] step  1000 loss 0.251 what 1.000 when 0.850 (281s)
+[memory_time    ] step  1500 loss 0.259 what 1.000 when 0.883 (421s)
+[memory_time    ] step  2000 loss 0.166 what 0.998 when 0.932 (562s)
+[memory_time    ] step  2500 loss 0.196 what 1.000 when 0.918 (708s)
+[memory_time    ] step  3000 loss 0.139 what 1.000 when 0.922 (849s)
+[memory_time    ] long rollout {"what_gap_20_140": 1.0, "what_gap_140_300": 0.579, "what_gap_300_500": 0.15, "inj_ratio_16_128": 0.104, "inj_ratio_128_320": 0.302, "inj_ratio_320_519": 0.303, "inj_ratio_max": 0.417, "gain": 0.463}
+
+baselines: what 0.125 (chance), when 0.333 (majority bin)
+closed_osc_ca1  what 1.000  when 0.977  inj late 0.349
+memory_time     what 1.000  when 0.922  inj late 0.303
+[closed_osc_ca1 ] step   500 loss 2.047 what 0.109 when 0.984 (139s)
+[closed_osc_ca1 ] step  1000 loss 1.019 what 0.527 when 0.990 (278s)
+[closed_osc_ca1 ] step  1500 loss 0.018 what 1.000 when 0.996 (411s)
+[closed_osc_ca1 ] step  2000 loss 0.002 what 1.000 when 0.998 (544s)
+[closed_osc_ca1 ] step  2500 loss 0.001 what 1.000 when 1.000 (681s)
+[closed_osc_ca1 ] step  3000 loss 0.001 what 1.000 when 1.000 (823s)
+[closed_osc_ca1 ] long rollout {"what_gap_20_140": 1.0, "what_gap_140_300": 0.333, "what_gap_300_500": 0.037, "inj_ratio_16_128": 0.294, "inj_ratio_128_320": 0.312, "inj_ratio_320_519": 0.312, "inj_ratio_max": 0.435, "gain": 0.483}
+
+baselines: what 0.125 (chance), when 0.333 (majority bin)
+closed_osc_ca1  what 1.000  when 1.000  inj late 0.312
+finished

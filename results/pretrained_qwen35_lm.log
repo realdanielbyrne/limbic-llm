@@ -1,0 +1,22 @@
+Loading weights:   0%|          | 0/320 [00:00<?, ?it/s]Loading weights: 100%|██████████| 320/320 [00:00<00:00, 14480.75it/s]
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+Qwen/Qwen3.5-2B-Base: 24 blocks (18 linear-attention), d_model 2048, tap block 12, 6 windowed, block window 256, reach inf
+window check: ok (block 3: far 0.0e+00 vs near 5.9e-01)
+trainable side-channel parameters 4,380,675 (base 1,881,825,088, frozen)
+lm: 1,150,251 train / 116,393 eval tokens, 113 eval sequences
+step   100 loss 2.605 token_acc 0.479 inj 0.146 (37s)
+step   200 loss 2.288 token_acc 0.522 inj 0.220 (74s)
+step   300 loss 2.304 token_acc 0.510 inj 0.231 (111s)
+step   400 loss 2.048 token_acc 0.550 inj 0.240 (149s)
+step   500 loss 2.642 token_acc 0.449 inj 0.249 (186s)
+step   600 loss 2.071 token_acc 0.540 inj 0.255 (223s)
+step   700 loss 2.087 token_acc 0.546 inj 0.259 (259s)
+step   800 loss 2.262 token_acc 0.518 inj 0.262 (296s)
+step   900 loss 2.363 token_acc 0.497 inj 0.263 (332s)
+step  1000 loss 2.184 token_acc 0.513 inj 0.263 (369s)
+
+condition       window side      ppl  tok_acc    loss    inj
+windowed           256  off   16.281    0.445   2.790      -
+windowed+side      256   on   11.215    0.493   2.417  0.263
+full                 0  off    9.831    0.514   2.286      -
+saved results/pretrained_qwen35_lm.json

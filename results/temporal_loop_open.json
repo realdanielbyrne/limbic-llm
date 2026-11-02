@@ -1,0 +1,160 @@
+{
+  "args": {
+    "suite": null,
+    "models": "memory,closed_osc_sub",
+    "name": "custom",
+    "task": "single",
+    "memory": true,
+    "time": true,
+    "kernel": "osc",
+    "rho": 0.7,
+    "amp": 1.0,
+    "loop": "open",
+    "ca1_control": true,
+    "contrast": true,
+    "dg_keys": false,
+    "read": "direct",
+    "feedback": null,
+    "clamp": null,
+    "project": null,
+    "saturate": null,
+    "forward_gain": 1.0,
+    "fb_beta": 1.0,
+    "tau": 16,
+    "window": 16,
+    "d": 64,
+    "d_key": 32,
+    "steps": 3000,
+    "batch": 32,
+    "lr": 0.003,
+    "eval_every": 500,
+    "seed": 1,
+    "out": "results/temporal_loop_open.json"
+  },
+  "results": {
+    "memory": {
+      "config": {
+        "memory": true,
+        "time": false
+      },
+      "params": 111746,
+      "curve": [
+        [
+          500,
+          0.1328125,
+          0.841796875
+        ],
+        [
+          1000,
+          0.998046875,
+          0.888671875
+        ],
+        [
+          1500,
+          1.0,
+          0.892578125
+        ],
+        [
+          2000,
+          1.0,
+          0.908203125
+        ],
+        [
+          2500,
+          1.0,
+          0.935546875
+        ],
+        [
+          3000,
+          1.0,
+          0.94140625
+        ]
+      ],
+      "diverged_at": null,
+      "seconds": 803.7277843952179,
+      "what": 1.0,
+      "when": 0.94140625,
+      "long": {
+        "what_gap_20_140": 1.0,
+        "what_gap_140_300": 1.0,
+        "what_gap_300_500": 0.8148148059844971,
+        "probe_newer_named": 0.453125,
+        "probe_older_named": 0.3828125,
+        "cue_noise_0.0": 1.0,
+        "cue_noise_0.5": 1.0,
+        "cue_noise_1.0": 1.0,
+        "cue_noise_2.0": 0.984375,
+        "inj_ratio_16_128": 0.2894219756126404,
+        "inj_ratio_128_320": 0.2995049059391022,
+        "inj_ratio_320_519": 0.2974707782268524,
+        "inj_ratio_max": 0.41498029232025146,
+        "gain": 0.461089164018631
+      }
+    },
+    "closed_osc_sub": {
+      "config": {
+        "memory": true,
+        "time": false,
+        "loop": "closed",
+        "kernel": "osc",
+        "feedback": "subtractive",
+        "clamp": false,
+        "project": false,
+        "saturate": false
+      },
+      "params": 111746,
+      "curve": [
+        [
+          500,
+          0.109375,
+          0.94921875
+        ],
+        [
+          1000,
+          0.6640625,
+          0.921875
+        ],
+        [
+          1500,
+          0.998046875,
+          0.953125
+        ],
+        [
+          2000,
+          0.998046875,
+          0.966796875
+        ],
+        [
+          2500,
+          1.0,
+          0.970703125
+        ],
+        [
+          3000,
+          0.998046875,
+          0.978515625
+        ]
+      ],
+      "diverged_at": null,
+      "seconds": 779.926628112793,
+      "what": 0.998046875,
+      "when": 0.978515625,
+      "long": {
+        "what_gap_20_140": 1.0,
+        "what_gap_140_300": 0.2777777910232544,
+        "what_gap_300_500": 0.2222222238779068,
+        "probe_newer_named": 0.40234375,
+        "probe_older_named": 0.375,
+        "cue_noise_0.0": 1.0,
+        "cue_noise_0.5": 1.0,
+        "cue_noise_1.0": 1.0,
+        "cue_noise_2.0": 0.90625,
+        "inj_ratio_16_128": 1.9673079252243042,
+        "inj_ratio_128_320": 1.7106086015701294,
+        "inj_ratio_320_519": 1.7062896490097046,
+        "inj_ratio_max": 6.948485374450684,
+        "gain": 0.3120173513889313
+      }
+    }
+  }
+}

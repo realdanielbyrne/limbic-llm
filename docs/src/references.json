@@ -37,6 +37,14 @@
    {
     "key": "qwenputer2026",
     "text": "divagr.com (2026). Qwenputer: Gated DeltaNet State as RAM. https://divagr.com/blog/qwenputer."
+   },
+   {
+    "key": "qwen2025qwen3",
+    "text": "Qwen Team (2025). Qwen3 Technical Report. https://arxiv.org/abs/2505.09388."
+   },
+   {
+    "key": "qwen2026qwen35",
+    "text": "Qwen Team (2026). Qwen3.5. Model release, February 2026. https://huggingface.co/Qwen/Qwen3.5-397B-A17B"
    }
   ]
  },
@@ -98,6 +106,10 @@
    {
     "key": "hitti2014hippocampal",
     "text": "Hitti, F. L., & Siegelbaum, S. A. (2014). The Hippocampal CA2 Region Is Essential for Social Memory. Nature 508, 88–92."
+   },
+   {
+    "key": "leroy2018circuit",
+    "text": "Leroy, F., Park, J., Asok, A., Brann, D. H., Meira, T., Boyle, L. M., et al. (2018). A circuit from hippocampal CA2 to lateral septum disinhibits social aggression. Nature 564, 213–218. https://pubmed.ncbi.nlm.nih.gov/30518859/"
    },
    {
     "key": "smith2016targeted",
@@ -218,6 +230,151 @@
    {
     "key": "dehghani2019universal",
     "text": "Dehghani, M., Gouws, S., Vinyals, O., Uszkoreit, J., & Kaiser, Ł. (2019). Universal Transformers. In International Conference on Learning Representations. https://arxiv.org/abs/1807.03819"
+   }
+  ]
+ },
+ {
+  "group": "Feedback control and timing in the hippocampus",
+  "entries": [
+   {
+    "key": "hasselmo2002proposed",
+    "text": "Hasselmo, M. E., Bodel\\'on, C., & Wyble, B. P. (2002). A Proposed Function for Hippocampal Theta Rhythm: Separate Phases of Encoding and Retrieval Enhance Reversal of Prior Learning. Neural Computation 14(4), 793–817."
+   },
+   {
+    "key": "sik1994inhibitory",
+    "text": "Sik, A., Ylinen, A., Penttonen, M., & Buzsáki, G. (1994). Inhibitory CA1-CA3-Hilar Region Feedback in the Hippocampus. Science 265(5179), 1722–1724."
+   },
+   {
+    "key": "treves1992computational",
+    "text": "Treves, A., & Rolls, E. T. (1992). Computational Constraints Suggest the Need for Two Distinct Input Systems to the Hippocampal CA3 Network. Hippocampus 2(2), 189–199."
+   },
+   {
+    "key": "buzsaki2002theta",
+    "text": "Buzsáki, G. (2002). Theta Oscillations in the Hippocampus. Neuron 33(3), 325–340."
+   },
+   {
+    "key": "macdonald2011hippocampal",
+    "text": "MacDonald, C. J., Lepage, K. Q., Eden, U. T., & Eichenbaum, H. (2011). Hippocampal ``Time Cells'' Bridge the Gap in Memory for Discontiguous Events. Neuron 71(4), 737–749."
+   },
+   {
+    "key": "shankar2012scale",
+    "text": "Shankar, K. H., & Howard, M. W. (2012). A Scale-Invariant Internal Representation of Time. Neural Computation 24(1), 134–193."
+   },
+   {
+    "key": "sapolsky1986neuroendocrinology",
+    "text": "Sapolsky, R. M., Krey, L. C., & McEwen, B. S. (1986). The Neuroendocrinology of Stress and Aging: The Glucocorticoid Cascade Hypothesis. Endocrine Reviews 7(3), 284–301."
+   }
+  ]
+ },
+ {
+  "group": "Dynamic steering and oscillatory sequence models",
+  "entries": [
+   {
+    "key": "rimsky2024steering",
+    "text": "Rimsky, N., Gabrieli, N., Schulz, J., Tong, M., Hubinger, E., & Turner, A. M. (2024). Steering Llama 2 via Contrastive Activation Addition. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics."
+   },
+   {
+    "key": "lee2024programming",
+    "text": "Lee, B. W., Padhi, I., Ramamurthy, K. N., Miehling, E., Dognin, P., Nagireddy, M., & Dhurandhar, A. (2024). Programming Refusal with Conditional Activation Steering. arXiv preprint arXiv:2409.05907. https://arxiv.org/abs/2409.05907"
+   },
+   {
+    "key": "do2025dynamic",
+    "text": "Do, V. D., Tran, Q. H., Venkatesh, S., & Le, H. (2025). Dynamic Steering With Episodic Memory For Large Language Models. In Findings of the Association for Computational Linguistics: ACL 2025. https://aclanthology.org/2025.findings-acl.706/"
+   },
+   {
+    "key": "sun2023retentive",
+    "text": "Sun, Y., Dong, L., Huang, S., Ma, S., Xia, Y., Xue, J., et al. (2023). Retentive Network: A Successor to Transformer for Large Language Models. arXiv preprint arXiv:2307.08621. https://arxiv.org/abs/2307.08621"
+   },
+   {
+    "key": "orvieto2023resurrecting",
+    "text": "Orvieto, A., Smith, S. L., Gu, A., Fernando, A., Gulcehre, C., Pascanu, R., & De, S. (2023). Resurrecting Recurrent Neural Networks for Long Sequences. In International Conference on Machine Learning. https://arxiv.org/abs/2303.06349"
+   }
+  ]
+ },
+ {
+  "group": "Knowledge in transformer weights (the neocortex analogue)",
+  "entries": [
+   {
+    "key": "geva2021transformer",
+    "text": "Geva, M., Schuster, R., Berant, J., & Levy, O. (2021). Transformer Feed-Forward Layers Are Key-Value Memories. In Proceedings of EMNLP. https://arxiv.org/abs/2012.14913"
+   },
+   {
+    "key": "meng2022locating",
+    "text": "Meng, K., Bau, D., Andonian, A., & Belinkov, Y. (2022). Locating and Editing Factual Associations in GPT. In Advances in Neural Information Processing Systems. https://arxiv.org/abs/2202.05262"
+   }
+  ]
+ },
+ {
+  "group": "Safety steering and evaluation (CA2 as a norm controller)",
+  "entries": [
+   {
+    "key": "arditi2024refusal",
+    "text": "Arditi, A., Obeso, O., Syed, A., Paleka, D., Panickssery, N., Gurnee, W., & Nanda, N. (2024). Refusal in Language Models Is Mediated by a Single Direction. In Advances in Neural Information Processing Systems. https://arxiv.org/abs/2406.11717"
+   },
+   {
+    "key": "zou2023representation",
+    "text": "Zou, A., Phan, L., Chen, S., et al. (2023). Representation Engineering: A Top-Down Approach to AI Transparency. https://arxiv.org/abs/2310.01405."
+   },
+   {
+    "key": "zou2024improving",
+    "text": "Zou, A., Phan, L., Wang, J., Duenas, D., Lin, M., Andriushchenko, M., et al. (2024). Improving Alignment and Robustness with Circuit Breakers. In Advances in Neural Information Processing Systems. https://arxiv.org/abs/2406.04313"
+   },
+   {
+    "key": "mazeika2024harmbench",
+    "text": "Mazeika, M., Phan, L., Yin, X., et al. (2024). HarmBench: A Standardized Evaluation Framework for Automated Red Teaming and Robust Refusal. In International Conference on Machine Learning. https://arxiv.org/abs/2402.04249"
+   },
+   {
+    "key": "zhao2025llms",
+    "text": "Zhao, J., Huang, J., Wu, Z., Bau, D., & Shi, W. (2025). LLMs Encode Harmfulness and Refusal Separately. In Advances in Neural Information Processing Systems. https://arxiv.org/abs/2507.11878"
+   },
+   {
+    "key": "rottger2024xstest",
+    "text": "Röttger, P., Kirk, H. R., Vidgen, B., Attanasio, G., Bianchi, F., & Hovy, D. (2024). XSTest: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models. In Proceedings of NAACL. https://arxiv.org/abs/2308.01263"
+   }
+  ]
+ },
+ {
+  "group": "Reasoning steering (CA2 beyond alignment)",
+  "entries": [
+   {
+    "key": "chen2025seal",
+    "text": "Chen, et al. (2025). SEAL: Steerable Reasoning Calibration of Large Language Models for Free. https://arxiv.org/abs/2504.07986."
+   },
+   {
+    "key": "azizi2025activation",
+    "text": "Azizi, et al. (2025). Activation Steering for Chain-of-Thought Compression. https://arxiv.org/abs/2507.04742."
+   },
+   {
+    "key": "huang2025mitigating",
+    "text": "Huang, et al. (2025). Mitigating Overthinking in Large Reasoning Models via Manifold Steering. NeurIPS 2025. https://arxiv.org/abs/2505.22411"
+   },
+   {
+    "key": "lin2025controlling",
+    "text": "Lin, et al. (2025). Controlling Thinking Speed in Reasoning Models. NeurIPS 2025. https://arxiv.org/abs/2507.03704"
+   },
+   {
+    "key": "ma2025cotvalve",
+    "text": "Ma, et al. (2025). CoT-Valve: Length-Compressible Chain-of-Thought Tuning. ACL 2025. https://arxiv.org/abs/2502.09601"
+   },
+   {
+    "key": "sun2025thinkedit",
+    "text": "Sun, et al. (2025). ThinkEdit: Interpretable Weight Editing to Mitigate Overly Short Thinking in Reasoning Models. EMNLP 2025. https://arxiv.org/abs/2503.22048"
+   },
+   {
+    "key": "venhoff2025understanding",
+    "text": "Venhoff, et al. (2025). Understanding Reasoning in Thinking Language Models via Steering Vectors. https://arxiv.org/abs/2506.18167."
+   },
+   {
+    "key": "hao2024training",
+    "text": "Hao, et al. (2024). Training Large Language Models to Reason in a Continuous Latent Space. https://arxiv.org/abs/2412.06769."
+   },
+   {
+    "key": "nguyen2025activation",
+    "text": "Nguyen, et al. (2025). Activation Steering with a Feedback Controller. ICLR 2026. https://arxiv.org/abs/2510.04309"
+   },
+   {
+    "key": "shi2026internalizing",
+    "text": "Shi, et al. (2026). Internalizing LLM Reasoning via Discovery and Replay of Latent Actions. https://arxiv.org/abs/2602.04925."
    }
   ]
  },

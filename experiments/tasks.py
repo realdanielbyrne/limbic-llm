@@ -41,6 +41,61 @@ class AssociativeRecall:
         return inp, tgt, mask
 
 
+class WhatWhenTask:
+    """What happened, and how long ago? Content and elapsed time beyond the attention window.
+
+    [filler … E_k … filler (gap Δ) … Q] → answer E_k (what), then answer bin(Δ) (when).
+    Δ is drawn from ``gaps``; ``bins`` are elapsed-time intervals (log-spaced by default).
+    Only the two answers are scored.
+
+    With ``distractor=True`` a different, older event E_j appears ``sep`` tokens before
+    E_k, and the answers refer to the most recent event. A loop whose feedback does not
+    decay returns both events equally, so this tests whether new input dominates.
+    ``last_old`` holds the older event's token for the latest batch.
+    """
+
+    def __init__(self, n_filler=16, n_events=8, gaps=(20, 140), bins=(20, 35, 60, 100, 140),
+                 pre=(4, 20), length=None, seed=0, distractor=False, sep=(20, 60)):
+        self.n_filler, self.n_events = n_filler, n_events
+        self.gaps, self.bins, self.pre = gaps, bins, pre
+        self.E0 = n_filler
+        self.Q = n_filler + n_events
+        self.B0 = self.Q + 1
+        self.vocab = self.B0 + len(bins) - 1
+        self.distractor, self.sep = distractor, sep
+        self.length = length or (pre[1] + (sep[1] if distractor else 0) + gaps[1] + 3)
+        self.last_old = None
+        self.g = torch.Generator().manual_seed(seed)
+
+    def bin_of(self, gap: torch.Tensor) -> torch.Tensor:
+        edges = torch.tensor(self.bins[1:-1])
+        return torch.bucketize(gap, edges, right=True).clamp(max=len(self.bins) - 2)
+
+    def batch(self, B: int):
+        L = self.length
+        seq = torch.randint(0, self.n_filler, (B, L), generator=self.g)
+        p = torch.randint(self.pre[0], self.pre[1], (B,), generator=self.g)
+        gap = torch.randint(self.gaps[0], self.gaps[1], (B,), generator=self.g)
+        ev = torch.randint(0, self.n_events, (B,), generator=self.g)
+        b = torch.arange(B)
+        if self.distractor:                      # an older, different event comes first
+            old = (ev + torch.randint(1, self.n_events, (B,), generator=self.g)) % self.n_events
+            seq[b, p] = self.E0 + old
+            p = p + torch.randint(self.sep[0], self.sep[1], (B,), generator=self.g)
+            self.last_old = self.E0 + old
+        q = p + gap
+        seq[b, p] = self.E0 + ev
+        seq[b, q] = self.Q
+        seq[b, q + 1] = self.E0 + ev
+        seq[b, q + 2] = self.B0 + self.bin_of(gap)
+        inp, tgt = seq[:, :-1], seq[:, 1:]
+        what = torch.zeros_like(tgt, dtype=torch.bool)
+        when = torch.zeros_like(tgt, dtype=torch.bool)
+        what[b, q] = True                # at Q, predict the event type
+        when[b, q + 1] = True            # after the type, predict the elapsed-time bin
+        return inp, tgt, what, when, gap
+
+
 class FactTask:
     def __init__(self, task_id: int, n_keys=8, n_vals=16, n_tasks=3, length=24, seed=0):
         g = torch.Generator().manual_seed(1000 + 10 * seed + task_id)

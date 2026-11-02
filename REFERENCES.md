@@ -15,6 +15,8 @@ The bibliography for limbic-llm, grouped by the part of the hippocampal mapping 
 | `shazeer2017outrageously` | Shazeer et al. (2017). *Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer.* ICLR | DG as an expert gate |
 | `perez2018film` | Perez et al. (2018). *FiLM: Visual Reasoning with a General Conditioning Layer.* AAAI | `CA2Modulator` |
 | `qwenputer2026` | divagr.com (2026). *Qwenputer.* Blog post | Gated DeltaNet state as RAM |
+| `qwen2025qwen3` | Qwen Team (2025). *Qwen3 Technical Report.* arXiv:2505.09388 | Attention-only pretrained target |
+| `qwen2026qwen35` | Qwen Team (2026). *Qwen3.5.* Model release | Gated DeltaNet hybrid pretrained target |
 
 ## Hippocampal anatomy, physiology and theory
 
@@ -34,6 +36,7 @@ The bibliography for limbic-llm, grouped by the part of the hippocampal mapping 
 | `lisman2005hippocampal` | Lisman & Grace (2005). *The Hippocampal-VTA Loop.* Neuron 46(5) | CA1 novelty → learning and decisions |
 | `bein2020mnemonic` | Bein, Duncan & Davachi (2020). *Mnemonic Prediction Errors Bias Hippocampal States.* Nature Communications 11 | CA1 mismatch drives encoding |
 | `hitti2014hippocampal` | Hitti & Siegelbaum (2014). *The Hippocampal CA2 Region Is Essential for Social Memory.* Nature 508 | CA2 function |
+| `leroy2018circuit` | Leroy et al. (2018). *A Circuit from Hippocampal CA2 to Lateral Septum Disinhibits Social Aggression.* Nature 564 | CA2 also promotes aggression: a social-context selector, not a norm enforcer |
 | `smith2016targeted` | Smith, Williams Avram, Cymerblit-Sabba, Song & Young (2016). *Targeted Activation of the Hippocampal CA2 Area Strongly Enhances Social Memory.* Mol. Psychiatry 21(8) | CA2 amplification |
 | `boyle2024tuned` | Boyle, Posani, Irfan, Siegelbaum & Fusi (2024). *Tuned Geometries of Hippocampal Representations Meet the Computational Demands of Social Memory.* Neuron 112(8) | CA2 identity coding |
 | `howard2002distributed` | Howard & Kahana (2002). *A Distributed Representation of Temporal Context.* J. Math. Psych. 46(3) | CA2 temporal context |
@@ -79,6 +82,61 @@ The bibliography for limbic-llm, grouped by the part of the hippocampal mapping 
 |---|---|---|
 | `zhu2025scaling` | Zhu et al. (2025). *Scaling Latent Reasoning via Looped Language Models* (Ouro). arXiv:2510.25741 | Big-loop recurrence; learned exit gate |
 | `dehghani2019universal` | Dehghani, Gouws, Vinyals, Uszkoreit & Kaiser (2019). *Universal Transformers.* ICLR | Weight-shared recurrence in depth |
+
+## Feedback control and timing in the hippocampus
+
+| Key | Reference | Relevance |
+|---|---|---|
+| `hasselmo2002proposed` | Hasselmo, Bodelón & Wyble (2002). *A Proposed Function for Hippocampal Theta Rhythm: Separate Phases of Encoding and Retrieval.* Neural Computation 14(4) | Theta-phase separation of writes and reads; loop period τ |
+| `sik1994inhibitory` | Sik, Ylinen, Penttonen & Buzsáki (1994). *Inhibitory CA1-CA3-Hilar Region Feedback in the Hippocampus.* Science 265 | CA1 → CA3 inhibitory back-projection; negative-feedback gain control |
+| `treves1992computational` | Treves & Rolls (1992). *Computational Constraints Suggest the Need for Two Distinct Input Systems to the Hippocampal CA3 Network.* Hippocampus 2(2) | DG for storage, direct EC → CA3 path for retrieval cues |
+| `buzsaki2002theta` | Buzsáki (2002). *Theta Oscillations in the Hippocampus.* Neuron 33(3) | Oscillatory timing of the loop |
+| `macdonald2011hippocampal` | MacDonald, Lepage, Eden & Eichenbaum (2011). *Hippocampal "Time Cells" Bridge the Gap in Memory for Discontiguous Events.* Neuron 71(4) | Time cells; the time channel |
+| `shankar2012scale` | Shankar & Howard (2012). *A Scale-Invariant Internal Representation of Time.* Neural Computation 24(1) | Log-spaced leaky integrators encode elapsed time |
+| `sapolsky1986neuroendocrinology` | Sapolsky, Krey & McEwen (1986). *The Neuroendocrinology of Stress and Aging: The Glucocorticoid Cascade Hypothesis.* Endocrine Reviews 7(3) | A loop without negative feedback: the cautionary case |
+
+## Dynamic steering and oscillatory sequence models
+
+| Key | Reference | Relevance |
+|---|---|---|
+| `rimsky2024steering` | Rimsky, Gabrieli, Schulz, Tong, Hubinger & Turner (2024). *Steering Llama 2 via Contrastive Activation Addition.* ACL | Contrast vectors averaged over many pairs |
+| `lee2024programming` | Lee et al. (2024). *Programming Refusal with Conditional Activation Steering.* arXiv:2409.05907 | Steering gated by hidden-state patterns |
+| `do2025dynamic` | Do, Tran, Venkatesh & Le (2025). *Dynamic Steering With Episodic Memory For Large Language Models.* Findings of ACL | Closest prior work: memory-retrieved steering vectors |
+| `sun2023retentive` | Sun et al. (2023). *Retentive Network.* arXiv:2307.08621 | Damped complex decay; recurrent form of the loop kernel |
+| `orvieto2023resurrecting` | Orvieto et al. (2023). *Resurrecting Recurrent Neural Networks for Long Sequences.* ICML | Linear recurrences with complex decays |
+
+## Knowledge in transformer weights (the neocortex analogue)
+
+| Key | Reference | Relevance |
+|---|---|---|
+| `geva2021transformer` | Geva, Schuster, Berant & Levy (2021). *Transformer Feed-Forward Layers Are Key-Value Memories.* EMNLP | Facts stored in MLP blocks |
+| `meng2022locating` | Meng, Bau, Andonian & Belinkov (2022). *Locating and Editing Factual Associations in GPT.* NeurIPS | Mid-layer MLPs as the consolidation target |
+
+## Safety steering and evaluation (CA2 as a norm controller)
+
+| Key | Reference | Relevance |
+|---|---|---|
+| `arditi2024refusal` | Arditi et al. (2024). *Refusal in Language Models Is Mediated by a Single Direction.* NeurIPS | Static refusal direction |
+| `zou2023representation` | Zou et al. (2023). *Representation Engineering: A Top-Down Approach to AI Transparency.* arXiv:2310.01405 | Reading and steering concepts in activations |
+| `zou2024improving` | Zou et al. (2024). *Improving Alignment and Robustness with Circuit Breakers.* NeurIPS | Rerouting harmful representations towards incoherent or refusal states |
+| `mazeika2024harmbench` | Mazeika et al. (2024). *HarmBench: A Standardized Evaluation Framework for Automated Red Teaming and Robust Refusal.* ICML | Attack-success benchmark |
+| `zhao2025llms` | Zhao, Huang, Wu, Bau & Shi (2025). *LLMs Encode Harmfulness and Refusal Separately.* NeurIPS | Harmfulness survives jailbreaks and harmful fine-tuning; the controller's input |
+| `rottger2024xstest` | Röttger et al. (2024). *XSTest: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models.* NAACL | Over-refusal benchmark |
+
+## Reasoning steering (CA2 beyond alignment)
+
+| Key | Reference | Relevance |
+|---|---|---|
+| `chen2025seal` | Chen et al. (2025). *SEAL: Steerable Reasoning Calibration of Large Language Models for Free.* arXiv:2504.07986 | Fewer reasoning tokens with higher accuracy |
+| `azizi2025activation` | Azizi et al. (2025). *Activation Steering for Chain-of-Thought Compression.* arXiv:2507.04742 | Concise-vs-verbose steering vector |
+| `huang2025mitigating` | Huang et al. (2025). *Mitigating Overthinking in Large Reasoning Models via Manifold Steering.* NeurIPS | Overthinking direction on the activation manifold |
+| `lin2025controlling` | Lin et al. (2025). *Controlling Thinking Speed in Reasoning Models.* NeurIPS | Fast/slow-thinking vector, adaptive strength |
+| `ma2025cotvalve` | Ma et al. (2025). *CoT-Valve: Length-Compressible Chain-of-Thought Tuning.* ACL | Parameter-space length control |
+| `sun2025thinkedit` | Sun et al. (2025). *ThinkEdit: Interpretable Weight Editing to Mitigate Overly Short Thinking in Reasoning Models.* EMNLP | Shortening can hurt; over-commitment risk |
+| `venhoff2025understanding` | Venhoff et al. (2025). *Understanding Reasoning in Thinking Language Models via Steering Vectors.* arXiv:2506.18167 | Backtracking and uncertainty directions |
+| `hao2024training` | Hao et al. (2024). *Training Large Language Models to Reason in a Continuous Latent Space.* arXiv:2412.06769 | Coconut: latent reasoning in place of tokens |
+| `nguyen2025activation` | Nguyen et al. (2025). *Activation Steering with a Feedback Controller.* ICLR 2026 | Steering as PID control |
+| `shi2026internalizing` | Shi et al. (2026). *Internalizing LLM Reasoning via Discovery and Replay of Latent Actions.* arXiv:2602.04925 | STIR: memory-retrieved reasoning steering |
 
 ## Continual learning and replay
 
