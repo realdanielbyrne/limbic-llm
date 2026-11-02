@@ -70,7 +70,7 @@ Closed loops that feed their output back into memory run away when undamped (ech
 git clone https://github.com/realdanielbyrne/limbic-llm
 cd limbic-llm
 pip install -e ".[dev]"      # needs torch >= 2.1
-pytest -q                    # 98 tests (12 need the [pretrained] extra)
+pytest -q                    # 100 tests (12 need the [pretrained] extra)
 ```
 
 ## Quick start
@@ -234,7 +234,7 @@ limbic_llm/         memory modules and models
   dentate_gyrus.py  ca3.py  ca2.py  ca1.py  subiculum.py  hippocampal_block.py
   neural_memory.py  titans_hybrid.py  gated_delta.py  temporal_loop.py  replay.py  models.py
 experiments/        recall, continual learning, capacity, temporal loop, op-amp sweep, pretrained models
-tests/              98 tests
+tests/              100 tests
 results/            experiment logs and JSON
 docs/               design document, diagrams, bibliography, notebook
 ```
