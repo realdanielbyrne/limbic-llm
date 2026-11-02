@@ -15,3 +15,4 @@
 [closed_osc_ca1 ] step   500 loss 2.358 what 0.133 when 0.877 (160s)
 [closed_osc_ca1 ] step  1000 loss 1.013 what 0.537 when 0.918 (312s)
 [closed_osc_ca1 ] step  1500 loss 0.150 what 0.986 when 0.936 (466s)
+[closed_osc_ca1 ] step  2000 loss 0.124 what 0.996 when 0.973 (598s)

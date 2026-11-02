@@ -1,0 +1,98 @@
+{
+  "args": {
+    "suite": "ablations",
+    "models": null,
+    "name": "custom",
+    "task": "single",
+    "memory": true,
+    "time": true,
+    "kernel": "osc",
+    "rho": 0.7,
+    "amp": 1.0,
+    "loop": "open",
+    "ca1_control": true,
+    "contrast": true,
+    "dg_keys": false,
+    "read": "direct",
+    "feedback": null,
+    "clamp": null,
+    "project": null,
+    "saturate": null,
+    "forward_gain": 1.0,
+    "fb_beta": 1.0,
+    "tau": 16,
+    "window": 16,
+    "d": 64,
+    "d_key": 32,
+    "steps": 3000,
+    "batch": 32,
+    "lr": 0.003,
+    "eval_every": 500,
+    "seed": 0,
+    "out": null
+  },
+  "results": {
+    "closed_osc_ca1_nocontrast": {
+      "config": {
+        "memory": true,
+        "time": false,
+        "loop": "closed",
+        "kernel": "osc",
+        "contrast": false
+      },
+      "params": 111746,
+      "curve": [
+        [
+          500,
+          0.99609375,
+          0.8125
+        ],
+        [
+          1000,
+          0.99609375,
+          0.9140625
+        ],
+        [
+          1500,
+          0.998046875,
+          0.923828125
+        ],
+        [
+          2000,
+          1.0,
+          0.916015625
+        ],
+        [
+          2500,
+          1.0,
+          0.94921875
+        ],
+        [
+          3000,
+          1.0,
+          0.94921875
+        ]
+      ],
+      "diverged_at": null,
+      "seconds": 857.4010937213898,
+      "what": 1.0,
+      "when": 0.94921875,
+      "long": {
+        "what_gap_20_140": 1.0,
+        "what_gap_140_300": 0.42105263471603394,
+        "what_gap_300_500": 0.15000000596046448,
+        "probe_newer_named": 0.32421875,
+        "probe_older_named": 0.625,
+        "cue_noise_0.0": 1.0,
+        "cue_noise_0.5": 1.0,
+        "cue_noise_1.0": 0.99609375,
+        "cue_noise_2.0": 0.96875,
+        "inj_ratio_16_128": 0.26222750544548035,
+        "inj_ratio_128_320": 0.27769264578819275,
+        "inj_ratio_320_519": 0.2549804747104645,
+        "inj_ratio_max": 0.4295923411846161,
+        "gain": 0.4773247241973877
+      }
+    }
+  }
+}
