@@ -7,3 +7,5 @@
 [closed_osc_ca1 ] long rollout {"what_gap_20_140": 1.0, "what_gap_140_300": 0.474, "what_gap_300_500": 0.1, "inj_ratio_16_128": 0.331, "inj_ratio_128_320": 0.349, "inj_ratio_320_519": 0.349, "inj_ratio_max": 0.533, "gain": 0.593}
 [memory_time    ] step   500 loss 0.563 what 0.998 when 0.789 (139s)
 [memory_time    ] step  1000 loss 0.251 what 1.000 when 0.850 (281s)
+[memory_time    ] step  1500 loss 0.259 what 1.000 when 0.883 (421s)
+[memory_time    ] step  2000 loss 0.166 what 0.998 when 0.932 (562s)
