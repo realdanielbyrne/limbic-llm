@@ -20,7 +20,7 @@ All earlier pretrained numbers are **superseded**, and the runs below are being 
 | `pretrained_qwen35_needle_layer22` (attention only, tap at block 22, 3000 steps) | **done** (fixed) |
 | `pretrained_qwen3_lm` | **done** (fixed rerun) |
 | `pretrained_qwen35_lm` | **done** (fixed rerun). The bf16 run was **stopped** at step 600 of 1000 and never wrote a JSON. |
-| `pretrained_qwen3_needle_horizon` (`--kernel exp --rho 0.95 --tau 32`, 3000 steps) | running, GPU 1 |
+| `pretrained_qwen3_needle_horizon` (`--kernel exp --rho 0.95 --tau 32`, 3000 steps) | **done** |
 | `pretrained_qwen35_needle_allwin_horizon` (same kernel, all layers windowed, 3000 steps) | running, GPU 0 |
 
 The horizon runs use a loop kernel that reaches the needle: w(Δ) = ρ^(Δ/τ−1), which is 0.472 at a lag of 500 and 0.470 at 503 (`limbic_llm/temporal_loop.py:100`). The default `osc` kernel's weight is 0 at that gap.
@@ -65,6 +65,26 @@ Each cell is exact / token_acc / loss. "gain" is the final loop gain; the initia
 - **Qwen3.5 with all layers windowed:** with every Gated DeltaNet layer windowed too, the loop on its own fails exactly as on Qwen3. The training loss stays flat at about 1.84 for all 3000 steps (1.831 at the end), and exact match is 0. The late drop to 1.60 in the bf16 1000-step run did not reproduce. Combined with the kernel calculation below, this is expected: no route remains to a needle about 500 tokens back.
 - **Qwen3.5 with the tap moved to block 22:** exact match drops from 1.0 to 0.0, and training loss plateaus around 1.7–1.8, like the failing runs. With the tap at 12, the loop's output passes through 9 more Gated DeltaNet layers. At 22 only blocks 22–23 come after it, and block 23 is windowed attention. So the success depends on Gated DeltaNet layers after the tap, not just on a trace that already exists when the loop reads its input. This supports the "the loop feeds the needle into the GDN layers after it" reading, not "the loop reads a trace the GDN layers already hold".
 - **Why the loop cannot recall alone (Qwen3), confirmed by calculation:** with the default `--kernel osc --rho 0.7 --tau 16`, the loop weight is w(Δ) = ρ^(Δ/τ−1)·[cos(2πΔ/τ)]₊ (`limbic_llm/temporal_loop.py:100-102`). That gives 1.0 at Δ=16, 0.08 at 128, 0.005 at 256, about 4e-19 at 500, and **exactly 0 at Δ = 501–503** (the needle gap falls on the clamped half of the cosine). The loop cannot see the needle on this task, whatever the training. Its kernel limits it to roughly the last 100–200 tokens. On Qwen3.5 with tap 12, it can only be passing along recent content that the earlier Gated DeltaNet layers have already carried forward.
+
+### Needle task with a loop horizon that covers the gap (`--kernel exp --rho 0.95 --tau 32`, w(500) ≈ 0.47)
+
+| run | windowed layers | windowed | windowed+side | full | gain |
+|---|---|---|---|---|---|
+| `pretrained_qwen3_needle_horizon` | 28/28 | 0.00 / 0.106 / 3.069 | 0.00 / **0.461 / 1.381** | 1.00 / 1.000 / 0.011 | 0.3264 |
+
+- **Training curve (loss / token_acc):** 300: 1.844 / 0.25 → 600: 1.683 / 0.32 → 900: 1.372 / 0.47, then flat at 1.38 to step 3000.
+- **First real long-range transfer through the loop on a pure-attention model.** Qwen3 leaves the format floor (1.842) for the first time. With all 28 layers windowed, the loop is the only route to the needle.
+- **The plateau is exactly "one digit known".** Mark k of the 4 value digits as known exactly and the rest at chance. Then loss = (4−k)/5·ln10 and token_acc = 0.2 + 0.2k + 0.02(4−k):
+
+  | k | loss | token_acc |
+  |---|---|---|
+  | 0 | 1.842 | 0.28 |
+  | **1** | **1.382** | **0.46** |
+  | 2 | 0.921 | 0.64 |
+
+  The measured 1.381 / 0.461 matches k = 1. So the loop carries one of the four digits perfectly and the other three not at all. Exact match therefore stays 0.
+- **Likely reason** (round-0 hypothesis "capacity H4"): the loop stores key and value from the *same* position (`limbic_llm/temporal_loop.py:262-263`). A query can therefore fetch the content at the position it matches, but nothing shifts the address to the *next* digit. Which digit is recovered is unknown: per-digit logging (round-0 item C1) is needed to confirm it, but it is most likely the first.
+- **The fix is a round-1 direction:** address-shift keys, meaning keys taken from the previous token (or the TimeChannel's lag features), so that each answer digit retrieves the next stored one.
 
 ### Language modelling: float32 side channels, WikiText-103, seq 1024, window 256, batch 4, 1000 steps, grad checkpointing
 
