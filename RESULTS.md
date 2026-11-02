@@ -62,11 +62,11 @@ Associative recall with 64 possible keys and a 40-token gap, 1,500 steps for the
 |---|---:|---:|
 | `titans_mac` (deep Titans memory, section 1) | 0.484 | 0.483 |
 | `titans_gdn` (linear delta-rule memory) | 0.680 | **1.000** |
-| `titans_gdn_dg` (+ DG-sparse addresses) | 0.905 | see `results/assoc_recall_gdn.log` |
+| `titans_gdn_dg` (+ DG-sparse addresses) | 0.905 | 0.989 |
 
 **What this shows**
 
 * **Standard Gated DeltaNet runs out of capacity as predicted.** With 16-dimensional keys, recall falls from 0.43 at 8 pairs to about 0.13 at 16 and 32 pairs. Widening keys to 128 dimensions helps (0.32 and 0.22) but doesn't fix it, because the model must also learn to bind each key to the next token through its short convolution.
 * **Successor-bound addresses solve the task outright.** When the address of token $t-1$ is the key for value $t$, the memory behaves as RAM and recall is perfect up to 32 pairs. A counterfactual check confirms this is genuine retrieval: after swapping the values shown at study time, predictions follow the new values 100 % of the time and the old values 0 %.
 * **DG versus dense addressing is not separated by this task.** Both hit the ceiling. With 128-dimensional addresses and distinct keys, dense addresses barely interfere. Testing pattern separation needs similar keys (shared prefixes or noise) or loads above $d_k$.
-* **An exact delta-rule memory beats the deep Titans memory here.** Swapping Titans' chunk-start gradient update for the exact per-token delta rule takes recall from 0.48 to 1.00. DG addresses reach high recall faster (0.905 vs 0.680 at step 500), a sample-efficiency effect that the final scores hide.
+* **An exact delta-rule memory beats the deep Titans memory here.** Swapping Titans' chunk-start gradient update for the exact per-token delta rule takes recall from 0.48 to 1.00. DG addresses reach high recall faster (0.905 vs 0.680 at step 500) but finish slightly lower (0.989 vs 1.000), so their advantage here is sample efficiency, not final accuracy.
