@@ -124,7 +124,7 @@ def main():
     ap.add_argument("--local", type=int, default=16, help="attention window / segment / chunk")
     ap.add_argument("--eval-every", type=int, default=100)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default="results/assoc_recall.json")
+    ap.add_argument("--out", default="results/synthetic/assoc_recall.json")
     args = ap.parse_args()
     names = ["full_attn", "window_attn", "hippocampal", "titans_mac", "titans_seq", "titans_hippo"] \
         if args.models == "all" else args.models.split(",")

@@ -9,7 +9,7 @@
 * ``GuardJudge``: an optional chat-template guard model (e.g. Llama Guard 3) that
   labels a (prompt, response) pair safe or unsafe.
 * ``assert_private``: raw completions to harmful prompts may only be written outside
-  the repository (results/evolve/REGISTER.md, alignment track data rule).
+  the repository (research/REGISTER.md, alignment track data rule).
 """
 
 from __future__ import annotations

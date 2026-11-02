@@ -1,6 +1,6 @@
 # Register of results, conclusions and experiments
 
-This file holds the current state of the project: every result with its status and evidence, every correction, and every planned experiment. [`NOTEBOOK.md`](NOTEBOOK.md) is the dated record of how each entry got here, and [`docs/genesis.md`](../../docs/genesis.md) is the history of the ideas. Update this file in place when a result lands or an experiment changes status, and cite the result file.
+This file holds the current state of the project: every result with its status and evidence, every correction, and every planned experiment. [`NOTEBOOK.md`](NOTEBOOK.md) is the dated record of how each entry got here, and [`docs/genesis.md`](../docs/genesis.md) is the history of the ideas. Update this file in place when a result lands or an experiment changes status, and cite the result file.
 
 **Status:** **Supported** · **Refuted** · **Mixed** (seeds or settings disagree) · **Open** (untested or confounded) · **Fixed** (a bug, now corrected).
 **Seeds:** results are from small CPU models (0.1–0.4M parameters) or frozen 2B models, mostly single seeds. Treat a difference of a few points as noise.
@@ -11,12 +11,12 @@ This file holds the current state of the project: every result with its status a
 
 | ID | Claim | Evidence | Seeds | Status |
 |---|---|---|---|---|
-| M1 | Hippocampal memories recall bindings beyond a 16-token window; windowed attention alone stays at chance | Strategy I 0.41, Titans 0.48, full attention 0.49, windowed 0.06 (`results/assoc_recall.json`) | 1 | Supported |
+| M1 | Hippocampal memories recall bindings beyond a 16-token window; windowed attention alone stays at chance | Strategy I 0.41, Titans 0.48, full attention 0.49, windowed 0.06 (`results/synthetic/assoc_recall.json`) | 1 | Supported |
 | M2 | Stacked DG writes and CA1 novelty-lr on Titans help | Neutral alone, 0.17 together | 1 | Refuted (warm-up untested) |
-| M3 | Novelty-prioritised replay with sleep prevents forgetting | Backward transfer −0.73 → 0.00 (`results/continual.json`) | 1 | Supported; no uniform-replay or sleep-only control |
-| M4 | Standard Gated DeltaNet loses recall once stored pairs exceed its key size | 0.43 → 0.13 at 8 → 16 pairs (`results/gdn_capacity.json`) | 1 | Supported |
+| M3 | Novelty-prioritised replay with sleep prevents forgetting | Backward transfer −0.73 → 0.00 (`results/synthetic/continual.json`) | 1 | Supported; no uniform-replay or sleep-only control |
+| M4 | Standard Gated DeltaNet loses recall once stored pairs exceed its key size | 0.43 → 0.13 at 8 → 16 pairs (`results/synthetic/gdn_capacity.json`) | 1 | Supported |
 | M5 | Successor-bound addressing makes the GDN state exact RAM | 1.00 up to 32 pairs; counterfactual 100% new / 0% old | 1 | Supported |
-| M6 | An exact delta-rule memory beats Titans' deep memory | 1.00 against 0.48 (`results/assoc_recall_gdn.json`) | 1 | Supported |
+| M6 | An exact delta-rule memory beats Titans' deep memory | 1.00 against 0.48 (`results/synthetic/assoc_recall_gdn.json`) | 1 | Supported |
 | M7 | DG addresses beat dense addresses | Same final recall; DG faster early (0.905 vs 0.680 at step 500) | 1 | Open (task does not separate them) |
 
 ### Temporal loop and clock (RESULTS.md §4)
@@ -43,7 +43,7 @@ This file holds the current state of the project: every result with its status a
 | T18 | The clock removed a curriculum, so memory + time failed "what" | Learned by step 500 with a longer schedule | 1 | Refuted |
 | T19 | Training is deterministic | A rerun reproduced every seed-0 number exactly | — | Supported |
 
-### Pretrained models (RESULTS.md §4.7, `results/pretrained_HANDOFF.md`)
+### Pretrained models (RESULTS.md §4.7, `research/HANDOFF.md`)
 
 | ID | Claim | Evidence | Seeds | Status |
 |---|---|---|---|---|

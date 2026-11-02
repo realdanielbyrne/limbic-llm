@@ -1,6 +1,6 @@
 # Alignment track: CA2 as a norm-steering controller
 
-A runtime side channel that steers a model away from harmful outputs, more strongly the more a harm signal persists. The design and its motivation are in [`results/evolve/NOTEBOOK.md`](../../results/evolve/NOTEBOOK.md) ("CA2 as a norm-steering controller" and "re-aligning an unaligned model"). Experiment IDs (A1–A7) and status are in [`results/evolve/REGISTER.md`](../../results/evolve/REGISTER.md).
+A runtime side channel that steers a model away from harmful outputs, more strongly the more a harm signal persists. The design and its motivation are in [`research/NOTEBOOK.md`](../../research/NOTEBOOK.md) ("CA2 as a norm-steering controller" and "re-aligning an unaligned model"). Experiment IDs (A1–A7) and status are in [`research/REGISTER.md`](../../research/REGISTER.md).
 
 ## Pieces
 

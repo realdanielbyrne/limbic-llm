@@ -354,7 +354,13 @@ C.push(bullet(" replaying high-novelty episodes offline into adapters on the fro
 C.push(p("Training would start with the side-loop parameters alone, on long documents with the context window deliberately truncated so that memory is the only route to distant information, then a light joint fine-tune, then consolidation for continual learning."));
 C.push(h2("6.7  Experiment: What, When, and Loop Stability"));
 C.push(p("In the what-when task an event token (8 types) is followed by 20–140 filler tokens and a query. The model must say what happened (chance 0.125) and when, in four log-spaced elapsed-time bins. The bins cover 15, 25, 40 and 40 of the 120 possible gaps, so a model that only learns the prior scores 0.333 on when. Attention sees only 16 tokens and there is no absolute position embedding, so content can only arrive through the memory loop and elapsed time only through the side channels. The stability suite trains closed loops, which write their own feedback back into memory, on 160-token sequences and then runs them on 520-token sequences, measuring the injection as a fraction of the incoming signal."));
-const RES = name => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "results", name), "utf8")); } catch (e) { return null; } };
+const RES_DIRS = ["synthetic", "pretrained", path.join("evolve", "round1")];   // results/<track>/<name>
+const RES = name => {
+  for (const d of RES_DIRS) {
+    try { return JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "results", d, name), "utf8")); } catch (e) { /* next */ }
+  }
+  return null;
+};
 const f2 = x => (x === null || x === undefined || Number.isNaN(x)) ? "—" : Number(x).toFixed(2);
 const f3 = x => (x === null || x === undefined || Number.isNaN(x)) ? "—" : Number(x).toFixed(3);
 const R = n => { const d = RES(n); return d ? d.results : {}; };

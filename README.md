@@ -225,7 +225,7 @@ Three design changes came out of debugging, each covered by a test.
 | | |
 |---|---|
 | [`docs/hippocampal_ml_architectures.docx`](docs/hippocampal_ml_architectures.docx) | The design document: circuit-to-ML mappings, Titans and Gated DeltaNet, recent inspirations, results |
-| [`results/evolve/REGISTER.md`](results/evolve/REGISTER.md) | Every result and conclusion with its status and evidence, and the backlog of planned experiments; the dated lab notebook is [`NOTEBOOK.md`](results/evolve/NOTEBOOK.md) |
+| [`research/REGISTER.md`](research/REGISTER.md) | Every result and conclusion with its status and evidence, and the backlog of planned experiments; the dated lab notebook is [`NOTEBOOK.md`](research/NOTEBOOK.md) |
 | [`docs/genesis.md`](docs/genesis.md) | How the project came about: the session's ideas in order, who proposed what, and the corrections made along the way |
 | [`docs/design/temporal-loop.md`](docs/design/temporal-loop.md) | The temporal loop: how the idea developed, biological stability, the design, plug-in versus new architecture, a full Limbic LLM |
 | [`docs/architecture.html`](docs/architecture.html) | Package and data-flow diagrams (download and open in a browser) |

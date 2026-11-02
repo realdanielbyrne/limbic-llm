@@ -129,7 +129,7 @@ Daniel then said "fan out as necessary", and the switches and experiments were b
 - Qwen3, pure attention: does the loop carry memory when nothing else can?
 - Qwen3.5, a 3:1 Gated DeltaNet hybrid: is GDN the CA3, and does the loop add anything on top?
 
-A second Claude session on Daniel's GPU machine (geof) ran these and pushed its results with a handoff note, [`results/pretrained_HANDOFF.md`](../results/pretrained_HANDOFF.md). It then began an evolution-style search over the side channels, with fitness criteria agreed with Daniel (reach on the Qwen3 needle, bounded echo, new tokens dominating) and anti-gaming rules such as strict causality and a fixed-size state. Its notebook is [`results/evolve/NOTEBOOK.md`](../results/evolve/NOTEBOOK.md), and its round-0 diagnosis found two of the corrections below.
+A second Claude session on Daniel's GPU machine (geof) ran these and pushed its results with a handoff note, [`research/HANDOFF.md`](../research/HANDOFF.md). It then began an evolution-style search over the side channels, with fitness criteria agreed with Daniel (reach on the Qwen3 needle, bounded echo, new tokens dominating) and anti-gaming rules such as strict causality and a fixed-size state. Its notebook is [`research/NOTEBOOK.md`](../research/NOTEBOOK.md), and its round-0 diagnosis found two of the corrections below.
 
 ### 5.6 Design review, stability and alignment (Daniel)
 
@@ -146,7 +146,7 @@ Two of Daniel's premises were adjusted: CA3 → CA1 is the main serial path rath
 
 This became three records:
 
-- the register of results and experiments, [`results/evolve/REGISTER.md`](../results/evolve/REGISTER.md);
+- the register of results and experiments, [`research/REGISTER.md`](../research/REGISTER.md);
 - a feedback-stability programme, S1–S8, led by a saturation curve on Qwen;
 - a proposal for CA2 as a norm-steering controller, A1–A5.
 
@@ -198,7 +198,7 @@ Small models (about 0.1M parameters, CPU), mostly single seeds; final numbers ar
 
 ## 8. Open questions
 
-The current list, with status and priority, is kept in [`results/evolve/REGISTER.md`](../results/evolve/REGISTER.md). The main threads:
+The current list, with status and priority, is kept in [`research/REGISTER.md`](../research/REGISTER.md). The main threads:
 
 - **How does Qwen3.5 recall the needle?** The late tap shows the success needs Gated DeltaNet layers after the tap. The loop cannot see 500 tokens back with its default kernel, so the needle must reach the tap through the GDN layers before it. The working hypothesis is a chain: GDN layers before the tap carry a weak trace, the loop re-presents it, and GDN layers after the tap integrate it for the attention layers to read.
 - **How long a memory should the loop have?** Damping makes new input dominate but sets a horizon of about $\tau/\ln(1/\rho)$ tokens. Several bands with different $\rho$, as in the blueprint, may be needed to have both.
@@ -216,5 +216,5 @@ The current list, with status and priority, is kept in [`results/evolve/REGISTER
 | [`../RESULTS.md`](../RESULTS.md) | All experimental results |
 | [`../limbic_llm/temporal_loop.py`](../limbic_llm/temporal_loop.py) | `HippocampalLoop`, `TimeChannel` |
 | [`../experiments/`](../experiments/) | `temporal_loop.py` (CLI), `loop_systems.py` (op-amp test), `pretrained_loop.py` (frozen HF models) |
-| [`../results/pretrained_HANDOFF.md`](../results/pretrained_HANDOFF.md) | Notes from the GPU session |
+| [`../research/HANDOFF.md`](../research/HANDOFF.md) | Notes from the GPU session |
 | [`../REFERENCES.md`](../REFERENCES.md) | Bibliography |

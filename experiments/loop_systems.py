@@ -20,7 +20,7 @@ polynomial is z^τ − ρ_E z^{τ−1} + K (1 − ρ_E). Above the critical K, w
 the unit circle, the loop rings with growing amplitude, as an uncompensated op-amp does.
 
 Usage
-  python experiments/loop_systems.py                 # writes results/loop_systems.json
+  python experiments/loop_systems.py                 # writes results/synthetic/loop_systems.json
 """
 
 from __future__ import annotations
@@ -92,7 +92,7 @@ def main():
     ap.add_argument("--T", type=int, default=512)
     ap.add_argument("--d", type=int, default=64)
     ap.add_argument("--tau", type=int, default=16)
-    ap.add_argument("--out", default="results/loop_systems.json")
+    ap.add_argument("--out", default="results/synthetic/loop_systems.json")
     args = ap.parse_args()
     gains = [float(x) for x in args.gains.split(",")]
     betas = [float(x) for x in args.betas.split(",")]

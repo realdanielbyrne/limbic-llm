@@ -3,7 +3,7 @@
 This is an AlphaEvolve-style search over the side channels: propose changes, score them on the GPUs, keep the best.
 A human checkpoint follows every round. Each entry records what was tried, the scores, the winning diff, any surprises, and the proposed next step.
 Round 0 is the current code (`limbic_llm/temporal_loop.py`, `experiments/pretrained_loop.py`) as it stood at commit `b39abab`.
-The project's history is in [`docs/genesis.md`](../../docs/genesis.md).
+The project's history is in [`docs/genesis.md`](../docs/genesis.md).
 Every result, conclusion and planned experiment is tracked in [`REGISTER.md`](REGISTER.md), which is kept current; this notebook is the dated record.
 
 ## Fitness (agreed 1 Nov 2026)
@@ -12,13 +12,13 @@ Every result, conclusion and planned experiment is tracked in [`REGISTER.md`](RE
 2. **Stability (must pass).** The closed-loop echo stays bounded on `experiments/temporal_loop.py --suite stability`. The reference is genesis §6: 0.27–0.35 of input, peak 0.53.
 3. **New tokens dominate (must pass).** Zero-shot recency probe. The full design names the older event 18% of the time.
 
-Candidates must also satisfy the anti-gaming rules E1–E9 in [`round0_plan.md`](round0_plan.md) §3: strict causality, bounded state, a parameter budget, input isolation, and held-out gaps.
+Candidates must also satisfy the anti-gaming rules E1–E9 in [`round0_plan.md`](plans/round0_plan.md) §3: strict causality, bounded state, a parameter budget, input isolation, and held-out gaps.
 
 ---
 
 ## Round 0: diagnosis (1 Nov 2026)
 
-**Method.** A workflow of 21 agents examined the problem from four angles: gradient flow, memory capacity, Qwen3 against Qwen3.5, and task mechanics. Each hypothesis was checked by an adversarial verifier, using code reading and CPU checks only. The full output is in [`round0_plan.md`](round0_plan.md).
+**Method.** A workflow of 21 agents examined the problem from four angles: gradient flow, memory capacity, Qwen3 against Qwen3.5, and task mechanics. Each hypothesis was checked by an adversarial verifier, using code reading and CPU checks only. The full output is in [`round0_plan.md`](plans/round0_plan.md).
 
 **Findings**
 - **D1 (fact).** Qwen3 windowed+side scores exactly the answer-format floor. Eval loss is 1.8421 against 0.8·ln10 = 1.8421, and digit accuracy is at chance. The side channels learned the leading space and the digit distribution, and nothing about the value.
@@ -39,7 +39,7 @@ Candidates must also satisfy the anti-gaming rules E1–E9 in [`round0_plan.md`]
 
 ## Design review: how the Qwen side channels map onto the circuit (2 Nov 2026)
 
-**Method.** Daniel asked five questions about how the Qwen implementation relates to the hippocampal mapping. They were answered from the code (`experiments/pretrained_loop.py`, `limbic_llm/temporal_loop.py`) and from the `args` recorded in every `results/pretrained_*needle*.json`. No new runs.
+**Method.** Daniel asked five questions about how the Qwen implementation relates to the hippocampal mapping. They were answered from the code (`experiments/pretrained_loop.py`, `limbic_llm/temporal_loop.py`) and from the `args` recorded in every `results/pretrained/pretrained_*needle*.json`. No new runs.
 
 **What the Qwen runs actually used.** All six needle runs had `loop: open`, `dg_keys: False`, `contrast: True`, `ca1_control: True`, `memory: True`, `time: True`, `window_mode: block`. The tap was the default `n_layers // 2` (block 14 for Qwen3, 12 for Qwen3.5), except the tap-22 run. The kernel was `osc` (ρ 0.7, τ 16), or `exp` (ρ 0.95, τ 32) in the two horizon runs.
 
@@ -125,12 +125,12 @@ The horizon runs pushed since round 0 (`pretrained_qwen3_needle_horizon`, `pretr
 
 | | Finding | Evidence |
 |---|---|---|
-| K1 | Without feedback, injection grows in proportion to the forward gain $A$. Divisive (energy) feedback only compresses it, sublinearly in $A$. | Untrained sweep, `results/loop_systems.json` |
+| K1 | Without feedback, injection grows in proportion to the forward gain $A$. Divisive (energy) feedback only compresses it, sublinearly in $A$. | Untrained sweep, `results/synthetic/loop_systems.json` |
 | K2 | Subtractive inverted-copy feedback obeys the op-amp law on persistent echo, $y_\text{sub}/y_\text{none} = 1/(1+K)$ within 1–3%, and passes varied content. It is a high-pass filter. | Same |
 | K3 | The one-circuit delay limits the stable loop gain. The loop rings and grows above $K = Ag\beta = 1.68$ (τ = 16, ρ_E = 0.9), with a period of about 44 tokens. | Characteristic polynomial; simulation |
 | K4 | Trained without the clamp, closed loops reach echo 1.7–3× the input (peaks 7–189×). Only subtractive feedback still learns content. With the clamp, echo is 0.29–0.35×. | RESULTS.md §4.2–4.3 |
 | K5 | None of the runaways diverged numerically, because the next LayerNorm rescales the stream. Saturation shows up as echo outweighing input, so it must be measured directly. | Same |
-| K6 | On Qwen, only open, clamped loops have run (injection ratio about 0.2). Closed loops, higher gains, and their effect on downstream layers are **unmeasured**. | `results/pretrained_*` |
+| K6 | On Qwen, only open, clamped loops have run (injection ratio about 0.2). Closed loops, higher gains, and their effect on downstream layers are **unmeasured**. | `results/pretrained/pretrained_*` |
 
 **Concern.** On a frozen model, an additive injection at one block moves the stream away from what the upper layers were trained on. Past some gain the LayerNorms, attention and MLPs saturate, and output degrades towards incoherence. The clamp bounds the injection's norm but says nothing about where that knee is.
 
@@ -266,7 +266,7 @@ The GPU session reviewed the 2 Nov additions (handoff note, "Review of the 2 Nov
 
 ## Alignment track, base build (2 Nov 2026)
 
-**Built.** [`experiments/alignment/`](../../experiments/alignment/), with a README, 14 tests (`tests/test_alignment.py`), and an offline smoke run on a random tiny model:
+**Built.** [`experiments/alignment/`](../experiments/alignment/), with a README, 14 tests (`tests/test_alignment.py`), and an offline smoke run on a random tiny model:
 
 - `SteeringController`, with modes `none` / `static` / `conditional` / `graded` and `fixed` or `gist` directions.
 - The harm probe (A1), with held-out AUROC, calibration and an optional layer sweep.
@@ -372,9 +372,9 @@ A graded controller maps *probability* to gain, so calibration, not just ranking
 
 ## Round 1: diagnostics on the horizon loop, and candidate W1 (2 Nov 2026)
 
-**Setup.** Branch `feat/round1-side-memory`. Runs go through [`experiments/evolve/run.py`](../../experiments/evolve/run.py), which wraps `pretrained_loop.main` unchanged and adds per-digit loss, a checkpoint of the side channels, and `--candidate` to swap the side-channel module. Results are in `results/evolve/gen01/`. Settings: needle task (gap about 500 tokens), seq 512, block window 64 on every layer unless noted, batch 8, 3000 steps, bf16 base, float32 side channels. One seed per run.
+**Setup.** Branch `feat/round1-side-memory`. Runs go through [`experiments/evolve/run.py`](../experiments/evolve/run.py), which wraps `pretrained_loop.main` unchanged and adds per-digit loss, a checkpoint of the side channels, and `--candidate` to swap the side-channel module. Results are in `results/evolve/round1/`. Settings: needle task (gap about 500 tokens), seq 512, block window 64 on every layer unless noted, batch 8, 3000 steps, bf16 base, float32 side channels. One seed per run.
 
-**Candidate W1** ([`experiments/evolve/w1_gdn.py`](../../experiments/evolve/w1_gdn.py)) is round-0 direction 1, combined with shortlist wins 1 and 2.
+**Candidate W1** ([`experiments/evolve/w1_gdn.py`](../experiments/evolve/w1_gdn.py)) is round-0 direction 1, combined with shortlist wins 1 and 2.
 - It runs the clock first, then a Gated DeltaNet memory at the tap. The memory writes v_t under the *previous* position's address a_{t−1} (successor binding) and reads with a_t.
 - It injects through the same CA1 control as the loop: error-only, ‖inj‖ = g‖h‖ with g ≤ 0.9σ(gain), saturating. It stores the stream before injection (open loop).
 - Its state is fixed-size: 8×64×64 floats for dense keys, 4×64×256 for DG keys.

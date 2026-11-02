@@ -34,12 +34,12 @@ The rerun JSONs overwrite the old files in place. Git history keeps the bf16 ver
 
 ## Round-0 diagnosis and evolution notebook
 
-See [`results/evolve/NOTEBOOK.md`](evolve/NOTEBOOK.md) and [`results/evolve/round0_plan.md`](evolve/round0_plan.md). For the report:
+See [`research/NOTEBOOK.md`](NOTEBOOK.md) and [`research/plans/round0_plan.md`](plans/round0_plan.md). For the report:
 
 - The Qwen3 windowed+side eval loss, 1.8421, equals 0.8·ln10, the answer-format floor exactly. The side channels learned the leading space and the digit distribution, and carry no information about the value.
 - **Caution:** the bf16 run's all-windowed drop (eval 1.692) was an **anti-causal leak**, not long-range transfer. `torch.arange(512, dtype=bfloat16)` has only 385 distinct values; positions 505–511 become [504, 506, 508, 508, 508, 510, 512]. So the `d >= 0` masks in `loop_kernel` and `decay_kernel` (`limbic_llm/temporal_loop.py:94`, `:109-111`) let some answer positions see their own targets. This session verified it on CPU. The kernels take their dtype from the activations, so any bf16 use of `HippocampalLoop` or `TimeChannel` hits this. The float32 fix (`3c90bde`) avoids it in `pretrained_loop.py`.
 
-## Round 1 results (`results/evolve/gen01/`, branch `feat/round1-side-memory`)
+## Round 1 results (`results/evolve/round1/`, branch `feat/round1-side-memory`)
 
 Needle task (gap about 500 tokens), seq 512, window 64, every layer windowed unless noted, 3000 steps unless noted. "per digit" lists the loss on digits 1–4; chance is ln 10 = 2.30.
 
@@ -56,11 +56,11 @@ Needle task (gap about 500 tokens), seq 512, window 64, every layer windowed unl
 
 LM, `g1_qwen3_lm_horizon`: Qwen3 WikiText with the horizon kernel. Perplexity 11.53 against 12.01 with the default kernel and 9.01 with full attention, so 49% of the loss gap is closed against 41%.
 
-The round-1 write-up is in `results/evolve/NOTEBOOK.md` ("Round 1"). The register now has entries P7–P12 and the new item W1b.
+The round-1 write-up is in `research/NOTEBOOK.md` ("Round 1"). The register now has entries P7–P12 and the new item W1b.
 
 ## Review of the alignment, CoT and CA1 decision tracks (2 Nov, round 1)
 
-Full report: [`results/evolve/reviews/2026-11-02_alignment_cot_ca1.md`](evolve/reviews/2026-11-02_alignment_cot_ca1.md). It covers commits `73259fc` and `241a13c`. Three track reviewers worked independently, an adversarial verifier checked each finding, and every bug was reproduced on CPU. Items to fix **before running A6, R2 or J1**:
+Full report: [`research/reviews/2026-11-02_alignment_cot_ca1.md`](reviews/2026-11-02_alignment_cot_ca1.md). It covers commits `73259fc` and `241a13c`. Three track reviewers worked independently, an adversarial verifier checked each finding, and every bug was reproduced on CPU. Items to fix **before running A6, R2 or J1**:
 
 - **A1 (high).** The perplexity check never activates the conditional, graded or graded_self arms. With `score_positions="last"` they inject only at the last position, and those logits are dropped. Perplexity came out bit-identical to the no-hook arm, so the capability metric is vacuous for three of the four hooked arms.
 - **C1 (high).** The gist is dominated by the attention-sink token and the stream mean: the EMAs are zero-initialised and position 0 is included. On Qwen3-1.7B-Base block 14, ‖h₀‖ = 13,587 against a median of 167, and cos(gist, h₀) = 0.998 at t = 5. The fix is to exclude the sink, and to initialise from the first included token or subtract a corpus mean. Bias correction alone does not fix it.
@@ -91,7 +91,7 @@ These files belong to the coordinating session, so this session did not edit the
 
 ## Files this session owns
 
-Every `results/pretrained_*.json` and `results/pretrained_*.log` file, plus this note. Each JSON holds
+Every `results/pretrained/pretrained_*.json` and `results/pretrained/pretrained_*.log` file, plus this note. Each JSON holds
 `args`, `model` (layer counts, `windowed_layers`, `window_check`), `curve` (training points every 100
 steps), and `results` with three conditions:
 

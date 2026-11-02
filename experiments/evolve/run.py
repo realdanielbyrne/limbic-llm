@@ -15,7 +15,7 @@ Runs ``pretrained_loop.main`` unchanged, with three additions:
                 flags, and the namespace is passed as ``Class(d_model, args, namespace)``.
 
     python experiments/evolve/run.py --model Qwen/Qwen3-1.7B-Base --dtype bfloat16 --device cuda \
-        --task needle --kernel exp --rho 0.95 --tau 32 --steps 3000 --out results/evolve/gen01/x.json
+        --task needle --kernel exp --rho 0.95 --tau 32 --steps 3000 --out results/evolve/round1/x.json
 """
 
 from __future__ import annotations
@@ -75,7 +75,7 @@ def main(argv=None):
         pl.SideChannels = lambda d_model, **_: Cand(d_model, parsed, cand_ns)
     results = pl.main(rest)
     args = pl.parse_args(rest)
-    out = Path(args.out or f"results/pretrained_loop_{args.task}.json")
+    out = Path(args.out or f"results/pretrained/pretrained_loop_{args.task}.json")
     if own.candidate:                                             # record the candidate and its flags
         rec = json.loads(out.read_text())
         rec["candidate"] = {"class": own.candidate, "args": vars(cand_ns) if cand_ns else {}}

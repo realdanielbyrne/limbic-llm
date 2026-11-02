@@ -162,7 +162,7 @@ The Treves–Rolls prediction, that a direct dense cue completes degraded patter
 
 ### 4.7 Pretrained models
 
-Side channels on frozen Hugging Face models, needle task with a gap of about 500 tokens, block windows of 64 tokens, run on two RTX 5090s by a separate session (details and caveats in [`results/pretrained_HANDOFF.md`](results/pretrained_HANDOFF.md)). Exact match of the 4-digit value:
+Side channels on frozen Hugging Face models, needle task with a gap of about 500 tokens, block windows of 64 tokens, run on two RTX 5090s by a separate session (details and caveats in [`research/HANDOFF.md`](research/HANDOFF.md)). Exact match of the 4-digit value:
 
 | Model | Windowed | Windowed + side channels | Full attention |
 |---|---:|---:|---:|

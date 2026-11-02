@@ -89,7 +89,7 @@ def main():
     ap.add_argument("--sleep-steps", type=int, default=100)
     ap.add_argument("--sleep-lr", type=float, default=1e-3)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default="results/continual.json")
+    ap.add_argument("--out", default="results/synthetic/continual.json")
     args = ap.parse_args()
     results = {c: run(c, args) for c in ["naive", "replay"]}
     out = Path(args.out); out.parent.mkdir(parents=True, exist_ok=True)

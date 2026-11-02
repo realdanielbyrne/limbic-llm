@@ -1,6 +1,6 @@
 """CA2 norm-steering controller: a graded, regulated steering side channel.
 
-Design: results/evolve/NOTEBOOK.md, "CA2 as a norm-steering controller" and
+Design: research/NOTEBOOK.md, "CA2 as a norm-steering controller" and
 "re-aligning an unaligned model". A linear probe on the residual stream gives a
 harm probability s_t, a calibrated CA1-style decision. A leaky integral
 E_t = λ E_{t−1} + s_t lets sustained pressure escalate and decay away. The
