@@ -1,0 +1,205 @@
+{
+  "args": {
+    "model": "Qwen/Qwen3.5-2B-Base",
+    "tiny": false,
+    "tiny_arch": "gpt2",
+    "dtype": "bfloat16",
+    "device": "cuda",
+    "attn_impl": "sdpa",
+    "grad_checkpointing": false,
+    "layer": null,
+    "window": 64,
+    "window_mode": "block",
+    "window_layers": "all",
+    "sink": true,
+    "memory": true,
+    "time": true,
+    "kernel": "exp",
+    "rho": 0.95,
+    "tau": 32,
+    "amp": 1.0,
+    "loop": "open",
+    "ca1_control": true,
+    "contrast": true,
+    "dg_keys": false,
+    "d_key": 32,
+    "loop_arg": [],
+    "init_gain": null,
+    "task": "needle",
+    "text_file": null,
+    "dataset": null,
+    "max_chars": 5000000,
+    "pairs": 1,
+    "seq_len": 512,
+    "steps": 6000,
+    "lr": 0.001,
+    "batch": 8,
+    "eval_n": 128,
+    "log_every": 0,
+    "seed": 0,
+    "out": "results/evolve/gen01/g1_qwen35_allwin_horizon_6k.json"
+  },
+  "model": {
+    "blocks": 24,
+    "linear_layers": 18,
+    "tap_layer": 12,
+    "windowed_layers": 24,
+    "reach": 63,
+    "window_check": "ok (block 0: far 0.0e+00 vs near 4.4e-01)",
+    "trainable_params": 4380675,
+    "base_params": 1881825088,
+    "transformers": "5.22.1",
+    "gap_range": [
+      501,
+      502
+    ]
+  },
+  "curve": [
+    {
+      "step": 600,
+      "loss": 1.846788763999939,
+      "token_acc": 0.32499998807907104,
+      "inj_ratio": 0.2030414640903473
+    },
+    {
+      "step": 1200,
+      "loss": 1.8394804000854492,
+      "token_acc": 0.32499998807907104,
+      "inj_ratio": 0.2043236643075943
+    },
+    {
+      "step": 1800,
+      "loss": 1.8491480350494385,
+      "token_acc": 0.30000001192092896,
+      "inj_ratio": 0.21017971634864807
+    },
+    {
+      "step": 2400,
+      "loss": 1.3930797576904297,
+      "token_acc": 0.4749999940395355,
+      "inj_ratio": 0.21777549386024475
+    },
+    {
+      "step": 3000,
+      "loss": 0.2280806005001068,
+      "token_acc": 0.8999999761581421,
+      "inj_ratio": 0.2340950220823288
+    },
+    {
+      "step": 3600,
+      "loss": 0.006124862935394049,
+      "token_acc": 1.0,
+      "inj_ratio": 0.23666176199913025
+    },
+    {
+      "step": 4200,
+      "loss": 0.00287079019472003,
+      "token_acc": 1.0,
+      "inj_ratio": 0.2392197996377945
+    },
+    {
+      "step": 4800,
+      "loss": 0.0006953844567760825,
+      "token_acc": 1.0,
+      "inj_ratio": 0.24026063084602356
+    },
+    {
+      "step": 5400,
+      "loss": 0.000591129413805902,
+      "token_acc": 1.0,
+      "inj_ratio": 0.24054434895515442
+    },
+    {
+      "step": 6000,
+      "loss": 0.0003793214855249971,
+      "token_acc": 1.0,
+      "inj_ratio": 0.24047741293907166
+    }
+  ],
+  "results": {
+    "windowed": {
+      "loss": 3.0392136573791504,
+      "token_acc": 0.1296875,
+      "exact": 0.0,
+      "per_pos": [
+        {
+          "loss": 3.294065475463867,
+          "acc": 0.4453125
+        },
+        {
+          "loss": 3.2021660804748535,
+          "acc": 0.0703125
+        },
+        {
+          "loss": 2.878523588180542,
+          "acc": 0.0390625
+        },
+        {
+          "loss": 2.9685122966766357,
+          "acc": 0.046875
+        },
+        {
+          "loss": 2.8528003692626953,
+          "acc": 0.046875
+        }
+      ]
+    },
+    "windowed+side": {
+      "loss": 0.0009595909301424399,
+      "token_acc": 1.0,
+      "exact": 1.0,
+      "inj_ratio": 0.240492332726717,
+      "per_pos": [
+        {
+          "loss": 5.555654570343904e-05,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.002262052148580551,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.0008633463294245303,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.0008895654464140534,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.0007274340023286641,
+          "acc": 1.0
+        }
+      ]
+    },
+    "full": {
+      "loss": 0.03381456509232521,
+      "token_acc": 1.0,
+      "exact": 1.0,
+      "per_pos": [
+        {
+          "loss": 0.053333647549152374,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.048704374581575394,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.025880783796310425,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.01943756639957428,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.021716460585594177,
+          "acc": 1.0
+        }
+      ]
+    },
+    "gain": 0.3277372121810913
+  },
+  "seconds": 1193.7616181373596
+}
