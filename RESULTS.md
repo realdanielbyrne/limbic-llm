@@ -138,8 +138,9 @@ A trained recency task (an older, different event precedes the target) was learn
 | Full design | 0.25 | 0.18 |
 | **Full design, DG write keys, direct read** | **0.68** | 0.31 |
 | **Full design, DG write keys, DG read** | **0.68** | 0.29 |
+| Open loop (stores the pre-injection stream), seed 1 | 0.45 | 0.38 |
 
-**Closed loops favour the first event.** A closed loop re-stores its own echo every circuit, and each re-stored copy starts its decay again, so damping each trace does not damp content the loop keeps rehearsing: the older event, rehearsed longer, wins. This is primacy by self-rehearsal, the mechanism psychology proposes for the primacy effect. The episode-minus-prior contrast reduces it (0.63 → 0.18 older), plausibly because rehearsed content becomes part of the prior $\mu_t$ and is subtracted. Sparse dentate-gyrus write keys give the only clear recency win, presumably because the two events no longer collide in memory. The subtractive inverted copy did not break primacy, contrary to the high-pass prediction, for the gain reason in 4.3.
+**Closed loops favour the first event.** A closed loop re-stores its own echo every circuit, and each re-stored copy starts its decay again, so damping each trace does not damp content the loop keeps rehearsing: the older event, rehearsed longer, wins. This is primacy by self-rehearsal, the mechanism psychology proposes for the primacy effect. The episode-minus-prior contrast reduces it (0.63 → 0.18 older), plausibly because rehearsed content becomes part of the prior $\mu_t$ and is subtracted. Sparse dentate-gyrus write keys give the only clear recency win, presumably because the two events no longer collide in memory. The open loop, which stores the stream from before injection as the acetylcholine switch does, does not re-store its echo and shows little primacy (0.38 older against 0.54–0.84 for closed loops without the contrast; different seed). The subtractive inverted copy did not break primacy, contrary to the high-pass prediction, for the gain reason in 4.3.
 
 ### 4.5 Read path and cue noise
 
