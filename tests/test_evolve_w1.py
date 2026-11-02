@@ -117,3 +117,21 @@ def test_gdn_conv_init_options(conv_init):
     h2 = h.clone()
     h2[:, 12:] += 1.0
     assert torch.equal(y[:, :12], m(h2)[0][:, :12])
+
+
+def test_scattered_needle_breaks_the_fixed_layout():
+    """--needle-scatter: right length, answer at the end, the queried fact beyond the tail, and the
+    first fact's position varies (so position cannot identify the queried fact)."""
+    import random
+    _, tok = evolve_run.pl.build_tiny("gpt2", seed=0)
+    task = evolve_run.ScatterNeedleTask(tok, 512, 3, 1, min_gap=8, tail=256)
+    rng = random.Random(0)
+    firsts = set()
+    for _ in range(20):
+        ids, n_ans, gap = task.sample(rng)
+        assert len(ids) == 513 and n_ans == len(tok.encode(" 0000"))
+        assert gap >= 256 + n_ans
+        text = bytes(i for i in ids[1:] if i < 256).decode("latin-1")
+        assert text.count(" The code for ") == 4                  # 3 facts and the query
+        firsts.add(text.index(" The code for "))
+    assert len(firsts) > 10
