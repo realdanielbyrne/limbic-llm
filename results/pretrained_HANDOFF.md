@@ -21,7 +21,7 @@ All earlier pretrained numbers are **superseded**, and the runs below are being 
 | `pretrained_qwen3_lm` | **done** (fixed rerun) |
 | `pretrained_qwen35_lm` | **done** (fixed rerun). The bf16 run was **stopped** at step 600 of 1000 and never wrote a JSON. |
 | `pretrained_qwen3_needle_horizon` (`--kernel exp --rho 0.95 --tau 32`, 3000 steps) | **done** |
-| `pretrained_qwen35_needle_allwin_horizon` (same kernel, all layers windowed, 3000 steps) | running, GPU 0 |
+| `pretrained_qwen35_needle_allwin_horizon` (same kernel, all layers windowed, 3000 steps) | **done** |
 
 The horizon runs use a loop kernel that reaches the needle: w(Δ) = ρ^(Δ/τ−1), which is 0.472 at a lag of 500 and 0.470 at 503 (`limbic_llm/temporal_loop.py:100`). The default `osc` kernel's weight is 0 at that gap.
 
@@ -71,6 +71,11 @@ Each cell is exact / token_acc / loss. "gain" is the final loop gain; the initia
 | run | windowed layers | windowed | windowed+side | full | gain |
 |---|---|---|---|---|---|
 | `pretrained_qwen3_needle_horizon` | 28/28 | 0.00 / 0.106 / 3.069 | 0.00 / **0.461 / 1.381** | 1.00 / 1.000 / 0.011 | 0.3264 |
+| `pretrained_qwen35_needle_allwin_horizon` | 24/24 (GDN windowed too) | 0.00 / 0.130 / 3.039 | 0.023 / **0.550 / 1.239** | 1.00 / 1.000 / 0.034 | 0.2768 |
+
+- **Qwen3.5, all layers windowed:** the loop also crosses the gap here. Training loss stayed at the floor (about 1.84) until step 2400, dropped to 1.36 by step 2700, and was 1.395 at step 3000.
+  - Eval (1.239 / 0.550) falls between the k = 1 and k = 2 levels in the table below. That means one digit plus partial knowledge of a second, and 3 of 128 sequences fully correct.
+  - The breakthrough came late, when the cosine learning-rate schedule was already near zero, so this run is very likely **undertrained**. A longer run would probably improve it.
 
 - **Training curve (loss / token_acc):** 300: 1.844 / 0.25 → 600: 1.683 / 0.32 → 900: 1.372 / 0.47, then flat at 1.38 to step 3000.
 - **First real long-range transfer through the loop on a pure-attention model.** Qwen3 leaves the format floor (1.842) for the first time. With all 28 layers windowed, the loop is the only route to the needle.
