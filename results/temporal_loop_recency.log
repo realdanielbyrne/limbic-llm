@@ -1,2 +1,4 @@
 [closed_flat    ] step   500 loss 2.457 what 0.115 when 0.838 older 0.111 (201s)
 [closed_flat    ] step  1000 loss 2.112 what 0.121 when 0.941 older 0.139 (407s)
+[closed_flat    ] step  1500 loss 2.362 what 0.150 when 0.961 older 0.098 (614s)
+[closed_flat    ] step  2000 loss 2.242 what 0.123 when 0.943 older 0.123 (815s)
