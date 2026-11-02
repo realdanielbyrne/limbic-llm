@@ -46,6 +46,9 @@ def split_args(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
     """Take the --w1i-* flags; the rest go to ``pretrained_loop``."""
     ap = argparse.ArgumentParser(add_help=False)
     ap.add_argument("--w1i-heads", type=int, default=5)
+    ap.add_argument("--w1i-chain-addressing", choices=["tied", "dg"], default="tied",
+                    help="the chain store S: dense successor keys, or DG codes (against interference)")
+    ap.add_argument("--w1i-chain-expansion", type=int, default=2, help="DG expansion of S's keys (dg only)")
     ap.add_argument("--w1i-dhead", type=int, default=64)
     ap.add_argument("--w1i-taus", type=float, nargs="+", default=[2.0, 4.0, 8.0],
                     help="initial context time constants, cycled over heads")
@@ -67,8 +70,10 @@ class EventLoop(StartLoop):
 
     def __init__(self, d_model: int, heads: int = 5, d_head: int = 64, taus=(2.0, 4.0, 8.0),
                  event_bias: float = -2.0, refractory: float = 0.7, goal_gain: float = 0.0,
-                 chunk: int = 64) -> None:
-        super().__init__(d_model, "tied", heads, d_head, goal_expansion=1, goal_gain=goal_gain, chunk=chunk)
+                 chain_addressing: str = "tied", chain_expansion: int = 2, chunk: int = 64) -> None:
+        super().__init__(d_model, chain_addressing, heads, d_head,
+                         key_expansion=chain_expansion if chain_addressing == "dg" else 1,
+                         goal_expansion=1, goal_gain=goal_gain, chunk=chunk)
         H = heads
         rho = torch.tensor([math.exp(-1.0 / taus[i % len(taus)]) for i in range(H)])
         self.rho_logit = nn.Parameter(torch.log(rho / (1 - rho)))
@@ -119,7 +124,7 @@ class W1iSide(nn.Module):
         w = w or split_args([])[0]
         self.time = TimeChannel(d_model) if getattr(args, "time", True) else None
         self.loop = EventLoop(d_model, w.w1i_heads, w.w1i_dhead, tuple(w.w1i_taus), w.w1i_event_bias,
-                              w.w1i_refractory, w.w1i_goal_gain)
+                              w.w1i_refractory, w.w1i_goal_gain, w.w1i_chain_addressing, w.w1i_chain_expansion)
 
     def forward(self, h: torch.Tensor) -> tuple[torch.Tensor, LoopStats]:
         if self.time is not None:

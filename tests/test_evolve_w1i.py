@@ -19,12 +19,14 @@ def side(*flags):
     return W1iSide(D, type("A", (), {"time": True})(), split_args(list(flags))[0]).eval()
 
 
+@pytest.mark.parametrize("chain", ["tied", "dg"])
 @pytest.mark.parametrize("refractory", ["0.7", "0"])
 @pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
-def test_strictly_causal(refractory, dtype):
+def test_strictly_causal(chain, refractory, dtype):
     """E1: perturbing h[:, t0:] leaves the output before t0 bitwise unchanged, also for bf16-rounded
     float32 input (the pipeline casts the tap activations to float32 before the side channels)."""
-    m = side("--w1i-heads=2", "--w1i-dhead=16", f"--w1i-refractory={refractory}", "--w1i-event-bias=1")
+    m = side("--w1i-heads=2", "--w1i-dhead=16", f"--w1i-refractory={refractory}", "--w1i-event-bias=1",
+             f"--w1i-chain-addressing={chain}")
     with torch.no_grad():
         m.loop.gain_logit.fill_(2.0)
         m.loop.goal_logit.fill_(2.0)
@@ -37,9 +39,10 @@ def test_strictly_causal(refractory, dtype):
         assert torch.equal(y[:, :t0], m(h2)[0][:, :t0]), t0
 
 
-def test_parameter_budget_at_qwen_width():
-    """E3: W1i at Qwen3-1.7B's width stays within 4.4M trainable parameters."""
-    m = W1iSide(2048, type("A", (), {"time": True})(), split_args([])[0])
+@pytest.mark.parametrize("flags", [[], ["--w1i-chain-addressing=dg"]])
+def test_parameter_budget_at_qwen_width(flags):
+    """E3: W1i (dense or DG chain keys) at Qwen3-1.7B's width stays within 4.4M trainable parameters."""
+    m = W1iSide(2048, type("A", (), {"time": True})(), split_args(flags)[0])
     assert sum(p.numel() for p in m.parameters()) <= 4_400_000
 
 
