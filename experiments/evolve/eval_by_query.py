@@ -34,6 +34,9 @@ def main(argv=None):
     ap.add_argument("--n", type=int, default=384)
     ap.add_argument("--batch", type=int, default=16)
     ap.add_argument("--seed", type=int, default=2024)
+    ap.add_argument("--pairs", type=int, default=None, help="evaluate with this many stored pairs (default: as trained)")
+    ap.add_argument("--gap-bins", type=int, nargs="+", default=[300, 350, 400, 450],
+                    help="bin edges for accuracy against the queried fact's gap")
     ap.add_argument("--out", default=None, help="default: <result>.by_query.json")
     args = ap.parse_args(argv)
     rec = json.loads(Path(args.result).read_text())
@@ -52,18 +55,20 @@ def main(argv=None):
     side = side.cuda().eval()
     lm = pl.HookedLM(model, side, ra["layer"], ra["window"], ra["window_mode"], ra["window_layers"], 1,
                      pad_id=tok.eos_token_id)
-    P = ra["pairs"]
+    P = args.pairs or ra["pairs"]
     scatter = rec.get("needle_scatter", 0)
     task = (ScatterNeedleTask(tok, ra["seq_len"], P, 1, min_gap=scatter, block=ra["window"]) if scatter
             else pl.NeedleTask(tok, ra["seq_len"], P, 1))
     rng = random.Random(args.seed)
     stats = torch.zeros(P, 3)                                      # per queried rank: digit-1 ok, exact ok, n
     eps_all, eps_d1 = [], []
+    per_seq = []                                                   # (rank, gap, digit-1 ok, exact ok)
     events = hasattr(side.loop, "event_strength")
     for _ in range(args.n // args.batch):
-        rows, js, vals = [], [], []
+        rows, js, vals, gaps = [], [], [], []
         for _ in range(args.batch):
-            ids, n_ans, _ = task.sample(rng)
+            ids, n_ans, gap = task.sample(rng)
+            gaps.append(gap)
             if scatter:
                 j, vat = task.last_queried, task.last_value_at
             else:                                                  # fixed layout: recover j from the text
@@ -84,6 +89,7 @@ def main(argv=None):
             stats[j, 0] += float(ok[1])                           # ok[0] is the space; ok[1] digit 1
             stats[j, 1] += float(all(ok))
             stats[j, 2] += 1
+            per_seq.append((j, gaps[i], float(ok[1]), float(all(ok))))
         if events:
             with torch.no_grad():
                 h_tap = {}
@@ -103,6 +109,18 @@ def main(argv=None):
            "exact_by_queried_rank": (stats[:, 1] / stats[:, 2]).tolist(),
            "count_by_queried_rank": stats[:, 2].tolist(),
            "missing_keys": list(missing), "unexpected_keys": list(unexpected)}
+    edges = [-1] + args.gap_bins + [10 ** 9]
+    bins = {}
+    for lo, hi in zip(edges[:-1], edges[1:]):
+        sel = [r for r in per_seq if lo < r[1] <= hi]
+        if sel:
+            key = f"{lo + 1 if lo >= 0 else 0}-{hi if hi < 10 ** 9 else 'max'}"
+            bins[key] = {"n": len(sel), "digit1": sum(r[2] for r in sel) / len(sel), "exact": sum(r[3] for r in sel) / len(sel),
+                         "by_rank": {str(k): {"n": sum(1 for r in sel if r[0] == k),
+                                              "exact": (sum(r[3] for r in sel if r[0] == k) / max(1, sum(1 for r in sel if r[0] == k)))}
+                                     for k in range(P)}}
+    out["by_gap"] = bins
+    out["per_sequence"] = per_seq
     if events:
         out["eps_mean_all_tokens"] = sum(eps_all) / len(eps_all)
         if eps_d1:
