@@ -1,0 +1,139 @@
+{
+  "args": {
+    "model": "Qwen/Qwen3-1.7B-Base",
+    "tiny": false,
+    "tiny_arch": "gpt2",
+    "dtype": "bfloat16",
+    "device": "cuda",
+    "attn_impl": "sdpa",
+    "grad_checkpointing": false,
+    "layer": null,
+    "window": 64,
+    "window_mode": "block",
+    "window_layers": "all",
+    "sink": true,
+    "memory": true,
+    "time": true,
+    "kernel": "osc",
+    "rho": 0.7,
+    "tau": 16,
+    "amp": 1.0,
+    "loop": "open",
+    "ca1_control": true,
+    "contrast": true,
+    "dg_keys": false,
+    "d_key": 32,
+    "loop_arg": [],
+    "init_gain": null,
+    "task": "needle",
+    "text_file": null,
+    "dataset": null,
+    "max_chars": 5000000,
+    "pairs": 1,
+    "seq_len": 512,
+    "steps": 1000,
+    "lr": 0.001,
+    "batch": 8,
+    "eval_n": 128,
+    "log_every": 0,
+    "seed": 0,
+    "out": "results/pretrained_qwen3_needle.json"
+  },
+  "model": {
+    "blocks": 28,
+    "linear_layers": 0,
+    "tap_layer": 14,
+    "windowed_layers": 28,
+    "reach": 63,
+    "window_check": "ok (block 0: far 0.0e+00 vs near 1.4e+01)",
+    "trainable_params": 4380675,
+    "base_params": 1720574976,
+    "transformers": "5.22.1",
+    "gap_range": [
+      501,
+      502
+    ]
+  },
+  "curve": [
+    {
+      "step": 100,
+      "loss": 1.8483787775039673,
+      "token_acc": 0.32499998807907104,
+      "inj_ratio": 0.2001953125
+    },
+    {
+      "step": 200,
+      "loss": 1.8447844982147217,
+      "token_acc": 0.22499999403953552,
+      "inj_ratio": 0.201171875
+    },
+    {
+      "step": 300,
+      "loss": 1.8443610668182373,
+      "token_acc": 0.22499999403953552,
+      "inj_ratio": 0.2021484375
+    },
+    {
+      "step": 400,
+      "loss": 1.8427597284317017,
+      "token_acc": 0.30000001192092896,
+      "inj_ratio": 0.2021484375
+    },
+    {
+      "step": 500,
+      "loss": 1.8376680612564087,
+      "token_acc": 0.3499999940395355,
+      "inj_ratio": 0.203125
+    },
+    {
+      "step": 600,
+      "loss": 1.843146562576294,
+      "token_acc": 0.20000000298023224,
+      "inj_ratio": 0.203125
+    },
+    {
+      "step": 700,
+      "loss": 1.8388278484344482,
+      "token_acc": 0.30000001192092896,
+      "inj_ratio": 0.2021484375
+    },
+    {
+      "step": 800,
+      "loss": 1.8388160467147827,
+      "token_acc": 0.25,
+      "inj_ratio": 0.2021484375
+    },
+    {
+      "step": 900,
+      "loss": 1.8350200653076172,
+      "token_acc": 0.3499999940395355,
+      "inj_ratio": 0.203125
+    },
+    {
+      "step": 1000,
+      "loss": 1.835422158241272,
+      "token_acc": 0.30000001192092896,
+      "inj_ratio": 0.203125
+    }
+  ],
+  "results": {
+    "windowed": {
+      "loss": 3.0685452938079836,
+      "token_acc": 0.10625,
+      "exact": 0.0
+    },
+    "windowed+side": {
+      "loss": 1.84166978597641,
+      "token_acc": 0.2796875,
+      "exact": 0.0,
+      "inj_ratio": 0.20257568359375
+    },
+    "full": {
+      "loss": 0.01132408673875034,
+      "token_acc": 1.0,
+      "exact": 1.0
+    },
+    "gain": 0.2689414322376251
+  },
+  "seconds": 231.72672247886658
+}
