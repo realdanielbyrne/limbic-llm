@@ -282,14 +282,17 @@ class HookedLM:
         if not self.side_on:
             return None
         h = out[0] if isinstance(out, tuple) else out
-        s = self.sink
+        s, dt = self.sink, h.dtype
+        # side channels keep float32 weights and run in float32: with bf16 weights, Adam steps
+        # of ~lr are below bf16's spacing near 1 (2^-7), so updates such as the loop gain round away
         if self._seg is not None:                                 # (B·n, s + W, D) → (B, L, D) and back
             B, n, L = self._seg
             W, D = self.window, h.shape[-1]
-            body, stats = self.side(h[:, s:].reshape(B, n * W, D)[:, :L])
-            body = F.pad(body, (0, 0, 0, n * W - L)).reshape(B * n, W, D)
+            body, stats = self.side(h[:, s:].reshape(B, n * W, D)[:, :L].float())
+            body = F.pad(body.to(dt), (0, 0, 0, n * W - L)).reshape(B * n, W, D)
         else:
-            body, stats = self.side(h[:, s:])
+            body, stats = self.side(h[:, s:].float())
+            body = body.to(dt)
         self.last_stats = stats
         h = torch.cat([h[:, :s], body], 1)
         return (h,) + tuple(out[1:]) if isinstance(out, tuple) else h
@@ -704,7 +707,7 @@ def main(argv=None):
     lm = HookedLM(model, side, args.layer, args.window, args.window_mode, args.window_layers, sink,
                   pad_id=tok.eos_token_id, grad_checkpointing=args.grad_checkpointing)
     p = next(lm.blocks[lm.layer].parameters())
-    side.to(p.device, p.dtype)
+    side.to(p.device)                                             # float32 master weights (see _tap)
     n_lin = lm.kinds.count("linear")
     print(f"{args.model if not args.tiny else 'tiny-' + args.tiny_arch}: {len(lm.blocks)} blocks "
           f"({n_lin} linear-attention), d_model {tc.hidden_size}, tap block {lm.layer}, "

@@ -102,3 +102,18 @@ def test_needle_task_shapes_and_gap():
     assert ids.shape == (3, 97) and (ids[:, 0] == tok.bos_token_id).all()
     assert (mask.sum(1) == 5).all() and mask[:, -1].all()          # " 1234" in bytes
     assert all(g > W for g in gaps)
+
+
+def test_side_channels_train_in_float32_on_a_bf16_model():
+    """With bf16 side weights, Adam steps of ~lr round away near 1 (bf16 spacing 2^-7)."""
+    lm, _ = hooked("gpt2")
+    lm.model.to(torch.bfloat16)
+    ids = tokens()
+    out = lm(ids)
+    assert out.dtype == torch.bfloat16                            # the base model still runs in bf16
+    assert all(p.dtype == torch.float32 for p in lm.side.parameters())
+    opt = torch.optim.AdamW(lm.side.parameters(), lr=1e-3)
+    g0 = lm.side.loop.gain_logit.item()
+    out.float().pow(2).mean().backward()
+    opt.step()
+    assert lm.side.loop.gain_logit.item() != g0
