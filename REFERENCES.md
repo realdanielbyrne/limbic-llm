@@ -123,6 +123,21 @@ The bibliography for limbic-llm, grouped by the part of the hippocampal mapping 
 | `zhao2025llms` | Zhao, Huang, Wu, Bau & Shi (2025). *LLMs Encode Harmfulness and Refusal Separately.* NeurIPS | Harmfulness survives jailbreaks and harmful fine-tuning; the controller's input |
 | `rottger2024xstest` | Röttger et al. (2024). *XSTest: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models.* NAACL | Over-refusal benchmark |
 
+## Reasoning steering (CA2 beyond alignment)
+
+| Key | Reference | Relevance |
+|---|---|---|
+| `chen2025seal` | Chen et al. (2025). *SEAL: Steerable Reasoning Calibration of Large Language Models for Free.* arXiv:2504.07986 | Fewer reasoning tokens with higher accuracy |
+| `azizi2025activation` | Azizi et al. (2025). *Activation Steering for Chain-of-Thought Compression.* arXiv:2507.04742 | Concise-vs-verbose steering vector |
+| `huang2025mitigating` | Huang et al. (2025). *Mitigating Overthinking in Large Reasoning Models via Manifold Steering.* NeurIPS | Overthinking direction on the activation manifold |
+| `lin2025controlling` | Lin et al. (2025). *Controlling Thinking Speed in Reasoning Models.* NeurIPS | Fast/slow-thinking vector, adaptive strength |
+| `ma2025cotvalve` | Ma et al. (2025). *CoT-Valve: Length-Compressible Chain-of-Thought Tuning.* ACL | Parameter-space length control |
+| `sun2025thinkedit` | Sun et al. (2025). *ThinkEdit: Interpretable Weight Editing to Mitigate Overly Short Thinking in Reasoning Models.* EMNLP | Shortening can hurt; over-commitment risk |
+| `venhoff2025understanding` | Venhoff et al. (2025). *Understanding Reasoning in Thinking Language Models via Steering Vectors.* arXiv:2506.18167 | Backtracking and uncertainty directions |
+| `hao2024training` | Hao et al. (2024). *Training Large Language Models to Reason in a Continuous Latent Space.* arXiv:2412.06769 | Coconut: latent reasoning in place of tokens |
+| `nguyen2025activation` | Nguyen et al. (2025). *Activation Steering with a Feedback Controller.* ICLR 2026 | Steering as PID control |
+| `shi2026internalizing` | Shi et al. (2026). *Internalizing LLM Reasoning via Discovery and Replay of Latent Actions.* arXiv:2602.04925 | STIR: memory-retrieved reasoning steering |
+
 ## Continual learning and replay
 
 | Key | Reference | Relevance |

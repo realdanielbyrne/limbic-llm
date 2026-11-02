@@ -334,6 +334,51 @@
   ]
  },
  {
+  "group": "Reasoning steering (CA2 beyond alignment)",
+  "entries": [
+   {
+    "key": "chen2025seal",
+    "text": "Chen, et al. (2025). SEAL: Steerable Reasoning Calibration of Large Language Models for Free. https://arxiv.org/abs/2504.07986."
+   },
+   {
+    "key": "azizi2025activation",
+    "text": "Azizi, et al. (2025). Activation Steering for Chain-of-Thought Compression. https://arxiv.org/abs/2507.04742."
+   },
+   {
+    "key": "huang2025mitigating",
+    "text": "Huang, et al. (2025). Mitigating Overthinking in Large Reasoning Models via Manifold Steering. NeurIPS 2025. https://arxiv.org/abs/2505.22411"
+   },
+   {
+    "key": "lin2025controlling",
+    "text": "Lin, et al. (2025). Controlling Thinking Speed in Reasoning Models. NeurIPS 2025. https://arxiv.org/abs/2507.03704"
+   },
+   {
+    "key": "ma2025cotvalve",
+    "text": "Ma, et al. (2025). CoT-Valve: Length-Compressible Chain-of-Thought Tuning. ACL 2025. https://arxiv.org/abs/2502.09601"
+   },
+   {
+    "key": "sun2025thinkedit",
+    "text": "Sun, et al. (2025). ThinkEdit: Interpretable Weight Editing to Mitigate Overly Short Thinking in Reasoning Models. EMNLP 2025. https://arxiv.org/abs/2503.22048"
+   },
+   {
+    "key": "venhoff2025understanding",
+    "text": "Venhoff, et al. (2025). Understanding Reasoning in Thinking Language Models via Steering Vectors. https://arxiv.org/abs/2506.18167."
+   },
+   {
+    "key": "hao2024training",
+    "text": "Hao, et al. (2024). Training Large Language Models to Reason in a Continuous Latent Space. https://arxiv.org/abs/2412.06769."
+   },
+   {
+    "key": "nguyen2025activation",
+    "text": "Nguyen, et al. (2025). Activation Steering with a Feedback Controller. ICLR 2026. https://arxiv.org/abs/2510.04309"
+   },
+   {
+    "key": "shi2026internalizing",
+    "text": "Shi, et al. (2026). Internalizing LLM Reasoning via Discovery and Replay of Latent Actions. https://arxiv.org/abs/2602.04925."
+   }
+  ]
+ },
+ {
   "group": "Continual learning and replay",
   "entries": [
    {

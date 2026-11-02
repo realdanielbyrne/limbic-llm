@@ -261,3 +261,73 @@ The GPU session reviewed the 2 Nov additions (handoff note, "Review of the 2 Nov
 4. **New cheap experiments:** C1a (per-digit logging) and g2b (a longer Qwen3.5 horizon run, which was undertrained).
 5. **A7.** The 9B abliterated model loads through a multimodal class, so the loader needs changes.
 6. **O3.** Both sessions recommend a fixed-size state for the pretrained track, keeping the O(T) horizon loop as the reference arm. Still awaiting Daniel.
+
+---
+
+## Alignment track, base build (2 Nov 2026)
+
+**Built.** [`experiments/alignment/`](../../experiments/alignment/), with a README, 14 tests (`tests/test_alignment.py`), and an offline smoke run on a random tiny model:
+
+- `SteeringController`, with modes `none` / `static` / `conditional` / `graded` and `fixed` or `gist` directions.
+- The harm probe (A1), with held-out AUROC, calibration and an optional layer sweep.
+- The difference-of-means refusal direction, optionally taken from an aligned sibling (A6).
+- Generation with the controller attached across KV-cached decoding.
+- Measurements: refusal on harmful, XSTest-unsafe, XSTest-safe and harmless prompts; selectivity; degeneration; perplexity; an optional guard model; and controller statistics.
+
+The data rule is enforced in code: response text can only be written to a directory outside the repository.
+
+**Checked by tests.**
+- Prefill followed by token-by-token decoding matches a single pass, for every mode and both directions.
+- The graded gain is capped, escalates under sustained score and decays when it stops.
+- The conditional arm decides on the prompt.
+- Left padding does not change real positions, and bf16 input comes back as bf16.
+- The gist direction follows the recent average.
+- The probe and judges behave on synthetic data.
+- An end-to-end run writes labels only.
+
+**Not yet run on real models.** Next on the GPU machine: A1 (a layer sweep on the abliterated model), then A6 against the aligned and base references. Commands are in the track README. The S1 saturation knee should set `--cap`.
+
+---
+
+## Proposal: CA2 beyond alignment, steering chain-of-thought (2 Nov 2026)
+
+**Idea (Daniel).** Chain-of-thought steers a model towards a correct answer by giving it extra context it generates itself, and it improves answers substantially. Additive activations could be a shortcut, "almost like momentum in training": selectively boosting thoughts along the current thought process so the model converges on a better answer sooner. If so, CA2 could cut chain-of-thought token counts at similar accuracy, lowering inference cost and latency. Daniel also asked that CA2 work on a windowed view of the stream (exponentially averaged, autoregressive) so that a general idea is boosted.
+
+**How CA2 is modelled today.**
+- The temporal loop's injection $\Delta_t = F_t - m_t\mu_t$ is a damped, relevance-weighted average of *older* content. It excludes the most recent τ tokens and subtracts the long-run mean, so it boosts what is distinctive about the past, not the gist of the current thought.
+- The alignment controller averages the harm *score* but steers along a fixed direction.
+
+**Added.** `direction="gist"` in `SteeringController`, a momentum direction from two exponential averages of the stream before injection:
+
+$$m_t = \beta m_{t-1} + (1-\beta)h_t,\qquad b_t = \beta_s b_{t-1} + (1-\beta_s)h_t,\qquad \hat d_t = \frac{m_t - b_t}{\lVert m_t - b_t\rVert}$$
+
+The averages read the stream before injection (open loop) and the gain is capped. Reinforcing what is already in the stream is positive feedback, so the gist arm belongs in stability experiment S1.
+
+**Prior art** (survey of 2 Nov; each checked on its arXiv or ACL page)
+
+| Work | Method | Reported result |
+|---|---|---|
+| SEAL (Chen et al. 2025, arXiv 2504.07986) | Vector separating execution thoughts from reflection and transition thoughts | Up to +11% accuracy, 11.8–50.4% fewer reasoning tokens |
+| Activation steering for CoT compression (Azizi et al. 2025, arXiv 2507.04742) | Verbose → concise vector from 100 paired examples | Up to 67% shorter CoT on MATH-500 and GSM8K, accuracy held; 2.7× faster at 8B |
+| Manifold steering (Huang et al., NeurIPS 2025, arXiv 2505.22411) | Overthinking direction restricted to the activation manifold | Up to 71% fewer tokens, accuracy held or improved |
+| Controlling thinking speed (Lin et al., NeurIPS 2025, arXiv 2507.03704) | Fast/slow-thinking vector with input-adaptive strength | +1.3% accuracy, 8.6% fewer tokens |
+| CoT-Valve (Ma et al., ACL 2025, arXiv 2502.09601) | Parameter-space direction whose scale sets CoT length | QwQ-32B GSM8K: 741 → 225 tokens, 95.07 → 94.92% |
+| ThinkEdit (Sun et al., EMNLP 2025, arXiv 2503.22048) | Edits about 4% of heads to fix overly *short* thinking | +6.4% on short-reasoning cases. Shortening can hurt |
+| Steering vectors in thinking LMs (Venhoff et al. 2025, arXiv 2506.18167) | Linear directions for backtracking and uncertainty | Consistent control of reasoning behaviours |
+| Coconut (Hao et al. 2024, arXiv 2412.06769) | Feeds the hidden state back in place of CoT tokens | Better accuracy–efficiency trade-off on search-heavy logic |
+| PID steering (Nguyen et al., ICLR 2026, arXiv 2510.04309) and STU-PID (arXiv 2506.18831) | Steering strength as a feedback controller | STU-PID: GSM8K 81 → 87% with 32% fewer tokens (100 problems, 1.5B) |
+| STIR (Shi et al. 2026, arXiv 2602.04925) and DSEM (Do et al. 2025) | Steering vectors retrieved from a memory of past runs | STIR: +1.9 to +7.5% accuracy, up to 35% fewer tokens |
+
+Also: RISER (arXiv 2601.09269) selects among reasoning-skill vectors (2–3× token efficiency). LOTUS (arXiv 2606.31779) is a looped transformer matching explicit CoT at 3B with 2.5–6.9× lower thinking latency. Qwen3's hybrid checkpoints switch thinking on or off with `enable_thinking` in the chat template, or `/think` and `/no_think`, which makes a thinking-minus-non-thinking direction easy to extract.
+
+**What would be new.** Fixed contrastive vectors already cut reasoning tokens by 10–70%. Feedback-controlled steering and memory-retrieved steering exist separately. No paper found builds the steering signal from the model's own running average of its current line of thought and regulates it with negative feedback, still less together with memory retrieval. **The main risk** is over-commitment: boosting the current line can suppress useful backtracking, and ThinkEdit shows that thinking which is too short costs accuracy.
+
+**Experiments** (R1–R5 in the register)
+
+- **R1 Thinking direction.** On Qwen3's hybrid checkpoints, take the difference between activations with thinking on and off for the same prompts. Inject it in no-think mode and measure accuracy against tokens.
+- **R2 Gist steering during thinking.** Sweep the gain and plot accuracy against mean reasoning tokens on GSM8K, MATH-500 and AIME 2024/25. Baselines: full thinking, `/no_think`, budget truncation, SEAL, and the concise-vector method.
+- **R3 Regulated gist.** A graded gain driven by agreement between the gist and the current token (CA1): boost while consistent, release on backtracking. Compare with STU-PID-style control, and run it through the stability programme.
+- **R4 Over-commitment checks.** Flip analysis (problems the baseline solves that steering breaks, and the reverse), the rate of backtracking words such as "wait", and GPQA-Diamond as an out-of-domain check, with wall-clock time and tokens-to-correct.
+- **R5 Memory-retrieved gist.** Store gist vectors from successful traces in a hippocampal memory and retrieve by similarity. This is the hippocampal version of STIR and DSEM.
+
+**Models:** R1-Distill-Qwen-1.5B/7B and Qwen3-1.7B/4B (hybrid thinking). R1–R4 can reuse `experiments/alignment/steering.py`; a reasoning runner is not built yet.

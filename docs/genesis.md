@@ -160,6 +160,14 @@ This became three records:
 
 **Claude** found suitable models on the Hub: abliterated Qwen3-1.7B variants next to the aligned and base models already in use. It also found supporting evidence: LLMs encode harmfulness separately from refusal, and jailbreaks or harmful fine-tuning leave the harmfulness judgement intact (Zhao et al. 2025). So the harmfulness representation can drive the controller while the hook supplies the refusal direction. Restoring refusal by adding the direction back is close to a tautology for an abliterated model. The informative tests are selectivity (over-refusal), capability cost, multi-turn persistence, and the never-aligned base model. Recorded as A6–A7 in the register, with a data rule: raw completions to harmful prompts are never committed.
 
+### 5.8 CA2 beyond alignment: chain-of-thought and a windowed view (Daniel)
+
+> "build a base alignment track which targets results needed in such research. The CA2 piece might also be helpful in non-alignment situations as well however. Consider CA2 side channel correlation's to COT reasoning. Chain of thought is essentially used to steer a model towards a correct answer by providing extra model generated context. Research has shown significant improvements in model responses when COT is activated. Additive Activations might be used as a shortcut, almost like momentum in training, to get a model to converge on a better answer more quickly my selectively boosting thoughts on the current thought process. So our CA2 model could be used to reduce COT token count while achieving the similar results. If true that could cut inference costs and improve speed."
+
+> "I believe our CA2 model should work on a windowed view (exponentially averaged, autoregressive, etc) so that a general idea is boosted. Is that how it is modeled currently?"
+
+**Claude** built the alignment track (`experiments/alignment/`). On the second question it answered "partly": the loop's injection averages *older* content, excluding the current circuit, and subtracts the long-run mean, while the alignment controller steers along a fixed direction. Claude added a *gist* direction, a fast-minus-slow running average of the stream before injection (momentum, open loop, capped), and flagged it as positive feedback for the stability programme. A literature survey found fixed reasoning-steering vectors already cutting chain-of-thought tokens by 10–70%, plus feedback-controlled and memory-retrieved steering. It found nothing that steers with the model's own running average of its current thought under negative feedback. Recorded as R1–R5, with over-commitment, the loss of useful backtracking, as the main risk.
+
 ## 6. Findings so far
 
 Small models (about 0.1M parameters, CPU), mostly single seeds; final numbers are in [RESULTS.md](../RESULTS.md).

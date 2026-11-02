@@ -115,15 +115,27 @@ This file holds the current state of the project: every result with its status a
 
 | ID | Experiment | Priority | Status |
 |---|---|---|---|
-| A1 | Harm probe at the tap: AUROC and calibration | M | Planned |
-| A2 | Escalating controller against static, conditional (CAST) and no steering, on HarmBench, XSTest and capability benchmarks | M | Planned (after S1) |
+| A1 | Harm probe at the tap: AUROC and calibration (layer sweep) | **H** | Built (`experiments/alignment`); ready to run |
+| A2 | Escalating controller against static, conditional (CAST) and no steering, on harmful prompts, XSTest and perplexity (HarmBench and MMLU later) | M | Built; ready to run (set the cap from S1) |
 | A3 | Escalation and recovery under multi-turn pressure | M | Planned |
 | A4 | Controller stability: ringing between refusing and complying | M | Planned |
 | A5 | Robustness to adaptive attacks on the probe | L | Planned |
-| A6 | **Re-align an unaligned model with runtime hooks** (Daniel). Abliterated Qwen3-1.7B and the never-aligned base, against the aligned reference. Arms: none, static refusal direction, conditional, graded controller, controller without the aligned sibling. Hypotheses H1–H4 in the notebook | **H** (standalone alignment track) | Planned (after A1, S1) |
+| A6 | **Re-align an unaligned model with runtime hooks** (Daniel). Abliterated Qwen3-1.7B and the never-aligned base, against the aligned reference. Arms: none, static refusal direction, conditional, graded controller, controller without the aligned sibling. Hypotheses H1–H4 in the notebook | **H** (standalone alignment track) | Built (`--direction-from`, arm `graded_self`); ready to run |
 | A7 | Scale and hybrid check of A6 on `Huihui-Qwen3.5-9B-abliterated`. It loads as `AutoModelForMultimodalLM`, so `pretrained_loop.py` model loading and `find_blocks` need changes | M | Planned |
 
 Alignment track data rule: commit only judge scores, refusal labels and aggregates. Raw completions to harmful prompts stay off the repository.
+
+### Reasoning: CA2 steering of chain-of-thought (NOTEBOOK, proposal)
+
+| ID | Experiment | Priority | Status |
+|---|---|---|---|
+| R1 | Thinking-minus-non-thinking direction on Qwen3 hybrid checkpoints, injected in no-think mode: accuracy against tokens | M | Planned |
+| R2 | Gist (momentum) steering during thinking: accuracy against reasoning tokens on GSM8K, MATH-500 and AIME, against full thinking, `/no_think`, budget truncation, SEAL and the concise vector | **H** | Planned (gist mode built in `steering.py`) |
+| R3 | Regulated gist: gain from agreement between the gist and the current token, released on backtracking; against STU-PID | M | Planned |
+| R4 | Over-commitment checks: flip analysis, "wait" rate, GPQA-Diamond, wall-clock time and tokens-to-correct | M | Planned (with R2) |
+| R5 | Memory-retrieved gist vectors from successful traces (hippocampal version of STIR and DSEM) | L | Planned |
+
+The gist arm is positive feedback. S1 must include it before R2 runs at high gain.
 
 ### Other open questions
 

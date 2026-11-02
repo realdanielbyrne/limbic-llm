@@ -70,7 +70,7 @@ Closed loops that feed their output back into memory run away when undamped (ech
 git clone https://github.com/realdanielbyrne/limbic-llm
 cd limbic-llm
 pip install -e ".[dev]"      # needs torch >= 2.1
-pytest -q                    # 100 tests (12 need the [pretrained] extra)
+pytest -q                    # 114 tests (13 need the [pretrained] extra)
 ```
 
 ## Quick start
@@ -164,6 +164,13 @@ python experiments/temporal_loop.py --suite ablations # contrast, DG keys, direc
 python experiments/loop_systems.py                   # the op-amp test on an untrained loop
 ```
 
+The alignment track steers a model away from harmful outputs with a graded, regulated controller (see [`experiments/alignment/README.md`](experiments/alignment/README.md)):
+
+```bash
+python experiments/alignment/run.py --model mlabonne/Qwen3-1.7B-abliterated --direction-from Qwen/Qwen3-1.7B \
+    --dtype bfloat16 --device cuda --private-dir ~/limbic_private/a6 --name a6_qwen3_abliterated
+```
+
 Side channels on a frozen pretrained model (needs `pip install -e ".[pretrained]"` and a GPU for real models):
 
 ```bash
@@ -235,7 +242,7 @@ limbic_llm/         memory modules and models
   dentate_gyrus.py  ca3.py  ca2.py  ca1.py  subiculum.py  hippocampal_block.py
   neural_memory.py  titans_hybrid.py  gated_delta.py  temporal_loop.py  replay.py  models.py
 experiments/        recall, continual learning, capacity, temporal loop, op-amp sweep, pretrained models
-tests/              100 tests
+tests/              114 tests
 results/            experiment logs and JSON
 docs/               design document, diagrams, bibliography, notebook
 ```
