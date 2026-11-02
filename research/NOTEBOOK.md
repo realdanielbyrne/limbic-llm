@@ -543,3 +543,44 @@ Recorded as A8, a gain-law comparison: additive-constant, tanh, squared and expo
 | W1b arms (a), (b), (c) | W1b.a, W1b.b, W1b.c | |
 
 **Corrections added as notes:** the stability reference in Fitness (T3's 3,000-step figures), g2 never run (round 0), DEC1 approved (round 0, design review, GPU-session corrections), the M2 premise behind J3 (RV1.D3), and links to RV1 from the alignment, chain-of-thought and CA1 entries.
+
+---
+
+## Round 2: context-bearing addresses (W1b) (2 Nov 2026)
+
+**Question.** In round 1, W1 retrieved the whole code once its first digit was given, but with two stored codes digit 1 was a coin flip (P11). Can the address carry enough context for the queried name to select the start?
+
+**Arms** (`experiments/evolve/w1_gdn.py`, all on Qwen3-1.7B-Base with every layer windowed, 3000 steps, one seed; results in `results/evolve/round2/`)
+- **W1b.a, gdn mode** (`--w1-addressing gdn`, 6 heads for the budget). Short-conv q/k/v, no explicit successor binding.
+- **W1b.b, context conv** (`--w1-ctx 4`). Addresses from a causal depthwise conv over the last 4 positions' hidden states; values from the current position. This is the n-gram idea, built on `h` because rule E4 forbids token ids. It starts as W1, and a test checks that.
+  - With DG keys added.
+  - With `--w1-ctx-init uniform`: an even average from step 0.
+- **W1b.c, tap 21** (`--layer 21`) instead of 14.
+
+**Results** (digit-1 loss / accuracy; digits 2–4 accuracy; exact)
+
+| Arm | 2 pairs | 3 pairs |
+|---|---|---|
+| W1 (reference) | 0.74 / 0.57; 0.97–0.99; 0.55 (round 1) | 1.20 / 0.41; 0.91–0.94; 0.31 |
+| Context conv K = 4 | 0.74 / 0.52; 0.96–0.98; 0.45 | 1.22 / 0.43; 0.91–0.95; 0.32 |
+| Context conv + DG keys | 0.80 / 0.46; 0.95–1.00; 0.42 | — |
+| Context conv, even-average init | 0.84 / 0.58; **0.52–0.65**; 0.11 | 1.90 / 0.34; ≈ chance; 0.00 |
+| gdn mode | 0.80 / 0.48; **chance**; 0.00 | 1.34 / 0.45; chance; 0.00 |
+| **Tap 21** | **0.65** / 0.53; 0.97–1.00; 0.49 | **0.97 / 0.48**; 0.91–0.98; 0.36 |
+
+ln 2 = 0.69 and ln 3 = 1.10.
+
+**What it shows**
+1. **No variant selects the start (P13).** In every arm, digit-1 loss is about ln(pairs). The read at the space after "is" returns an even mix of the stored first digits, so the addresses at that position stay effectively the same across facts.
+2. **Explicit successor binding is what carries the rest of the code (P14).** gdn mode, which would have to learn the shift itself, loses digits 2–4 as well.
+3. **The later tap is the only small step forward (P15).** It learns fastest (0.19 by step 300) and shows slight selection with 3 pairs. That points to the representation at the tap: at block 21 the space token carries more of the name than at block 14.
+4. **Averaging context into the address from the start hurts (P16).** It blurs the successor addresses, so the chain degrades, and the start is still not selected.
+
+**Proposed round 3** (for the checkpoint)
+- **Diagnose before building more (cheap, about 10 minutes of GPU, no training).** Use the saved round-1/2 checkpoints (`.pt`) and the frozen model:
+  - (a) A linear probe for *which name* at the space after "is", at blocks 14 and 21. Is the name decodable there at all?
+  - (b) The cosine similarity between W1's learned addresses at that position across facts. Do they collapse?
+
+  If (a) fails at 14 but works at 21, the fix is where the key is read, not how it is built.
+- **W1g: temporal-context keys** (Howard & Kahana's temporal context model, already the project's CA2 reference). File each value under a slowly drifting context vector, the leaky integral of recent addresses, as well as the previous address. The first digit's key then carries "the code for Name is", not just "is". The state stays fixed-size and causal.
+- **W1b.c, longer.** Tap 21 at 6000 steps with 2 and 3 pairs. It was still improving.
