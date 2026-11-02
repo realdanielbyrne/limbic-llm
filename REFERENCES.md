@@ -36,6 +36,7 @@ The bibliography for limbic-llm, grouped by the part of the hippocampal mapping 
 | `lisman2005hippocampal` | Lisman & Grace (2005). *The Hippocampal-VTA Loop.* Neuron 46(5) | CA1 novelty → learning and decisions |
 | `bein2020mnemonic` | Bein, Duncan & Davachi (2020). *Mnemonic Prediction Errors Bias Hippocampal States.* Nature Communications 11 | CA1 mismatch drives encoding |
 | `hitti2014hippocampal` | Hitti & Siegelbaum (2014). *The Hippocampal CA2 Region Is Essential for Social Memory.* Nature 508 | CA2 function |
+| `leroy2018circuit` | Leroy et al. (2018). *A Circuit from Hippocampal CA2 to Lateral Septum Disinhibits Social Aggression.* Nature 564 | CA2 also promotes aggression: a social-context selector, not a norm enforcer |
 | `smith2016targeted` | Smith, Williams Avram, Cymerblit-Sabba, Song & Young (2016). *Targeted Activation of the Hippocampal CA2 Area Strongly Enhances Social Memory.* Mol. Psychiatry 21(8) | CA2 amplification |
 | `boyle2024tuned` | Boyle, Posani, Irfan, Siegelbaum & Fusi (2024). *Tuned Geometries of Hippocampal Representations Meet the Computational Demands of Social Memory.* Neuron 112(8) | CA2 identity coding |
 | `howard2002distributed` | Howard & Kahana (2002). *A Distributed Representation of Temporal Context.* J. Math. Psych. 46(3) | CA2 temporal context |
@@ -103,6 +104,23 @@ The bibliography for limbic-llm, grouped by the part of the hippocampal mapping 
 | `do2025dynamic` | Do, Tran, Venkatesh & Le (2025). *Dynamic Steering With Episodic Memory For Large Language Models.* Findings of ACL | Closest prior work: memory-retrieved steering vectors |
 | `sun2023retentive` | Sun et al. (2023). *Retentive Network.* arXiv:2307.08621 | Damped complex decay; recurrent form of the loop kernel |
 | `orvieto2023resurrecting` | Orvieto et al. (2023). *Resurrecting Recurrent Neural Networks for Long Sequences.* ICML | Linear recurrences with complex decays |
+
+## Knowledge in transformer weights (the neocortex analogue)
+
+| Key | Reference | Relevance |
+|---|---|---|
+| `geva2021transformer` | Geva, Schuster, Berant & Levy (2021). *Transformer Feed-Forward Layers Are Key-Value Memories.* EMNLP | Facts stored in MLP blocks |
+| `meng2022locating` | Meng, Bau, Andonian & Belinkov (2022). *Locating and Editing Factual Associations in GPT.* NeurIPS | Mid-layer MLPs as the consolidation target |
+
+## Safety steering and evaluation (CA2 as a norm controller)
+
+| Key | Reference | Relevance |
+|---|---|---|
+| `arditi2024refusal` | Arditi et al. (2024). *Refusal in Language Models Is Mediated by a Single Direction.* NeurIPS | Static refusal direction |
+| `zou2023representation` | Zou et al. (2023). *Representation Engineering: A Top-Down Approach to AI Transparency.* arXiv:2310.01405 | Reading and steering concepts in activations |
+| `zou2024improving` | Zou et al. (2024). *Improving Alignment and Robustness with Circuit Breakers.* NeurIPS | Rerouting harmful representations towards incoherent or refusal states |
+| `mazeika2024harmbench` | Mazeika et al. (2024). *HarmBench: A Standardized Evaluation Framework for Automated Red Teaming and Robust Refusal.* ICML | Attack-success benchmark |
+| `rottger2024xstest` | Röttger et al. (2024). *XSTest: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models.* NAACL | Over-refusal benchmark |
 
 ## Continual learning and replay
 

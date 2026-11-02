@@ -131,6 +131,29 @@ Daniel then said "fan out as necessary", and the switches and experiments were b
 
 A second Claude session on Daniel's GPU machine (geof) ran these and pushed its results with a handoff note, [`results/pretrained_HANDOFF.md`](../results/pretrained_HANDOFF.md). It then began an evolution-style search over the side channels, with fitness criteria agreed with Daniel (reach on the Qwen3 needle, bounded echo, new tokens dominating) and anti-gaming rules such as strict causality and a fixed-size state. Its notebook is [`results/evolve/NOTEBOOK.md`](../results/evolve/NOTEBOOK.md), and its round-0 diagnosis found two of the corrections below.
 
+### 5.6 Design review, stability and alignment (Daniel)
+
+The next morning Daniel asked how the Qwen implementation relates to the circuit: whether DG reuses a mixture-of-experts router, how skip paths and feedback are wired, whether the CA2 injection is a single layer, and what plays the neocortex. **Claude's** answers, taken from the code and run settings, are in the lab notebook's design review. In short:
+
+- Both Qwen models are dense, and DG keys were off in every Qwen run.
+- The skips and the feedback live inside one hook at one block, with feedback running over time rather than depth.
+- The injection is single-layer and switchable.
+- The frozen stack is the neocortex, and consolidation is not yet wired in.
+
+Two of Daniel's premises were adjusted: CA3 → CA1 is the main serial path rather than a skip, and the Titans LMM is hippocampal rather than neocortical. Daniel then set a direction:
+
+> "All results and conclusions should be tracked and potential future experiments noted. Feedback stability mechanisms need to be explored in more detail as our additive activations could likely cause saturation without mediation. Additive activations also seem to be analogous to llm alignment. There is the biological similarity in that societal norms seems to drive CA2 and in the world of deep learning that maps directly onto alignment efforts. CA2 could be a way to prevent models from producing harmful content if we can find a way to dynamically steer models away from harmful outputs. For instance I can imagine a scenario similar to the books of Isaac Asimov's robot books. In Asimov's books when a robot (AI) is asked to harm a human an internal feedback loop ever more aggressively blocks this behavior until the model's outputs become nonsensical. Dynamic Additive Activations can be used to push a model towards non-harmful outputs the more the "novelty" signal increases, and in this case we could model novelty as a proxy for a harmfullness score"
+
+This became three records:
+
+- the register of results and experiments, [`results/evolve/REGISTER.md`](../results/evolve/REGISTER.md);
+- a feedback-stability programme, S1–S8, led by a saturation curve on Qwen;
+- a proposal for CA2 as a norm-steering controller, A1–A5.
+
+**Claude** added two points of context:
+- Biology: CA2 supports social recognition memory and in mice also *promotes* aggression through the lateral septum, so it acts as a context selector rather than an enforcer of norms.
+- Prior art: circuit breakers already reroute harmful representations towards incoherent or refusal states, but by fine-tuning. What is new here is a runtime, graded controller: a leaky integral of a harm score drives a capped steering gain. Plain novelty is not the same as harm, so the score should come from a harm probe, or from "norm novelty", a mismatch against a memory of aligned behaviour.
+
 ## 6. Findings so far
 
 Small models (about 0.1M parameters, CPU), mostly single seeds; final numbers are in [RESULTS.md](../RESULTS.md).
@@ -160,6 +183,8 @@ Small models (about 0.1M parameters, CPU), mostly single seeds; final numbers ar
 | The pretrained needle runs tested the loop's memory | With $\rho = 0.7$ and $\tau = 16$, the kernel's e-folding span is $\tau/\ln(1/\rho) \approx 45$ tokens, and its weight is exactly 0 for lags of 501–503 (the clamped half of the cosine). The horizon has to be set for the gap. |
 
 ## 8. Open questions
+
+The current list, with status and priority, is kept in [`results/evolve/REGISTER.md`](../results/evolve/REGISTER.md). The main threads:
 
 - **How does Qwen3.5 recall the needle?** The late tap shows the success needs Gated DeltaNet layers after the tap. The loop cannot see 500 tokens back with its default kernel, so the needle must reach the tap through the GDN layers before it. The working hypothesis is a chain: GDN layers before the tap carry a weak trace, the loop re-presents it, and GDN layers after the tap integrate it for the attention layers to read.
 - **How long a memory should the loop have?** Damping makes new input dominate but sets a horizon of about $\tau/\ln(1/\rho)$ tokens. Several bands with different $\rho$, as in the blueprint, may be needed to have both.

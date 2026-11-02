@@ -108,6 +108,10 @@
     "text": "Hitti, F. L., & Siegelbaum, S. A. (2014). The Hippocampal CA2 Region Is Essential for Social Memory. Nature 508, 88–92."
    },
    {
+    "key": "leroy2018circuit",
+    "text": "Leroy, F., Park, J., Asok, A., Brann, D. H., Meira, T., Boyle, L. M., et al. (2018). A circuit from hippocampal CA2 to lateral septum disinhibits social aggression. Nature 564, 213–218. https://pubmed.ncbi.nlm.nih.gov/30518859/"
+   },
+   {
     "key": "smith2016targeted",
     "text": "Smith, A. S., Williams Avram, S. K., Cymerblit-Sabba, A., Song, J., & Young, W. S. (2016). Targeted Activation of the Hippocampal CA2 Area Strongly Enhances Social Memory. Molecular Psychiatry 21(8), 1137–1144."
    },
@@ -284,6 +288,44 @@
    {
     "key": "orvieto2023resurrecting",
     "text": "Orvieto, A., Smith, S. L., Gu, A., Fernando, A., Gulcehre, C., Pascanu, R., & De, S. (2023). Resurrecting Recurrent Neural Networks for Long Sequences. In International Conference on Machine Learning. https://arxiv.org/abs/2303.06349"
+   }
+  ]
+ },
+ {
+  "group": "Knowledge in transformer weights (the neocortex analogue)",
+  "entries": [
+   {
+    "key": "geva2021transformer",
+    "text": "Geva, M., Schuster, R., Berant, J., & Levy, O. (2021). Transformer Feed-Forward Layers Are Key-Value Memories. In Proceedings of EMNLP. https://arxiv.org/abs/2012.14913"
+   },
+   {
+    "key": "meng2022locating",
+    "text": "Meng, K., Bau, D., Andonian, A., & Belinkov, Y. (2022). Locating and Editing Factual Associations in GPT. In Advances in Neural Information Processing Systems. https://arxiv.org/abs/2202.05262"
+   }
+  ]
+ },
+ {
+  "group": "Safety steering and evaluation (CA2 as a norm controller)",
+  "entries": [
+   {
+    "key": "arditi2024refusal",
+    "text": "Arditi, A., Obeso, O., Syed, A., Paleka, D., Panickssery, N., Gurnee, W., & Nanda, N. (2024). Refusal in Language Models Is Mediated by a Single Direction. In Advances in Neural Information Processing Systems. https://arxiv.org/abs/2406.11717"
+   },
+   {
+    "key": "zou2023representation",
+    "text": "Zou, A., Phan, L., Chen, S., et al. (2023). Representation Engineering: A Top-Down Approach to AI Transparency. https://arxiv.org/abs/2310.01405."
+   },
+   {
+    "key": "zou2024improving",
+    "text": "Zou, A., Phan, L., Wang, J., Duenas, D., Lin, M., Andriushchenko, M., et al. (2024). Improving Alignment and Robustness with Circuit Breakers. In Advances in Neural Information Processing Systems. https://arxiv.org/abs/2406.04313"
+   },
+   {
+    "key": "mazeika2024harmbench",
+    "text": "Mazeika, M., Phan, L., Yin, X., et al. (2024). HarmBench: A Standardized Evaluation Framework for Automated Red Teaming and Robust Refusal. In International Conference on Machine Learning. https://arxiv.org/abs/2402.04249"
+   },
+   {
+    "key": "rottger2024xstest",
+    "text": "Röttger, P., Kirk, H. R., Vidgen, B., Attanasio, G., Bianchi, F., & Hovy, D. (2024). XSTest: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models. In Proceedings of NAACL. https://arxiv.org/abs/2308.01263"
    }
   ]
  },
