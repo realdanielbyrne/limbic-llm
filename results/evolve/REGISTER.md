@@ -137,6 +137,16 @@ Alignment track data rule: commit only judge scores, refusal labels and aggregat
 
 The gist arm is positive feedback. S1 must include it before R2 runs at high gain.
 
+### CA1 as a calibrated decision model (JEV, LAYA) (NOTEBOOK, proposal)
+
+| ID | Experiment | Priority | Status |
+|---|---|---|---|
+| J1 | Decision source for the alignment controller: linear probe, calibrated head, LAYA-style external encoder, guard model. AUROC, ECE in and out of distribution, A2 selectivity at a fixed cap | **H** (cheap add-on to A1/A2) | Planned |
+| J2 | LAYA-style CA1 comparator for the loop: joint encoder over the stream and the CA3 retrieval, outputting injection strength, write/no-write and replay priority, trained on the counterfactual benefit of injecting | M | Planned |
+| J3 | Revisit M2 with a calibrated CA1 novelty signal for Titans | L | Planned |
+| J4 | Calibrated "on track" decision gating the gist gain and early stopping of thinking (with R3) | M | Planned |
+| J5 | Calibrated exit for a depth loop (with D-b), against Ouro's gate | L | Planned |
+
 ### Other open questions
 
 | ID | Experiment | Priority | Status |

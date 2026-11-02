@@ -331,3 +331,39 @@ Also: RISER (arXiv 2601.09269) selects among reasoning-skill vectors (2–3× to
 - **R5 Memory-retrieved gist.** Store gist vectors from successful traces in a hippocampal memory and retrieve by similarity. This is the hippocampal version of STIR and DSEM.
 
 **Models:** R1-Distill-Qwen-1.5B/7B and Qwen3-1.7B/4B (hybrid thinking). R1–R4 can reuse `experiments/alignment/steering.py`; a reasoning runner is not built yet.
+
+---
+
+## Proposal: calibrated decision models (JEV, LAYA) as CA1 (2 Nov 2026)
+
+**Question (Daniel).** Are experiments planned that use JEV- or LAYA-style decision models as CA1 stand-ins, or are they not worth exploring?
+
+**Status.** None were in the register; the README roadmap listed only "a calibrated CA1". CA1 today does two jobs:
+- in `HippocampalBlock`, a shallow comparator with features $[a; r; a\odot r; \lvert a-r\rvert]$, whose novelty is trained to track per-token loss;
+- in the temporal loop, uncalibrated gain control: error-only projection, $\tanh(\lVert\Delta\rVert/\lambda)$, and energy division.
+
+The design document already gives the target shape. CA1 should be a joint encoder over the current input and the CA3 retrieval (LAYA encodes both inputs together across every layer). Its output should be typed decisions with calibrated confidence (JEV): write or not, replay priority, loop again or exit.
+
+**Why it is worth it.** Every gate in the design is a decision that is currently uncalibrated:
+- the harm score $s_t$ driving the alignment controller;
+- the injection strength;
+- the acetylcholine write/recall switch (S6);
+- replay priority (W3);
+- the reasoning "on track?" signal (R3);
+- the exit of a depth loop (D-b).
+
+A graded controller maps *probability* to gain, so calibration, not just ranking (AUROC), decides how selective it is. One earlier failure may also have been a calibration problem: CA1 + novelty-scaled learning rate harmed Titans (M2) when the novelty signal was still untrained. One caveat comes from LAYA's own documentation: an English checkpoint scored 0% on Khmer while still reporting high confidence. Calibration has to be checked under distribution shift.
+
+**Experiments** (J1–J5 in the register)
+
+- **J1 Decision source for the alignment controller.** Use each of the following as $s_t$:
+  - the current linear probe;
+  - a calibrated head on the residual stream (proper scoring rule plus temperature scaling);
+  - a LAYA-style external encoder on the text (a small ModernBERT classifier, model-agnostic);
+  - a guard model.
+
+  Measure AUROC, ECE in and out of distribution (XSTest borderline prompts, other languages), and A2 selectivity at a fixed cap. *Hypothesis:* at equal AUROC, better calibration gives higher selectivity.
+- **J2 LAYA-style CA1 comparator for the loop.** A small cross-attention encoder over the recent stream window and the CA3 retrieval, outputting injection strength, write/no-write and replay priority with confidence. The training target is the counterfactual benefit of injecting, the next-token loss with and without the injection. Test on the what-when task, the recency probe and the stability suite, then the Qwen needle.
+- **J3 Revisit M2.** A calibrated CA1 (proper scoring, warm-up) as the novelty signal for Titans' learning rate. Does calibration remove the harmful interaction?
+- **J4 Reasoning gate.** A calibrated "on track" decision that predicts eventual correctness from a partial trace. It sets the gist gain (boost while on track, release towards backtracking) and could stop thinking early. Run with R3 and compare with PID control.
+- **J5 Depth-loop exit.** A calibrated halting decision for a looped upper block (D-b), compared with Ouro's learned gate and its hidden-state-difference rule.
