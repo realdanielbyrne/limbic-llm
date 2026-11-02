@@ -1,0 +1,23 @@
+Loading weights:   0%|          | 0/320 [00:00<?, ?it/s]Loading weights: 100%|██████████| 320/320 [00:00<00:00, 18189.15it/s]
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+Qwen/Qwen3.5-2B-Base: 24 blocks (18 linear-attention), d_model 2048, tap block 22, 6 windowed, block window 64, reach inf
+window check: ok (block 3: far 0.0e+00 vs near 5.9e-01)
+trainable side-channel parameters 4,380,675 (base 1,881,825,088, frozen)
+needle gap 501–502 tokens
+note: linear-attention layers are not windowed, so the windowed base keeps their memory
+step   300 loss 1.869 token_acc 0.325 inj 0.201 (47s)
+step   600 loss 1.811 token_acc 0.300 inj 0.195 (93s)
+step   900 loss 1.762 token_acc 0.400 inj 0.201 (140s)
+step  1200 loss 1.828 token_acc 0.300 inj 0.208 (186s)
+step  1500 loss 1.736 token_acc 0.350 inj 0.214 (233s)
+step  1800 loss 1.874 token_acc 0.275 inj 0.212 (279s)
+step  2100 loss 1.714 token_acc 0.400 inj 0.216 (325s)
+step  2400 loss 1.835 token_acc 0.275 inj 0.218 (372s)
+step  2700 loss 1.830 token_acc 0.300 inj 0.217 (419s)
+step  3000 loss 1.766 token_acc 0.275 inj 0.218 (466s)
+
+condition       window side    exact  tok_acc    loss    inj
+windowed            64  off    0.000    0.056   4.028      -
+windowed+side       64   on    0.000    0.345   1.734  0.218
+full                 0  off    1.000    1.000   0.034      -
+saved results/pretrained_qwen35_needle_layer22.json

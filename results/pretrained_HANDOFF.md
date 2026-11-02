@@ -17,8 +17,8 @@ All earlier pretrained numbers are **superseded**, and the runs below are being 
 | `pretrained_qwen3_needle` (3000 steps) | **done** (fixed) |
 | `pretrained_qwen35_needle` (attention only, 3000 steps) | **done** (fixed) |
 | `pretrained_qwen35_needle_allwin` (all layers, 3000 steps) | running, GPU 0 |
-| `pretrained_qwen35_needle_layer22` (attention only, tap at block 22, 3000 steps) | running, GPU 1 |
-| `pretrained_qwen3_lm` | queued (rerun) |
+| `pretrained_qwen35_needle_layer22` (attention only, tap at block 22, 3000 steps) | **done** (fixed) |
+| `pretrained_qwen3_lm` | running, GPU 1 (rerun) |
 | `pretrained_qwen35_lm` | queued (rerun). The bf16 run was **stopped** at step 600 of 1000 and never wrote a JSON. |
 
 The rerun JSONs overwrite the old files in place. Git history keeps the bf16 versions (commits
@@ -46,9 +46,12 @@ Each cell is exact / token_acc / loss. "gain" is the final loop gain; the initia
 |---|---|---|---|---|---|---|
 | `pretrained_qwen3_needle` | 28/28 | 14 | 0.00 / 0.106 / 3.069 | 0.00 / 0.287 / 1.842 | 1.00 / 1.000 / 0.011 | 0.2797 |
 | `pretrained_qwen35_needle` | 6/24 attention | 12 | 0.00 / 0.056 / 4.028 | **1.00 / 1.000 / 0.0000** | 1.00 / 1.000 / 0.034 | 0.2697 |
+| `pretrained_qwen35_needle_layer22` | 6/24 attention | **22** | 0.00 / 0.056 / 4.028 | 0.00 / 0.345 / 1.734 | 1.00 / 1.000 / 0.034 | 0.2933 |
 
 - **Qwen3:** the fix did not help. The training loss stayed flat at about 1.84 for all 3000 steps (1.840 at the end), and exact match is still 0. The gain did train (0.2689 → 0.2797), so bf16 rounding was not the only reason this run was stuck. A diagnosis is in progress in this session.
 - **Qwen3.5 with only the attention layers windowed:** reproduces the bf16-era result. Exact is 1.0 with near-zero loss, and the gain moved only slightly (0.2697). Whether the loop reads a trace kept by the Gated DeltaNet layers or replays the needle into them is what the allwin and layer-22 runs test.
+- **Qwen3.5 with the tap moved to block 22:** exact match drops from 1.0 to 0.0, and training loss plateaus around 1.7–1.8, like the failing runs. With the tap at 12, the loop's output passes through 9 more Gated DeltaNet layers. At 22 only blocks 22–23 come after it, and block 23 is windowed attention. So the success depends on Gated DeltaNet layers after the tap, not just on a trace that already exists when the loop reads its input. This supports the "the loop feeds the needle into the GDN layers after it" reading, not "the loop reads a trace the GDN layers already hold".
+- **Why the loop cannot recall alone (Qwen3), confirmed by calculation:** with the default `--kernel osc --rho 0.7 --tau 16`, the loop weight is w(Δ) = ρ^(Δ/τ−1)·[cos(2πΔ/τ)]₊ (`limbic_llm/temporal_loop.py:100-102`). That gives 1.0 at Δ=16, 0.08 at 128, 0.005 at 256, about 4e-19 at 500, and **exactly 0 at Δ = 501–503** (the needle gap falls on the clamped half of the cosine). The loop cannot see the needle on this task, whatever the training. Its kernel limits it to roughly the last 100–200 tokens. On Qwen3.5 with tap 12, it can only be passing along recent content that the earlier Gated DeltaNet layers have already carried forward.
 
 ## Superseded results: bf16 bug (do not cite)
 
