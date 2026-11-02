@@ -615,7 +615,7 @@ ln 2 = 0.69 and ln 3 = 1.10.
    - Subtractive feedback must amplify some band (Bode). At K = 1 that is about 2.5× near a 46-token period, which may explain T10.
 5. **Pathfinding (RV2.F1).** Samsonovich & Ascoli's CA3 transition matrix *J* is the repo's successor store. Their CA3 → CA1 goal field *W*, written at sharp waves by a hindsight max-recency rule, together with theta-timed probes of candidate successors, makes it a path search. A re-implementation reproduced their path lengths (6.69 ± 3.29 against 4.24 ± 0.66 optimal at 10⁴ contexts; one graph and seed).
 
-**Read against rounds 1–2.** P8 confirms the passkey critique. P9 rules out adapter repair only when every layer is windowed, and P2 still needs L2. P11 and P13 are RV2.F1 in LLM form: every W1b variant changed the write-side address and left digit 1 at ≈ ln(pairs). Start selection is read-side, through a dense cue from the query span or a goal field (L6). P14 (gdn mode loses the chain) is confounded by B12.
+**Read against rounds 1–2.** P8 confirms the passkey critique. P9 rules out adapter repair only when every layer is windowed, and P2 still needs L2. P11 and P13 are RV2.F1 in LLM form: every W1b variant changed the write-side address. None selected the start: digit-1 loss was ≈ ln(pairs) in the identity-initialised arms, and higher in ctx4u (0.84 / 1.90 with 2 / 3 pairs). Start selection is read-side, through a dense cue from the query span or a goal field (L6). P14 (gdn mode loses the chain) is confounded by B12.
 
 **Register changes.**
 - M1, M2, M6 and T16 moved to Open; M4 to Refuted.

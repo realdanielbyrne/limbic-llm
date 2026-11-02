@@ -183,7 +183,7 @@ DG keys learned faster (P10) but did not help start selection (P11), as the DG r
 
 ## 3b. Round-2 results read against the review
 
-Round 2 tested W1b's three context-bearing address variants with 2 and 3 pairs (register P13–P16). **No variant selected the start.** Digit-1 loss stayed at about ln(number of pairs) in every arm (0.65–0.80 with 2 pairs, 0.97–1.34 with 3), so the read at the space after "is" returns an even mix of the stored first digits. The block-21 tap gave the only slight selection (digit-1 accuracy 0.48 against 0.33 chance with 3 pairs).
+Round 2 tested W1b's three context-bearing address variants with 2 and 3 pairs (register P13–P16). **No variant selected the start.** In the identity-initialised arms, digit-1 loss stayed near ln(number of pairs): 0.65–0.80 with 2 pairs (ln 2 = 0.69) and 0.97–1.34 with 3 (ln 3 = 1.10). The read at the space after "is" therefore returns roughly an even mix of the stored first digits. The even-average-init arm (ctx4u, P16) was worse than an even mix: 0.84 with 2 pairs and 1.90 with 3. The block-21 tap gave the only slight selection (digit-1 accuracy 0.48 against 0.33 chance with 3 pairs).
 
 This is what the review's reading of P11 predicts, for a specific reason. Every W1b arm changes the *write-side address*, the history folded into the key at the answer position. In the Samsonovich & Ascoli model and in the Treves–Rolls split, start selection is a *read-side* operation: either a dense cue computed from the query (the name), or a goal field that scores candidate successors. Neither has been tried. The next arms are therefore:
 
