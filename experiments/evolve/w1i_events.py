@@ -13,14 +13,16 @@ tokens the facts share. Both are learned here:
 
     b_t = W_c x_t                                   key features; their magnitude is salience
     c_t = norm( Σ_{s≤t} ρ_h^{t−s} b_s )             drifting context (TCM), ρ_h learned
-    e_t = σ(w_e · x_t + b_e)                        event detector (starts sparse, b_e = −2)
+    e_t = σ(w_e · x_t + b_e)                        event detector (b_e = −2: e ≈ 0.12 everywhere at init)
     r_t = Σ_{s≤t} λ^{t−s}(1−λ) e_s                  recent-event trace
     ε_t = e_t (1 − r_{t−1})                          refractory: no re-write right after an event
     G:  v_t filed under c_{t−1} with strength ε_t, no decay (α ≈ 1, learned)
     o_t = S_t a_t + σ(g) · G_t c_t                  S is W1's chain store, unchanged
 
 G is read with the current context and written with the previous one (hindsight: the context that
-led to the event). Fixed state (G, the context and the trace are fixed-size; rule E2), causal
+led to the event). At initialisation the detector is low but not sparse (≈ 0.12 at every token),
+so G starts close to a recency echo of the last few values; whether training makes the events
+sparse is measured by ``eval_by_query.py`` (mean ε, and ε at the facts' first digits). Fixed state (G, the context and the trace are fixed-size; rule E2), causal
 (E1). The kernels are evaluated in parallel in float32. Same CA1 injection as W1.
 
 Run with ``experiments/evolve/run.py --candidate evolve.w1i_events:W1iSide``; flags below.
@@ -73,6 +75,7 @@ class EventLoop(StartLoop):
         self.event = nn.Linear(d_model, H)
         nn.init.constant_(self.event.bias, event_bias)
         nn.init.constant_(self.g_alpha.bias, -9.0)                         # no decay to start (α ≈ 1)
+        del self.g_beta                                                    # writes come from the events
         self.refractory = refractory
 
     def goal_context(self, x: torch.Tensor) -> torch.Tensor:
@@ -99,7 +102,7 @@ class EventLoop(StartLoop):
         alpha, beta = _gates(m.w_alpha, m.w_beta, x)
         o, _, _ = _run(a, self._shift(a), v, alpha, beta, None, m.chunk_size)        # chain store S
         c = self.goal_context(x)
-        ga, _ = _gates(self.g_alpha, self.g_beta, x)
+        ga = torch.exp(-F.softplus(self.g_alpha(x))).transpose(1, 2)     # G's decay (B, H, T)
         og, _, _ = _run(c, self._shift(c), v, ga, self.event_strength(x), None, m.chunk_size)   # goal field G
         o = o + torch.sigmoid(self.goal_logit) * og
         o = m.norm(o).transpose(1, 2).reshape(B, T, m.h * m.dv)

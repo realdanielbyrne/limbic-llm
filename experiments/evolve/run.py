@@ -57,12 +57,15 @@ class ScatterNeedleTask(pl.NeedleTask):
     two pairs by position alone. W1g did: it retrieved the first and the last fact, never the
     middle one (register P18). Here each fact is preceded by a random stretch of filler (at least
     ``min_gap`` tokens between facts), and at least ``tail`` filler tokens separate the last fact
-    from the query, so the queried fact's position carries no information about which one it is.
+    from the query. This removes absolute-position cues but keeps the facts' order, so a memory of
+    the first and the last fact still covers 2 pairs; use 3 or more pairs, and read the accuracy by
+    queried rank (``eval_by_query.py``). With ``block`` (the attention window), facts that would
+    straddle a window-block boundary are resampled, as in the fixed layout, where none do.
     """
 
-    def __init__(self, *a, min_gap: int = 8, tail: int = 256, **kw) -> None:
+    def __init__(self, *a, min_gap: int = 8, tail: int = 256, block: int = 0, **kw) -> None:
         super().__init__(*a, **kw)
-        self.min_gap, self.tail = min_gap, tail
+        self.min_gap, self.tail, self.block = min_gap, tail, block
 
     def sample(self, rng):
         enc = self.tok.encode
@@ -76,9 +79,16 @@ class ScatterNeedleTask(pl.NeedleTask):
         spare = n_fill - self.tail - self.min_gap * (self.pairs - 1)
         if spare < 0:
             raise ValueError(f"--seq-len {self.seq_len} too short for {self.pairs} scattered pairs")
-        cuts = sorted(rng.randint(0, spare) for _ in range(self.pairs))      # filler before each fact
-        pre = [cuts[0]] + [cuts[i] - cuts[i - 1] + self.min_gap for i in range(1, self.pairs)]
-        fill = lambda k: [self.pool[rng.randrange(len(self.pool))] for _ in range(k)]
+        for _ in range(1000):                                              # filler before each fact
+            cuts = sorted(rng.randint(0, spare) for _ in range(self.pairs))
+            pre = [cuts[0]] + [cuts[i] - cuts[i - 1] + self.min_gap for i in range(1, self.pairs)]
+            if not self.block or not self._straddles(pre, facts):
+                break
+        def fill(k):
+            if self.corpus:
+                o = rng.randrange(len(self.corpus) - k)
+                return self.corpus[o:o + k]
+            return [self.pool[rng.randrange(len(self.pool))] for _ in range(k)]
         ids, value_at = [self.bos] * self.sink, []
         for f, h, k in zip(facts, heads, pre):
             ids += fill(k)
@@ -86,7 +96,18 @@ class ScatterNeedleTask(pl.NeedleTask):
             ids += f
         ids += fill(self.seq_len + self.sink - len(ids) - len(query) - len(answer)) + query + answer
         gap = (len(ids) - len(answer)) - value_at[j]
+        self.last_queried, self.last_value_at = j, value_at                # read by eval_by_query.py
         return ids, len(answer), gap
+
+    def _straddles(self, pre: list[int], facts: list[list[int]]) -> bool:
+        """True if any fact would span two window blocks (positions counted after the sink)."""
+        p = 0
+        for k, f in zip(pre, facts):
+            p += k
+            if p // self.block != (p + len(f) - 1) // self.block:
+                return True
+            p += len(f)
+        return False
 
 
 def evaluate(lm, batches, window, side, task):
@@ -106,9 +127,6 @@ def main(argv=None):
     own, rest = ap.parse_known_args(argv)
     cand_ns = None
     pl.evaluate = evaluate
-    if own.needle_scatter:
-        gap = own.needle_scatter
-        pl.NeedleTask = lambda *a, **kw: ScatterNeedleTask(*a, min_gap=gap, **kw)
     if own.candidate:
         mod_name, cls = own.candidate.split(":")
         mod = importlib.import_module(mod_name)
@@ -117,6 +135,9 @@ def main(argv=None):
             cand_ns, rest = mod.split_args(rest)
         parsed = pl.parse_args(rest)
         pl.SideChannels = lambda d_model, **_: Cand(d_model, parsed, cand_ns)
+    if own.needle_scatter:                                         # after the candidate took its flags
+        gap, window = own.needle_scatter, pl.parse_args(rest).window
+        pl.NeedleTask = lambda *a, **kw: ScatterNeedleTask(*a, min_gap=gap, block=window, **kw)
     results = pl.main(rest)
     args = pl.parse_args(rest)
     out = Path(args.out or f"results/pretrained/pretrained_loop_{args.task}.json")

@@ -135,3 +135,20 @@ def test_scattered_needle_breaks_the_fixed_layout():
         assert text.count(" The code for ") == 4                  # 3 facts and the query
         firsts.add(text.index(" The code for "))
     assert len(firsts) > 10
+
+
+def test_scattered_facts_stay_inside_one_window_block():
+    """With block = W, no fact spans two attention-window blocks (as in the fixed layout)."""
+    import random
+    _, tok = evolve_run.pl.build_tiny("gpt2", seed=0)
+    task = evolve_run.ScatterNeedleTask(tok, 512, 3, 1, min_gap=8, tail=256, block=64)
+    rng = random.Random(1)
+    head = len(tok.encode(" The code for "))
+    for _ in range(50):
+        ids, _, _ = task.sample(rng)
+        body = bytes(i for i in ids[1:] if i < 256).decode("latin-1")
+        starts = [i for i in range(len(body)) if body.startswith(" The code for ", i)][:3]
+        for st in starts:
+            end = body.index(".", st)
+            assert st // 64 == end // 64, (st, end)
+    assert task.last_queried in (0, 1, 2)

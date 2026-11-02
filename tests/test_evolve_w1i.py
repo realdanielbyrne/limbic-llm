@@ -22,7 +22,8 @@ def side(*flags):
 @pytest.mark.parametrize("refractory", ["0.7", "0"])
 @pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
 def test_strictly_causal(refractory, dtype):
-    """E1: perturbing h[:, t0:] leaves the output before t0 bitwise unchanged, also for bf16 input."""
+    """E1: perturbing h[:, t0:] leaves the output before t0 bitwise unchanged, also for bf16-rounded
+    float32 input (the pipeline casts the tap activations to float32 before the side channels)."""
     m = side("--w1i-heads=2", "--w1i-dhead=16", f"--w1i-refractory={refractory}", "--w1i-event-bias=1")
     with torch.no_grad():
         m.loop.gain_logit.fill_(2.0)
@@ -90,3 +91,28 @@ def test_refractory_suppresses_writes_right_after_an_event():
     eps = loop.event_strength(x)[0, 0]
     assert eps[3] > 0.99 and eps[4] < 0.75 and eps[3] > eps[4] > 0
     assert eps[:3].max() < 1e-6 and eps[8:].max() < 1e-6
+
+
+def test_read_wires_the_goal_field_as_described(monkeypatch):
+    """The code the GPU runs: G is keyed by the *previous* context, read with the current one, and
+    written with the event strength (RV review w1i-1: the mechanism test above rebuilds this path)."""
+    import evolve.w1i_events as w1i
+    calls = []
+    real = w1i._run
+
+    def spy(q, k, v, alpha, beta, S0, chunk):
+        calls.append((q, k, beta))
+        return real(q, k, v, alpha, beta, S0, chunk)
+
+    monkeypatch.setattr(w1i, "_run", spy)
+    torch.manual_seed(0)
+    loop = EventLoop(D, heads=2, d_head=16)
+    x = torch.randn(2, 30, D)
+    with torch.no_grad():
+        loop._read(x)
+        c = loop.goal_context(x)
+        eps = loop.event_strength(x)
+    assert len(calls) == 2                                          # S, then G
+    q, k, beta = calls[1]
+    assert torch.equal(q, c) and torch.equal(k, loop._shift(c)) and torch.equal(beta, eps)
+    assert not hasattr(loop, "g_beta")                              # writes come from the events only
