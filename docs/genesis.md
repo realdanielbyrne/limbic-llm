@@ -129,7 +129,7 @@ Daniel then said "fan out as necessary", and the switches and experiments were b
 - Qwen3, pure attention: does the loop carry memory when nothing else can?
 - Qwen3.5, a 3:1 Gated DeltaNet hybrid: is GDN the CA3, and does the loop add anything on top?
 
-A second Claude session on Daniel's GPU machine (geof) ran these and pushed its results with a handoff note, [`results/pretrained_HANDOFF.md`](../results/pretrained_HANDOFF.md).
+A second Claude session on Daniel's GPU machine (geof) ran these and pushed its results with a handoff note, [`results/pretrained_HANDOFF.md`](../results/pretrained_HANDOFF.md). It then began an evolution-style search over the side channels, with fitness criteria agreed with Daniel (reach on the Qwen3 needle, bounded echo, new tokens dominating) and anti-gaming rules such as strict causality and a fixed-size state. Its notebook is [`results/evolve/NOTEBOOK.md`](../results/evolve/NOTEBOOK.md), and its round-0 diagnosis found two of the corrections below.
 
 ## 6. Findings so far
 
@@ -155,6 +155,8 @@ Small models (about 0.1M parameters, CPU), mostly single seeds; final numbers ar
 | CA1 control proves the feedback is stabilising | The hard clamp guarantees the bound by construction; the feedback had to be tested separately |
 | A sliding window makes memory the only route | Information hops $W-1$ tokens per layer, reaching $L(W-1)$; block windows are strict |
 | The first GPU runs trained the side channels | Side channels in bf16 lost Adam updates near 1; they now train in float32 |
+| The loop's kernels were causal in any precision | In bf16, `arange(512)` has only 385 distinct values, so positions merged and the clock's $d \ge 0$ mask let a position see the next token. Found by the GPU session; index arithmetic now stays in float32 |
+| The loop has an $O(1)$-state recurrent form | Only if relevance factorises as $\varphi(q)^\top\varphi(k)$. The exponential relevance used here does not, so the store grows as $O(T)$; a fixed-state version leads back to linear attention and Gated DeltaNet |
 | The pretrained needle runs tested the loop's memory | With $\rho = 0.7$ and $\tau = 16$, the kernel's e-folding span is $\tau/\ln(1/\rho) \approx 45$ tokens, and its weight is exactly 0 for lags of 501–503 (the clamped half of the cosine). The horizon has to be set for the gap. |
 
 ## 8. Open questions
