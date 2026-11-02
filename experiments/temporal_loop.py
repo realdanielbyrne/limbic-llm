@@ -13,6 +13,10 @@ Suites (pick with --suite, or build one model from the flags):
   stability   closed-loop memory with kernel flat / exp / osc, and osc + CA1 control
               trained on gaps ≤ 140, then run on 520-token sequences to see whether
               feedback stays bounded and new input keeps dominating
+  The long rollout of single-event models also runs a zero-shot recency probe: an
+  older, different event precedes the target, and it reports how often the model
+  names the newer and the older event.
+
   recency     the stability models on a recency task: an older, different event
               comes 20–60 tokens before the target, and the answer is the most recent.
               Undamped feedback returns both events equally; tests whether new input
@@ -113,6 +117,14 @@ def long_rollout(model, args, seed):
         res[f"what_gap_{lo}_{hi}"] = correct[sel].mean().item() if sel.any() else None
     if task.distractor:
         res["older_named"] = (pred[what] == task.last_old).float().mean().item()
+    if args.task == "single":
+        # zero-shot recency probe: an older, different event precedes the target.
+        # Which one does a model trained on single events name?
+        probe = WhatWhenTask(seed=seed + 1, distractor=True)
+        p_inp, p_tgt, p_what, _, _ = probe.batch(256)
+        p_pred = model(p_inp).logits.argmax(-1)[p_what]
+        res["probe_newer_named"] = (p_pred == p_tgt[p_what]).float().mean().item()
+        res["probe_older_named"] = (p_pred == probe.last_old).float().mean().item()
     if out.loop is not None:
         r = out.loop.inj_ratio
         for lo, hi in [(args.tau, 128), (128, 320), (320, 519)]:

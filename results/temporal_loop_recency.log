@@ -8,3 +8,7 @@
 [closed_exp     ] step   500 loss 3.262 what 0.129 when 0.340 older 0.111 (202s)
 [closed_exp     ] step  1000 loss 3.193 what 0.123 when 0.510 older 0.139 (408s)
 [closed_exp     ] step  1500 loss 2.444 what 0.145 when 0.824 older 0.098 (616s)
+[closed_exp     ] step  2000 loss 2.317 what 0.123 when 0.939 older 0.125 (824s)
+[closed_exp     ] step  2500 loss 2.128 what 0.117 when 0.969 older 0.127 (1021s)
+[closed_exp     ] step  3000 loss 2.413 what 0.143 when 0.967 older 0.143 (1226s)
+[closed_exp     ] long rollout {"what_gap_20_140": 0.091, "what_gap_140_300": 0.1, "what_gap_300_500": 0.091, "older_named": 0.125, "inj_ratio_16_128": 1.372, "inj_ratio_128_320": 1.436, "inj_ratio_320_519": 0.834, "inj_ratio_max": 7.645, "gain": 0.257}

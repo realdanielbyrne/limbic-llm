@@ -17,3 +17,8 @@ baselines: what 0.125 (chance), when 0.333 (majority bin)
 closed_osc_ca1  what 1.000  when 0.977  inj late 0.349
 memory_time     what 1.000  when 0.922  inj late 0.303
 [closed_osc_ca1 ] step   500 loss 2.047 what 0.109 when 0.984 (139s)
+[closed_osc_ca1 ] step  1000 loss 1.019 what 0.527 when 0.990 (278s)
+[closed_osc_ca1 ] step  1500 loss 0.018 what 1.000 when 0.996 (411s)
+[closed_osc_ca1 ] step  2000 loss 0.002 what 1.000 when 0.998 (544s)
+[closed_osc_ca1 ] step  2500 loss 0.001 what 1.000 when 1.000 (681s)
+[closed_osc_ca1 ] step  3000 loss 0.001 what 1.000 when 1.000 (823s)
