@@ -72,7 +72,7 @@ Closed loops that feed their output back into memory run away when undamped (ech
 git clone https://github.com/realdanielbyrne/limbic-llm
 cd limbic-llm
 pip install -e ".[dev]"      # needs torch >= 2.1
-pytest -q                    # 122 tests (21 need the [pretrained] extra)
+pytest -q                    # 206 tests (78 need the [pretrained] extra)
 ```
 
 ## Quick start
@@ -265,7 +265,7 @@ results/            experiment logs and JSON, one folder per track
   evolve/round2/    round 2 (W1b), in progress
   alignment/        alignment-track labels and scores
 research/           REGISTER.md, NOTEBOOK.md, HANDOFF.md (GPU session), plans/, reviews/
-tests/              122 tests
+tests/              206 tests
 docs/               design document, design notes, diagrams, bibliography, notebooks
 ```
 

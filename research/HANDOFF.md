@@ -39,7 +39,7 @@ The scripts now default to this layout: the CPU scripts write to `results/synthe
 
 ## Data rules
 
-- **Alignment track.** Commit only judge scores, refusal labels and aggregate metrics. Raw completions to harmful prompts go to `--private-dir`, outside the repository, and are never committed. Until RV1.A6 is fixed, an absolute or `../` value of `--name` bypasses `assert_private` and writes inside the repo, so check the resolved path.
+- **Alignment track.** Commit only judge scores, refusal labels and aggregate metrics. Raw completions to harmful prompts go to `--private-dir`, outside the repository, and are never committed. `--name` may hold only letters, digits, `.`, `_` and `-`, and each private file is checked after resolution (RV1.A6, fixed).
 - **Result files.** Do not edit JSON or logs by hand. Commit logs only for finished runs (B8). A rerun that replaces a file in place must be recorded in the Provenance section of `results/README.md`.
 - **Checkpoints** (`*.pt`) are not committed.
 
@@ -47,9 +47,15 @@ The scripts now default to this layout: the CPU scripts write to `results/synthe
 
 Follow [`evolution_protocol.md`](evolution_protocol.md): the round loop, controls, the candidate interface, `experiments/evolve/queue.sh` (GPU job queue) and `experiments/evolve/sync.sh` (rebase-safe push), and the pitfalls met in rounds 0–5.
 
-## Open review items
+## Review RV1 (fixed, 2 Nov)
 
-The open findings of the review of the alignment, CoT and CA1 decision tracks are tracked in the RV1 table of [`REGISTER.md`](REGISTER.md) (report: [`reviews/2026-11-02_alignment_cot_ca1.md`](reviews/2026-11-02_alignment_cot_ca1.md)). They block A2, A6, R2, R3, R4, J1 and J3, and qualify A1, A7, R1 and the S1 gist arm. Fix them before running those.
+All twenty findings of the review of the alignment, CoT and CA1 decision tracks are addressed (RV1 table of [`REGISTER.md`](REGISTER.md); NOTEBOOK, "RV1 fixes"; report: [`reviews/2026-11-02_alignment_cot_ca1.md`](reviews/2026-11-02_alignment_cot_ca1.md)). **A1, A2 and A6 are ready for geof.** What changed for whoever runs them:
+- Perplexity now prefills `--ppl-prefix` tokens and teacher-forces the rest, so every arm is measured; `ppl_gain_mean` shows the arm acted.
+- A refusal counts only in a non-degenerate response (`refusal_raw` keeps the old count).
+- Every arm, including `none`, reports the probe's AUROC and ECE at the prompt and on generated tokens (`calibration`). Check the generated-token numbers before reading graded-vs-conditional differences.
+- New arm `static_random` (matched-norm control). `--gains` and `--caps` sweep the gain and cap, and `operating_points` compares arms at a matched harmful-refusal rate (`--target-refusal`). For A6 sweep past 0.3 (N3).
+- `--direction-from` frees the sibling before loading the target and exits if layer count or width differ.
+- The gist direction skips the sink token and is bias-corrected, with `anti_gist`, `mean` and `random` controls; R2 and R3 still need a reasoning runner (protocols in the NOTEBOOK).
 
 ## Literature review RV2 (2 Nov)
 
@@ -74,7 +80,7 @@ A Claude Science session reviewed the four research tracks against the literatur
 - **A8.** The gain law: tanh against squared and exponential schedules in the harm evidence. The A6 gain sweep should extend past 0.3, since the sibling direction first refuses there.
 - **R6.** A repetition-regulated CoT gain.
 
-A8 and R6 need new modes in `steering.py`, and none are built yet. **Do not commit this notebook with outputs from the alignment preset** (data rule): clear them with `jupyter nbconvert --clear-output --inplace`.
+A8 and R6 need new modes in `steering.py`, and neither is built yet. The notebook reads `summary()`'s new keys (`s_gen_mean` replaces `s_mean`). **Do not commit this notebook with outputs from the alignment preset** (data rule): clear them with `jupyter nbconvert --clear-output --inplace`.
 
 ## Earlier contents
 

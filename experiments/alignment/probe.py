@@ -1,10 +1,14 @@
 """Activations, the harm probe (A1), and steering directions.
 
 * ``activations``: the residual stream after one decoder block at the last prompt
-  token. Prompts are left-padded, so the last position is always real.
+  token. Prompts are left-padded, so the last position is always real. Position ids
+  are derived from the padding mask, as ``generate`` derives them, so absolute-position
+  models (GPT-2, OPT) see the same positions with or without padding (RV1.A8).
 * ``fit_probe``: logistic regression on standardised activations. This is the
-  CA1-style calibrated decision s_t = σ(w·(h − μ)/σ + b). Reports held-out AUROC and
-  expected calibration error.
+  CA1-style decision s_t = σ(w·(h − μ)/σ + b). Reports held-out AUROC and expected
+  calibration error *at the last prompt token*, where it is fit. The controller also
+  reads it on generated tokens; ``run.py`` reports AUROC and ECE there separately
+  (RV1.A2, RV1.D2).
 * ``diff_of_means``: the refusal direction of Arditi et al. (2024), the mean
   activation on harmful prompts minus the mean on harmless ones. Taken from an
   aligned model, it is the direction the hook injects into an unaligned one.
@@ -32,10 +36,17 @@ def activations(model, block, batches) -> torch.Tensor:
     dev = model.get_input_embeddings().weight.device
     try:
         for ids, mask in batches:
-            model(input_ids=ids.to(dev), attention_mask=mask.to(dev), use_cache=False)
+            model(input_ids=ids.to(dev), attention_mask=mask.to(dev), position_ids=position_ids(mask).to(dev),
+                  use_cache=False)
     finally:
         handle.remove()
     return torch.cat(grabbed)
+
+
+def position_ids(mask: torch.Tensor) -> torch.Tensor:
+    """Positions counted over real tokens of a left-padded batch (pads get 1, as in HF ``generate``)."""
+    pos = mask.long().cumsum(-1) - 1
+    return pos.masked_fill(mask == 0, 1)
 
 
 def diff_of_means(X: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
@@ -68,17 +79,13 @@ def predict(probe: dict, X: torch.Tensor) -> torch.Tensor:
 
 def auroc(scores: torch.Tensor, y: torch.Tensor) -> float:
     """Area under the ROC curve by the rank-sum (Mann–Whitney) statistic, ties averaged."""
-    scores, y = scores.double(), y.bool()
+    scores, y = scores.double().flatten(), y.bool().flatten()
     n1, n0 = int(y.sum()), int((~y).sum())
     if n1 == 0 or n0 == 0:
         return float("nan")
-    order = scores.argsort()
-    ranks = torch.empty_like(scores)
-    ranks[order] = torch.arange(1, len(scores) + 1, dtype=torch.double)
-    for v in scores.unique():                         # average ranks over ties
-        tie = scores == v
-        if tie.sum() > 1:
-            ranks[tie] = ranks[tie].mean()
+    _, inv, counts = torch.unique(scores, return_inverse=True, return_counts=True)   # sorted unique values
+    upper = counts.cumsum(0).double()                  # rank of the last member of each tie group
+    ranks = (upper - (counts.double() - 1) / 2)[inv]   # average rank within ties
     return float((ranks[y].sum() - n1 * (n1 + 1) / 2) / (n1 * n0))
 
 

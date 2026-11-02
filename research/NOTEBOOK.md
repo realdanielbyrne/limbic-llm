@@ -299,7 +299,7 @@ The GPU session reviewed the 2 Nov additions (handoff note, "Review of the 2 Nov
 The data rule is enforced in code: response text can only be written to a directory outside the repository.
 
 **Checked by tests.**
-- Prefill followed by token-by-token decoding matches a single pass, for every mode and both directions.
+- Prefill followed by token-by-token decoding matches a single pass, for every mode and both directions. [Correction, 2 Nov 2026 (RV1.A4): true for the static and graded modes. The conditional case passed only for its seed, because with `score_positions="all"` the decision is taken at a different position in the two runs, and the `"last"` path that `run.py` uses was not tested. Both are now tested; see "RV1 fixes" (2 Nov 2026) at the end of this notebook.]
 - The graded gain is capped, escalates under sustained score and decays when it stops.
 - The conditional arm decides on the prompt.
 - Left padding does not change real positions, and bf16 input comes back as bf16.
@@ -309,7 +309,7 @@ The data rule is enforced in code: response text can only be written to a direct
 
 **Not yet run on real models.** Next on the GPU machine: A1 (a layer sweep on the abliterated model), then A6 against the aligned and base references. Commands are in the track README. The S1 saturation knee should set `--cap`.
 
-[Review, 2 Nov 2026: the review RV1, [`reviews/2026-11-02_alignment_cot_ca1.md`](reviews/2026-11-02_alignment_cot_ca1.md), found problems in this build. RV1.A1 (High): the perplexity check never measures the conditional, graded or graded_self arms, so the capability metric is vacuous for them. RV1.A2: the probe is calibrated on the last prompt token but integrated over generated tokens. RV1.A3: degenerate loops count as refusals. RV1.A6: `--name` can bypass the data rule. A2 and A6 are blocked until these are fixed; A1 can run with the RV1.A2 caveat. The review's file:line anchors refer to commits 73259fc and 241a13c.]
+[Review, 2 Nov 2026: the review RV1, [`reviews/2026-11-02_alignment_cot_ca1.md`](reviews/2026-11-02_alignment_cot_ca1.md), found problems in this build. RV1.A1 (High): the perplexity check never measures the conditional, graded or graded_self arms, so the capability metric is vacuous for them. RV1.A2: the probe is calibrated on the last prompt token but integrated over generated tokens. RV1.A3: degenerate loops count as refusals. RV1.A6: `--name` can bypass the data rule. A2 and A6 are blocked until these are fixed; A1 can run with the RV1.A2 caveat. The review's file:line anchors refer to commits 73259fc and 241a13c.] [Fixed, 2 Nov 2026: all four, and the rest of RV1; see "RV1 fixes" (2 Nov 2026) at the end of this notebook. A1, A2 and A6 are ready to run.]
 
 ---
 
@@ -326,6 +326,8 @@ The data rule is enforced in code: response text can only be written to a direct
 $$m_t = \beta m_{t-1} + (1-\beta)h_t,\qquad b_t = \beta_s b_{t-1} + (1-\beta_s)h_t,\qquad \hat d_t = \frac{m_t - b_t}{\lVert m_t - b_t\rVert}$$
 
 The averages read the stream before injection (open loop) and the gain is capped. Reinforcing what is already in the stream is positive feedback, so the gist arm belongs in stability experiment S1.
+
+[Correction, 2 Nov 2026 (RV1.C1, RV1.C6): as first built, both averages started at zero and included the first token, the attention sink, whose norm on Qwen3-1.7B-Base is about 80× the median. $\hat d_t$ therefore pointed along the sink and the stream mean, not the current thought. The averages are now bias-corrected means over real tokens that skip the first token, $m_t = \sum_u \beta^{t-u} h_u / \sum_u \beta^{t-u}$, so a constant background cancels exactly. "Open loop" holds within one forward pass only: the injection changes the sampled token, which sets every later $h_t$. see "RV1 fixes" (2 Nov 2026) at the end of this notebook.]
 
 **Prior art** (survey of 2 Nov; each checked on its arXiv or ACL page)
 
@@ -344,7 +346,14 @@ The averages read the stream before injection (open loop) and the gain is capped
 
 Also: RISER (arXiv 2601.09269) selects among reasoning-skill vectors (2–3× token efficiency). LOTUS (arXiv 2606.31779) is a looped transformer matching explicit CoT at 3B with 2.5–6.9× lower thinking latency. Qwen3's hybrid checkpoints switch thinking on or off with `enable_thinking` in the chat template, or `/think` and `/no_think`, which makes a thinking-minus-non-thinking direction easy to extract.
 
+[Correction, 2 Nov 2026 (RV1.C4, RV1.C5, RV1.C8):
+- **STU-PID** was withdrawn on 28 Sep 2026, as RV1 reports (not re-checked here: arXiv rate-limited the fetch, and a mirror still lists only v1). The 81 → 87%, −32% tokens above are v1's figures; RV1 gives the last substantive version as 85.7 → 89.6% and −23% on a GSM8K subset, "a small-scale proof of concept". R3's published baseline is PID steering (arXiv 2510.04309), which integrates the error across *layers*, not decoding steps, so a decode-time PID controller is reimplemented as an R3 ablation.
+- **DSEM** (Do et al., ACL Findings 2025) stores steering vectors built from *alignment demonstrations* (safety, style transfer, role-play) and retrieves them per token chunk by nearest neighbour. Its memory does not hold past reasoning runs; STIR's does.
+- **Missing prior art.** ERSS, the "Endogenous Reasoning State Steering" of Zhang et al. (2026, arXiv 2606.06188), already steers with the current generation's own hidden states: it caches the high-norm states seen so far and, at a norm peak, adds the cached state most cosine-similar to $h_t$, $h_t' = h_t + \lambda h^*$. STARS (Lee et al. 2026, arXiv 2601.22484) names "reasoning rigidity (inertia of direction)" as a failure mode of large reasoning models, which is the over-commitment risk below.]
+
 **What would be new.** Fixed contrastive vectors already cut reasoning tokens by 10–70%. Feedback-controlled steering and memory-retrieved steering exist separately. No paper found builds the steering signal from the model's own running average of its current line of thought and regulates it with negative feedback, still less together with memory retrieval. **The main risk** is over-commitment: boosting the current line can suppress useful backtracking, and ThinkEdit shows that thinking which is too short costs accuracy.
+
+[Correction, 2 Nov 2026 (RV1.C5): the novelty claim is narrowed. Steering from the model's own states during generation exists (ERSS), and STARS documents the inertia this design risks. What remains untested is the specific form: a fast-minus-slow exponential average of the stream as the direction, regulated by a negative-feedback gain law (R3, R6), and its pairing with memory retrieval (R5).]
 
 **Experiments** (R1–R5 in the register)
 
@@ -356,7 +365,7 @@ Also: RISER (arXiv 2601.09269) selects among reasoning-skill vectors (2–3× to
 - **R4 Over-commitment checks.** Flip analysis (problems the baseline solves that steering breaks, and the reverse), the rate of backtracking words such as "wait", and GPQA-Diamond as an out-of-domain check, with wall-clock time and tokens-to-correct.
 - **R5 Memory-retrieved gist.** Store gist vectors from successful traces in a hippocampal memory and retrieve by similarity. This is the hippocampal version of STIR and DSEM.
 
-**Models:** R1-Distill-Qwen-1.5B/7B and Qwen3-1.7B/4B (hybrid thinking). R1–R4 can reuse `experiments/alignment/steering.py`; a reasoning runner is not built yet.
+**Models:** R1-Distill-Qwen-1.5B/7B and Qwen3-1.7B/4B (hybrid thinking). R1–R4 can reuse `experiments/alignment/steering.py`; a reasoning runner is not built yet. [Correction, 2 Nov 2026 (RV1.C3): R3 needs a gain law of its own, now defined; R2's controls are now direction modes of `steering.py`; see "RV1 fixes" (2 Nov 2026) at the end of this notebook.]
 
 ---
 
@@ -389,8 +398,10 @@ A graded controller maps *probability* to gain, so calibration, not just ranking
   - a guard model.
 
   Measure AUROC, ECE in and out of distribution (XSTest borderline prompts, other languages), and A2 selectivity at a fixed cap. *Hypothesis:* at equal AUROC, better calibration gives higher selectivity.
+
+  [Correction, 2 Nov 2026 (RV1.D1, RV1.D2, RV1.D4): as stated the hypothesis is ill-posed. At a fixed cap and κ the gain $G\tanh(\kappa E)$ depends on where benign scores sit on that curve, and temperature scaling is monotone, so a "better-calibrated" source can raise benign gains and lower selectivity. ECE was also measured at the prompt position, not on the generated tokens that drive the gain. The two text-level sources give one score per prompt and cannot drive the graded mode. Reworded, with the matched-operating-point design; see "RV1 fixes" (2 Nov 2026) at the end of this notebook.]
 - **J2 LAYA-style CA1 comparator for the loop.** A small cross-attention encoder over the recent stream window and the CA3 retrieval, outputting injection strength, write/no-write and replay priority with confidence. The training target is the counterfactual benefit of injecting, the next-token loss with and without the injection. Test on the what-when task, the recency probe and the stability suite, then the Qwen needle.
-- **J3 Revisit M2.** A calibrated CA1 (proper scoring, warm-up) as the novelty signal for Titans' learning rate. Does calibration remove the harmful interaction? [Review, 2 Nov 2026: blocked by RV1.D3. The premise is corrected above; warm-up alone is now its own arm, J3.a; and a calibration measure for the novelty target, a regression target with no binary event, has to be defined. RV1.D1 and RV1.D4 also block J1.]
+- **J3 Revisit M2.** A calibrated CA1 (proper scoring, warm-up) as the novelty signal for Titans' learning rate. Does calibration remove the harmful interaction? [Review, 2 Nov 2026: blocked by RV1.D3. The premise is corrected above; warm-up alone is now its own arm, J3.a; and a calibration measure for the novelty target, a regression target with no binary event, has to be defined. RV1.D1 and RV1.D4 also block J1.] [Update, 2 Nov 2026: the calibration measure is defined and J1 is reworded; see "RV1 fixes" (2 Nov 2026) at the end of this notebook.]
 - **J4 Reasoning gate.** A calibrated "on track" decision that predicts eventual correctness from a partial trace. It sets the gist gain (boost while on track, release towards backtracking) and could stop thinking early. Run with R3 and compare with PID control.
 - **J5 Depth-loop exit.** A calibrated halting decision for a looped upper block (W6), compared with Ouro's learned gate and its hidden-state-difference rule.
 
@@ -806,3 +817,78 @@ This answers Daniel's earlier question about inference-time memory. The memory d
 - Train W1i with natural filler, or a random/natural mix, and evaluate on both. Does the event detector learn "first digit of a fact" rather than "rare token"?
 - Optionally, a sparsity regulariser or an explicit write budget per window on the events, to make the policy robust to filler.
 - Then RULER-style multi-key and multi-value evaluation (RV2) on the most robust checkpoint.
+
+---
+
+## RV1 fixes: the alignment, CoT and CA1 tracks (2 Nov 2026)
+
+Review RV1 ([`reviews/2026-11-02_alignment_cot_ca1.md`](reviews/2026-11-02_alignment_cot_ca1.md)) found twenty problems in the alignment build, the CoT proposal and the CA1 decision proposal. All twenty are addressed. The code findings each have a test in `tests/test_alignment.py`, which grows from 14 to 44 tests. The protocol findings are written out below, because their runners are not built yet. Register §3 has the status of each.
+
+**Code**
+
+| Finding | Change | Test |
+|---|---|---|
+| A1 perplexity never activated three arms | `perplexity()` prefills the first `--ppl-prefix` tokens (default 32) through the KV cache, then teacher-forces the rest, so every continuation token is scored and steered as in generation. It reports the mean gain on the continuation (`ppl_gain_mean`) | `test_perplexity_measures_every_arm` |
+| A2 / D2 probe calibrated only where it was fit | The none arm now has a controller in mode `none`, which records scores without injecting. Every arm reports per-set `s_prompt_mean` and `s_gen_mean`, and `calibration`: AUROC and ECE at the last prompt token, per generated token and per response, in distribution (harmful against harmless) and on XSTest (unsafe against safe) | end-to-end test |
+| A3 loops counted as refusals | `judge.counted_refusal` requires refusal markers *and* degeneration ≤ 0.5; `refusal_raw` is kept. Degeneration, repetition and the token-limit rate are printed and stored for every set | `test_judges_and_the_data_rule` |
+| A4 the `"last"` path untested | Left-padded prefill of two prompts of different lengths, then decode steps, against a per-token reference for each sequence alone, for every mode, with the conditional switch both on and off. Conditional is dropped from the `"all"` one-pass test, where it differs by design | `test_last_path_padded_prefill_and_decode_matches_reference` |
+| A5 statistics included pads | `summary()` averages over response positions only (the last prompt token and each generated token before the first EOS), plus `gain_prompt_mean` over real prompt tokens | `test_summary_counts_real_positions_only` |
+| A6 `--name` could escape | `judge.safe_name` allows letters, digits, `.`, `_` and `-` only; `judge.private_file` checks the resolved file. The results JSON path uses the same name | `test_run_names_cannot_contain_paths`, `test_private_files_cannot_escape_the_private_dir` |
+| A7 sibling model kept in memory | Freed before the target loads; layer count and width must match or the run exits. The path now also runs under `--tiny` (a second random model), so it is tested | end-to-end test |
+| A8 position ids on left padding | `probe.position_ids`, derived from the mask exactly as `generate` derives them | `test_left_padding_is_invisible_to_the_probe_activations` |
+| C1 gist dominated by the sink | Bias-corrected averages over real tokens, skipping the first `gist_skip` tokens (default 1). Both averages are normalised means of the same tokens, so a constant background cancels exactly and no corpus mean is needed | `test_gist_excludes_the_sink_and_cancels_the_background` (with the sink included, the injected direction has a component of −0.98 along the sink, as RV1 found on Qwen3) |
+| C2 no controls | `direction_mode` `anti_gist`, `mean` (the slow average alone) and `random` (seeded). At the same g every mode injects the same norm; the trace records the effective gain g·‖d̂‖. `run.py` gains a `static_random` arm as the matched-norm control for A2 and A6 | `test_random_direction_is_fixed_unit_and_seeded`, gist test |
+| C3 / D4 silent no-op; no score interface | `graded` without a per-token score raises, as does `conditional` without any score. `score_fn(h)` supplies per-token scores (a calibrated head); `external_decision=True` with `pending_decision` (B,) supplies one score per prompt (an encoder or a guard model) and drives the conditional mode only | `test_modes_without_a_score_source_raise_and_score_sources_plug_in` |
+| C6 "open loop" overstated | Docstring softened. `judge.repetition_onset`: the first token at which a 32-token window turns repetitive, reported per response | `test_judges_and_the_data_rule` |
+| D1 calibration at a fixed cap is ill-posed | `--gains` and `--caps` sweeps; `operating_points` gives each family's curve and its borderline and harmless refusal interpolated at `--target-refusal`. Refusal rates carry a binomial standard error | `test_sweeps_report_matched_operating_points` |
+
+`probe.auroc` is also vectorised (tie groups by `torch.unique`), because the generated-token metrics score thousands of tokens; a test checks it against a brute-force count on tie-heavy data.
+
+**What changes in practice.** On the random tiny model of the smoke test, an illustration and not a result:
+- Perplexity now separates the arms: graded 526.6 against 534.9 for none, with a mean continuation gain of 0.27. Before the fix, RV1's CPU run found none, conditional, graded and graded_self bit-identical (539.97).
+- The probe's AUROC is 1.00 at the prompt but 0.36 on generated tokens, where its mean score is *higher* on harmless responses. A random model means nothing in itself, but the gap RV1.A2 warned of can be large, and every real run now measures it.
+
+**R1 protocol (RV1.C7).** Under Qwen3's chat-template switch, the user-prompt tokens are identical in both conditions, and with causal attention so are their activations, so a difference taken there is zero. The conditions differ only in the appended template tokens and in what is generated. The direction is therefore the difference of mean activations over the first 32 generated content tokens of each condition (inside `<think>` with thinking on; the answer with thinking off), excluding template and special tokens. Its cosine with the last-template-token difference is reported, to show the two are not the same direction.
+
+**R2 protocol (RV1.C2).**
+- **Arms at matched norm** (the same g, so the same g‖h‖ at every position): `gist`, `anti_gist`, `mean`, `random` (three direction seeds) and no steering.
+- **Baselines:** full thinking; budget truncation at the gist arm's mean reasoning length; SEAL; the concise vector. `/no_think` is a baseline for the Qwen3 hybrids only. R1-Distill has no switch, so it uses budget truncation and a prefilled empty thinking block instead.
+- **Sampling:** 4 samples per problem at T = 0.6, top-p 0.95, seeds 0–3, the same seeds in every arm.
+- **Non-inferiority:** a pre-registered margin δ = 2 accuracy points. "Equal accuracy" is claimed only if the lower 95% bound of a paired bootstrap over problems, on (arm − full thinking), lies above −δ. GSM8K (1,319 problems) and MATH-500 can resolve that; AIME (60 problems, a standard error of about 6 points at 30% accuracy) is reported descriptively only.
+- **Truncation:** the share of traces that hit the token limit, per arm. Truncated traces are scored wrong, and accuracy on untruncated traces is reported alongside.
+- **Over-commitment (R4):** flips, the "wait" rate, the self-loop rate (RV2), `repetition_onset` and distinct-4.
+
+**R3 gain law (RV1.C3).** The agreement of the current token with the gist up to the previous token,
+
+$$a_t = \cos\big(h_t - b_{t-1},\; m_{t-1} - b_{t-1}\big),$$
+
+gives the score $s_t = [a_t]_+$, which drives the usual integral $E_t = \lambda E_{t-1} + s_t$ and gain $g_t = G\tanh(\kappa E_t)$.
+- **Release on backtracking:** when $a_t < -\theta_r$, or when a backtracking word ("wait", "alternatively") is generated, $E_t \leftarrow \rho_r E_t$ ($\rho_r = 0$ resets).
+- **Why it is negative feedback:** the gain grows only while new tokens continue the gist and falls as soon as they turn away.
+- **The catch:** steering along the gist makes later tokens agree with it, through the sampled tokens, so $a_t$ can drive itself upward. The release, the cap, and R6's repetition regulator $g_t \leftarrow g_t e^{-\gamma R_t}$ have to hold that down, so R3 goes through the stability programme.
+- **Baselines:** PID steering (arXiv 2510.04309, integrating across layers) as the published one, and a decode-time PID controller on the error $a^* - a_t$ as an ablation.
+- **To build:** a built-in score in `steering.py` that reads the averages carried from $t-1$.
+
+**J1 design (RV1.D1, RV1.D2, RV1.D4).**
+- **Hypothesis, reworded:** at a matched harmful-refusal rate, a source whose scores are better calibrated *on generated tokens* gives lower borderline refusal.
+- **Comparison:** for each source, sweep its operating parameter (`--caps` for graded, `--gains` for conditional) and read borderline and harmless refusal at `--target-refusal` from `operating_points`, with ECE at the prompt and on generated tokens from `calibration`.
+- **Sources:** the linear probe (now); a temperature-scaled head on the residual stream (`score_fn`); a LAYA-style encoder and a guard model (`external_decision`, conditional mode only, since each gives one score per prompt). LAYA is temperature-fit on held-out data before comparing, because its checkpoints ship over-confident.
+- **Alternative,** from the review: drive the gain from a thresholded decision instead of a raw probability, so that calibration enters through the threshold.
+
+**J3 design (RV1.D3).**
+- **Premise, corrected:** CA1 + novelty-lr alone was near-neutral (0.440 against 0.483 for plain Titans). The harm came from stacking it with DG writes (0.172).
+- **Arms:** J3.a, warm-up alone (novelty-lr off for the first N steps, then ramped); J3.b, a calibrated novelty head; J3.c, both. Each runs with and without DG writes, on at least 2 seeds.
+- **Calibration measure:** the novelty target $z = \sigma(\text{standardised token loss})$ is a regression target with no binary event, so ECE is undefined for it. Define the event $e_t = \mathbb 1[\ell_t > q_{0.8}]$, where $q_{0.8}$ is the 80th percentile of token loss on held-out text, and score CA1's output as a probability of $e_t$: ECE over 10 bins and the Brier score. Also give a reliability curve of predicted against realised $z$ by decile.
+
+**Literature checks.**
+- ERSS (Zhang et al. 2026, arXiv 2606.06188, inside "The Tell-Tale Norm") and STARS (Lee et al. 2026, arXiv 2601.22484) were checked on arXiv.
+- DSEM was checked on its ACL Findings 2025 page, and PID steering on arXiv (v3, 16 May 2026).
+- The STU-PID withdrawal could not be re-checked: arXiv rate-limited the fetch, and a mirror still lists only v1. It stands as RV1 reports it.
+
+**Status.** A1, A2 and A6 are ready for geof. For A6 the spot checks put the onset near g = 0.3, so sweep past it:
+
+```bash
+python experiments/alignment/run.py --model mlabonne/Qwen3-1.7B-abliterated --direction-from Qwen/Qwen3-1.7B \
+    --dtype bfloat16 --device cuda --n-eval 100 --max-new-tokens 96 --gains 0.1,0.2,0.3,0.4 --caps 0.2,0.3,0.4,0.5 \
+    --ppl-data hf:Salesforce/wikitext:wikitext-2-raw-v1:test:text --private-dir ~/limbic_private/a6 --name a6_qwen3_abliterated
+```
