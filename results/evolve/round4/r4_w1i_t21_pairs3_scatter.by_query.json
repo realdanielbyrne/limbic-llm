@@ -1,0 +1,28 @@
+{
+  "result": "results/evolve/round4/r4_w1i_t21_pairs3_scatter.json",
+  "pairs": 3,
+  "scatter": 8,
+  "n": 384,
+  "digit1_acc_by_queried_rank": [
+    0.991304337978363,
+    0.9923076629638672,
+    1.0
+  ],
+  "exact_by_queried_rank": [
+    0.7565217614173889,
+    0.9153845906257629,
+    0.9784172773361206
+  ],
+  "count_by_queried_rank": [
+    115.0,
+    130.0,
+    139.0
+  ],
+  "missing_keys": [],
+  "unexpected_keys": [
+    "loop.g_beta.weight",
+    "loop.g_beta.bias"
+  ],
+  "eps_mean_all_tokens": 0.04003973491489887,
+  "eps_mean_at_fact_digit1": 0.23193334229290485
+}
