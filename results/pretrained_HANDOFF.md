@@ -36,7 +36,15 @@ How to read the table. Please keep these caveats in the combined report.
 
 ## Language-modelling runs (WikiText-103, seq 1024, window 256, batch 4, grad checkpointing)
 
-- `pretrained_qwen3_lm`: Qwen3-1.7B-Base, all layers windowed, on GPU 0. *Pending.*
-- `pretrained_qwen35_lm`: Qwen3.5-2B-Base, attention layers windowed only, on GPU 1. *Pending.*
+The training set is 1,155,524 WikiText-103 tokens. The eval set is 116,893 tokens in 114 sequences.
 
-This section gets filled in as each lands. Check `git log -- results/pretrained_*` for the latest.
+| run | model | windowed layers | windowed ppl / loss | windowed+side ppl / loss | full ppl / loss | gap closed |
+|---|---|---|---|---|---|---|
+| `pretrained_qwen3_lm` | Qwen3-1.7B-Base | 28/28 | 14.62 / 2.683 | 11.91 / 2.477 | 9.01 / 2.199 | 43% of loss gap |
+| `pretrained_qwen35_lm` | Qwen3.5-2B-Base | attention only | *pending* | *pending* | *pending* | |
+
+"Gap closed" is (windowed − side) / (windowed − full), measured on eval loss.
+
+Caveat for the LM rows: in the `windowed` and `full` conditions the base model is frozen and never trained. Only `windowed+side` trains 4.38M parameters on WikiText. Some of its gain could therefore be adaptation to the WikiText domain rather than long-range recall. A proper control would train side channels with the memory read-out ablated (or measure loss by token position beyond the window). This session has not run that control.
+
+This section gets filled in as each run lands. Check `git log -- results/pretrained_*` for the latest.

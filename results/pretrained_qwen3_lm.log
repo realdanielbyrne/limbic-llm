@@ -1,0 +1,21 @@
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 15333.86it/s]
+Qwen/Qwen3-1.7B-Base: 28 blocks (0 linear-attention), d_model 2048, tap block 14, 28 windowed, block window 256, reach 255
+window check: ok (block 0: far 0.0e+00 vs near 1.4e+01)
+trainable side-channel parameters 4,380,675 (base 1,720,574,976, frozen)
+lm: 1,155,524 train / 116,893 eval tokens, 114 eval sequences
+step   100 loss 2.847 token_acc 0.447 inj 0.053 (32s)
+step   200 loss 2.254 token_acc 0.533 inj 0.110 (65s)
+step   300 loss 2.723 token_acc 0.468 inj 0.164 (97s)
+step   400 loss 2.413 token_acc 0.506 inj 0.195 (129s)
+step   500 loss 2.567 token_acc 0.479 inj 0.202 (161s)
+step   600 loss 2.322 token_acc 0.519 inj 0.201 (194s)
+step   700 loss 2.619 token_acc 0.465 inj 0.203 (226s)
+step   800 loss 2.103 token_acc 0.536 inj 0.203 (259s)
+step   900 loss 2.530 token_acc 0.506 inj 0.202 (291s)
+step  1000 loss 2.605 token_acc 0.481 inj 0.204 (323s)
+
+condition       window side      ppl  tok_acc    loss    inj
+windowed           256  off   14.623    0.472   2.683      -
+windowed+side      256   on   11.905    0.489   2.477  0.203
+full                 0  off    9.012    0.527   2.199      -
+saved results/pretrained_qwen3_lm.json
