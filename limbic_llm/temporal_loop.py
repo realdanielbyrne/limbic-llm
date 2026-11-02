@@ -60,8 +60,9 @@ computed exactly in chunks of τ, because nothing within τ steps can feed back.
 TimeChannel (an internal clock)
 -------------------------------
 A learned salience u_t ∈ (0, 1) drives a bank of leaky integrators and damped
-oscillators at log-spaced timescales τ_j (Shankar & Howard's scale-invariant
-time cells):
+oscillators at log-spaced timescales τ_j. This is the Laplace stage of Shankar &
+Howard (2012), closer to LEC temporal-context cells (Tsao et al. 2018); their
+scale-invariant time cells need an approximate inverse transform, not implemented:
 
     L_j(t) = (1 − ρ_j) Σ_{s≤t} ρ_j^{t−s} u_s,
     C_j(t) + i S_j(t) = (1 − ρ_j) Σ_{s≤t} ρ_j^{t−s} e^{iω_j (t−s)} u_s,   ρ_j = e^{−1/τ_j}

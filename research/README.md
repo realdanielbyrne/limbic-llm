@@ -9,7 +9,7 @@ How the project keeps track of what it has found, what it plans, and who is doin
 | [`REGISTER.md`](REGISTER.md) | **Current state.** Every result and conclusion with its status, numbers and evidence file; every correction; decisions; open review findings; the backlog of planned experiments | Edited in place whenever a result lands or a status changes |
 | [`NOTEBOOK.md`](NOTEBOOK.md) | **Dated log.** What was tried, why, the scores, surprises and the proposed next step, one entry per event (a round, a proposal, a review) | Append only. Old entries are not rewritten: a correction is a bracketed note, "[Correction, 2 Nov 2026: …]", and ID renames are applied |
 | [`plans/`](plans/) | Plans written before a round: arms, commands, pass criteria and the anti-gaming rules E1–E9 ([`round0_plan.md`](plans/round0_plan.md)) | Fixed once the round starts; outcomes go to the register and notebook |
-| [`reviews/`](reviews/) | Dated review reports, kept exactly as written. Cite a finding as `RV<n>.<ID>`; RV1 is [`2026-11-02_alignment_cot_ca1.md`](reviews/2026-11-02_alignment_cot_ca1.md), whose `file:line` anchors refer to commits `73259fc` and `241a13c` | Never edited. Open findings are tracked in the register's RV table |
+| [`reviews/`](reviews/) | Dated review reports, kept exactly as written. Cite a finding as `RV<n>.<ID>`; RV1 is [`2026-11-02_alignment_cot_ca1.md`](reviews/2026-11-02_alignment_cot_ca1.md), whose `file:line` anchors refer to commits `73259fc` and `241a13c`; RV2 is the literature review, [`2026-11-02_literature/`](reviews/2026-11-02_literature/README.md) (a folder: synthesis, track reports, `findings.json`, scripts, and a handoff note for agents) | Never edited. Open findings are tracked in the register's RV table |
 | [`HANDOFF.md`](HANDOFF.md) | Coordination between sessions: branches, file ownership, layout, data rules, warnings | Updated when any of those change. Not a results document |
 
 Outside this folder: [`RESULTS.md`](../RESULTS.md) is the stable write-up of results, [`results/`](../results/) holds the raw files, and [`docs/genesis.md`](../docs/genesis.md) is the history of the ideas.
@@ -22,13 +22,14 @@ Outside this folder: [`RESULTS.md`](../RESULTS.md) is the stable write-up of res
 | N | Steering spot checks from a notebook | REGISTER §1 |
 | B | Corrections and fixed bugs | REGISTER §1 |
 | DEC | Decisions, with date and approver | REGISTER |
-| RV1.A1 … | Review findings, by report | REGISTER (open findings); the report itself |
+| RV1.A1 …, RV2.X1 … | Review findings, by report (RV2 is the literature review) | REGISTER (open findings); the report itself |
 | g0–g7, g2b, g5h | Round-0 arms (g0–g7 are the flat and exp098 arms of the round-0 plan), and later runs of the same kind | REGISTER §4.1, round-0 plan |
 | C1–C6 | Round-0 diagnostics that need code | REGISTER §4.1, round-0 plan |
 | D1–D5 | Round-0 diagnoses | NOTEBOOK, "Round 0" |
 | DR1–DR5 | Findings of the design review of 2 Nov | NOTEBOOK |
 | E1–E9 | Rules a candidate must pass | round-0 plan §3 |
 | W, S, A, R, J, O | Backlog: side-channel candidates and design gaps, feedback stability, alignment, reasoning, CA1 decision models, other | REGISTER §4.2–4.7 |
+| L | Backlog proposed by the literature review (RV2) | REGISTER §4.8 |
 
 A letter suffix marks a variant or sub-finding (P4a, C1a, W1b). A dot marks an arm or a hypothesis within an item (W1b.a, A6.H1, J3.a). Priorities are High, Med and Low.
 

@@ -11,8 +11,12 @@ associative loss ½‖M k_t − v_t‖² with a *linear* memory M = S and no mom
 
 so α_t plays the role of Titans' forgetting / weight decay (synaptic decay,
 LTD) and β_t the role of θ_t (encoding strength); the bracket is the
-prediction error that the CA1 comparator computes. With one-hot keys and
-α = β = 1 the state is exact RAM: each write replaces one slot (Qwenputer).
+prediction error that the CA1 comparator computes (the online-regression view is
+from Yang et al. 2025 §3, DeltaNet and Longhorn). With orthonormal (e.g. one-hot)
+keys and α = β = 1 the state is exact RAM up to d_k items: each write replaces one
+slot (Kohonen 1972; Schlag et al. 2021; Qwenputer). Note that the parametrisation
+here keeps α = exp(−softplus(·)) < 1 and β = sigmoid(·) < 1, so this limit is only
+approached.
 
 The recurrence is evaluated exactly: token by token in ``gated_delta_scan``,
 or with the equivalent chunkwise-parallel solve in ``gated_delta_chunked``
