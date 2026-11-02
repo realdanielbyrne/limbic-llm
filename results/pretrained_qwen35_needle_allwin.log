@@ -1,22 +1,22 @@
-Loading weights:   0%|          | 0/320 [00:00<?, ?it/s]Loading weights: 100%|██████████| 320/320 [00:00<00:00, 16197.16it/s]
+Loading weights:   0%|          | 0/320 [00:00<?, ?it/s]Loading weights: 100%|██████████| 320/320 [00:00<00:00, 14197.53it/s]
 [transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
 Qwen/Qwen3.5-2B-Base: 24 blocks (18 linear-attention), d_model 2048, tap block 12, 24 windowed, block window 64, reach 63
 window check: ok (block 0: far 0.0e+00 vs near 4.4e-01)
 trainable side-channel parameters 4,380,675 (base 1,881,825,088, frozen)
 needle gap 501–502 tokens
-step   100 loss 1.831 token_acc 0.350 inj 0.198 (21s)
-step   200 loss 1.847 token_acc 0.350 inj 0.198 (41s)
-step   300 loss 1.844 token_acc 0.225 inj 0.199 (61s)
-step   400 loss 1.844 token_acc 0.300 inj 0.198 (81s)
-step   500 loss 1.849 token_acc 0.200 inj 0.198 (101s)
-step   600 loss 1.847 token_acc 0.300 inj 0.200 (121s)
-step   700 loss 1.860 token_acc 0.225 inj 0.200 (140s)
-step   800 loss 1.600 token_acc 0.375 inj 0.198 (160s)
-step   900 loss 1.655 token_acc 0.350 inj 0.199 (180s)
-step  1000 loss 1.600 token_acc 0.400 inj 0.198 (200s)
+step   300 loss 1.846 token_acc 0.300 inj 0.199 (68s)
+step   600 loss 1.842 token_acc 0.300 inj 0.201 (135s)
+step   900 loss 1.840 token_acc 0.250 inj 0.201 (202s)
+step  1200 loss 1.842 token_acc 0.275 inj 0.203 (269s)
+step  1500 loss 1.841 token_acc 0.300 inj 0.201 (336s)
+step  1800 loss 1.846 token_acc 0.275 inj 0.202 (402s)
+step  2100 loss 1.845 token_acc 0.225 inj 0.202 (469s)
+step  2400 loss 1.848 token_acc 0.275 inj 0.203 (536s)
+step  2700 loss 1.839 token_acc 0.400 inj 0.204 (602s)
+step  3000 loss 1.831 token_acc 0.425 inj 0.204 (668s)
 
 condition       window side    exact  tok_acc    loss    inj
 windowed            64  off    0.000    0.130   3.039      -
-windowed+side       64   on    0.000    0.320   1.692  0.199
+windowed+side       64   on    0.000    0.289   1.843  0.204
 full                 0  off    1.000    1.000   0.034      -
 saved results/pretrained_qwen35_needle_allwin.json
