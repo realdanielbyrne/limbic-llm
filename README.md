@@ -17,7 +17,7 @@ Both strategies can feed a replay-consolidation loop for continual learning, in 
                                                                                              └─► replay priority ─► sleep consolidation
 ```
 
-[`docs/architecture.html`](docs/architecture.html) diagrams how the package fits together; open it in a browser. The `docs/` folder also holds the background write-ups: a hippocampus report, the ML-architecture parallels document, and an interactive circuit diagram.
+[`docs/architecture.html`](docs/architecture.html) diagrams how the package fits together; open it in a browser. The `docs/` folder also holds the background write-ups: a hippocampus report, the ML-architecture parallels document, and an interactive circuit diagram. `docs/notebooks/` holds the Activation Addition GPT-2-XL notebook (Turner et al.), a candidate mechanism for a CA2 side channel.
 
 ## Install
 
