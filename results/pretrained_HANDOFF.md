@@ -39,6 +39,21 @@ See [`results/evolve/NOTEBOOK.md`](evolve/NOTEBOOK.md) and [`results/evolve/roun
 - The Qwen3 windowed+side eval loss, 1.8421, equals 0.8·ln10, the answer-format floor exactly. The side channels learned the leading space and the digit distribution, and carry no information about the value.
 - **Caution:** the bf16 run's all-windowed drop (eval 1.692) was an **anti-causal leak**, not long-range transfer. `torch.arange(512, dtype=bfloat16)` has only 385 distinct values; positions 505–511 become [504, 506, 508, 508, 508, 510, 512]. So the `d >= 0` masks in `loop_kernel` and `decay_kernel` (`limbic_llm/temporal_loop.py:94`, `:109-111`) let some answer positions see their own targets. This session verified it on CPU. The kernels take their dtype from the activations, so any bf16 use of `HippocampalLoop` or `TimeChannel` hits this. The float32 fix (`3c90bde`) avoids it in `pretrained_loop.py`.
 
+## Round 1 results (`results/evolve/gen01/`, branch `feat/round1-side-memory`)
+
+Needle task (gap about 500 tokens), seq 512, window 64, every layer windowed unless noted, 3000 steps unless noted. "per digit" lists the loss on digits 1–4; chance is ln 10 = 2.30.
+
+| run | side channels | exact | loss | per digit | notes |
+|---|---|---|---|---|---|
+| `g1_qwen3_horizon_perpos` | O(T) loop, exp ρ 0.95 τ 32 | 0.00 | 1.381 | **0.001**, 2.30, 2.30, 2.30 | Recovers exactly the first digit; reproduces the earlier run to 4 decimals |
+| `g1_qwen3_horizon_pairs2` | same, 2 stored pairs | 0.00 | 1.809 | 2.17, 2.29, 2.28, 2.30 | Loses even the first digit. The 1-pair success did not use the query |
+| `g1_qwen35_allwin_horizon_6k` | same loop, Qwen3.5, 6000 steps | **1.00** | 0.001 | 0.002, 0.001, 0.001, 0.001 | Loss broke at ~2400 and reached 0.006 by 3600. The 3000-step run was undertrained |
+| **`g1_w1_tied`** | **W1**: GDN side memory, successor-bound dense keys + clock (4.28M params) | **1.00** | **0.0001** | 0.000 × 4 | Solved by step 1200. Fixed-size state (rule E2) |
+| **`g1_w1_dg`** | **W1**, DG k-WTA keys (4 heads, key expansion 4; 3.74M params) | **1.00** | **0.0001** | 0.000 × 4 | Learns faster: loss 0.73 at step 300, 0.008 at 600 |
+| full attention (reference) | — | 1.00 | 0.011 | — | |
+
+**Pending:** W1 with 2 stored pairs (the test that rules out query-independent shortcuts) and the horizon-kernel LM run (O4).
+
 ## Review of the alignment, CoT and CA1 decision tracks (2 Nov, round 1)
 
 Full report: [`results/evolve/reviews/2026-11-02_alignment_cot_ca1.md`](evolve/reviews/2026-11-02_alignment_cot_ca1.md). It covers commits `73259fc` and `241a13c`. Three track reviewers worked independently, an adversarial verifier checked each finding, and every bug was reproduced on CPU. Items to fix **before running A6, R2 or J1**:
