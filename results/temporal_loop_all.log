@@ -40,3 +40,10 @@
 [closed_exp     ] step  1250 loss 0.072 what 1.000 when 0.980 (330s)
 [closed_exp     ] step  1500 loss 0.044 what 1.000 when 0.990 (368s)
 [closed_exp     ] long rollout {"what_gap_20_140": 1.0, "what_gap_140_300": 0.609, "what_gap_300_500": 0.208, "inj_ratio_16_128": 1.41, "inj_ratio_128_320": 0.265, "inj_ratio_320_519": 0.233, "inj_ratio_max": 11.804, "gain": 0.302}
+[closed_osc     ] step   250 loss 2.412 what 0.152 when 0.807 (41s)
+[closed_osc     ] step   500 loss 2.105 what 0.143 when 0.934 (82s)
+[closed_osc     ] step   750 loss 2.169 what 0.146 when 0.953 (123s)
+[closed_osc     ] step  1000 loss 2.090 what 0.139 when 0.977 (163s)
+[closed_osc     ] step  1250 loss 2.222 what 0.123 when 0.951 (204s)
+[closed_osc     ] step  1500 loss 2.093 what 0.100 when 0.963 (245s)
+[closed_osc     ] long rollout {"what_gap_20_140": 0.118, "what_gap_140_300": 0.043, "what_gap_300_500": 0.208, "inj_ratio_16_128": 3.755, "inj_ratio_128_320": 2.718, "inj_ratio_320_519": 3.041, "inj_ratio_max": 12.859, "gain": 0.294}
