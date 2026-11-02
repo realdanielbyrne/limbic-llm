@@ -62,7 +62,7 @@ Small CPU models (0.2–0.4 M parameters, single seed), so these are sanity chec
 | Clock | 0.10 | 0.88 |
 | Loop + clock (3,000 steps; others 1,500) | **1.00** | **0.92** |
 
-Closed loops that feed their output back into memory run away when undamped (echo 14× the input, peak 63×). The clamped, damped loop with CA1 control holds the echo at about 0.3× across 520 tokens and still learns the task on two seeds. Two findings shaped the design. A closed loop rehearses, so the *first* event captures it however strongly each trace is damped; subtracting the prior and sparse dentate-gyrus keys counter this. And CA1's inverted copy obeys the op-amp law, $y = A\Delta/(1+A\beta)$, but only below a loop gain of 1.68, because it arrives a circuit late. On frozen Qwen3.5-2B, the side channels restore exact needle recall 500 tokens back (0.00 → 1.00) with help from its Gated DeltaNet layers. See [RESULTS.md §4](RESULTS.md#4-temporal-loop-what-when-stability-and-feedback).
+Closed loops that feed their output back into memory run away when undamped (echo 14× the input, peak 63×). The clamped, damped loop with CA1 control holds the echo at about 0.3× across 520 tokens and still learns the task on two seeds. Two findings shaped the design. A closed loop rehearses, so the *first* event captures it however strongly each trace is damped; subtracting the prior and sparse dentate-gyrus keys counter this. And CA1's inverted copy obeys the op-amp law, $y = A\Delta/(1+A\beta)$, but only below a loop gain of 1.68, because it arrives a circuit late. On frozen Qwen3.5-2B, the side channels restore exact needle recall 500 tokens back (0.00 → 1.00) with help from its Gated DeltaNet layers. On Qwen3-1.7B with every layer windowed, a Gated DeltaNet side memory with successor-bound keys recalls the needle exactly with a fixed-size state; with two stored pairs it still cannot choose which one to start from. See [RESULTS.md §4](RESULTS.md#4-temporal-loop-what-when-stability-and-feedback).
 
 ## Install
 
@@ -70,7 +70,7 @@ Closed loops that feed their output back into memory run away when undamped (ech
 git clone https://github.com/realdanielbyrne/limbic-llm
 cd limbic-llm
 pip install -e ".[dev]"      # needs torch >= 2.1
-pytest -q                    # 114 tests (13 need the [pretrained] extra)
+pytest -q                    # 122 tests (21 need the [pretrained] extra)
 ```
 
 ## Quick start
@@ -164,6 +164,8 @@ python experiments/temporal_loop.py --suite ablations # contrast, DG keys, direc
 python experiments/loop_systems.py                   # the op-amp test on an untrained loop
 ```
 
+These CPU runs write `results/synthetic/<script>.json`; a `--suite` run writes `results/synthetic/temporal_loop_<suite>.json`. `gdn_capacity.py` and `temporal_loop.py` skip runs already in that file, so delete it (or pass `--out`) to rerun. Console output is not saved; the committed `.log` files were captured by redirecting it.
+
 The alignment track steers a model away from harmful outputs with a graded, regulated controller (see [`experiments/alignment/README.md`](experiments/alignment/README.md)):
 
 ```bash
@@ -171,12 +173,16 @@ python experiments/alignment/run.py --model mlabonne/Qwen3-1.7B-abliterated --di
     --dtype bfloat16 --device cuda --private-dir ~/limbic_private/a6 --name a6_qwen3_abliterated
 ```
 
+It writes labels, scores and aggregates to `results/alignment/<name>.json`. Response text goes only to `--private-dir`, which must lie outside the repository.
+
 Side channels on a frozen pretrained model (needs `pip install -e ".[pretrained]"` and a GPU for real models):
 
 ```bash
 python experiments/pretrained_loop.py --model Qwen/Qwen3.5-2B-Base --dtype bfloat16 --device cuda \
     --task needle --window 64 --window-layers attention --seq-len 512 --steps 3000
 ```
+
+Without `--out` it writes `results/pretrained/pretrained_loop_<task>.json`; the committed runs were named with `--out results/pretrained/<name>.json`. The evolution-search runner, `experiments/evolve/run.py`, takes the same flags plus per-digit logging and `--candidate`, and saves the trained side channels as a `.pt` next to the JSON; round-1 runs are in `results/evolve/round1/`.
 
 The temporal-loop experiment takes flags for each excitatory variant, so a single model can be built from the command line:
 
@@ -200,7 +206,7 @@ python experiments/temporal_loop.py --name mine --memory --time \
 | `--forward-gain`, `--fb-beta` | Open-loop gain $A$ and feedback fraction $\beta$ |
 | `--read direct\|dg` | Retrieval cue straight from the stream (EC → CA3) or through the dentate-gyrus code |
 
-Logs and JSON results are in [`results/`](results/).
+The command above writes `results/synthetic/temporal_loop_custom.json`, with the model stored under its `--name` key. Results are kept by track: `results/synthetic/` (CPU), `results/pretrained/` (frozen models on GPU), `results/evolve/round1/` (evolution search) and `results/alignment/`; see [`results/README.md`](results/README.md).
 
 ## Lessons from the experiments
 
@@ -215,7 +221,7 @@ Three design changes came out of debugging, each covered by a test.
 * **CA2 as identity steering.** Per-speaker activation-steering vectors ([Turner et al.](https://arxiv.org/abs/2308.10248)) at the CA2 point, tested on multi-speaker recall.
 * **A calibrated CA1.** Novelty trained with a proper scoring rule, in the spirit of decision models such as [JEV](https://jevai.net) and [LAYA](https://github.com/NandhaKishorM/laya), with a JEPA-style predictive target.
 * **Big-loop recurrence.** A looped HippocampalBlock whose exit gate is driven by CA1 novelty, after [Ouro](https://arxiv.org/abs/2510.25741).
-* **A full Limbic LLM.** The temporal loop and the clock on a frozen pretrained decoder: tap at a third of the depth, inject at half, consolidate into adapters. The blueprint is in the [design note](docs/design/temporal-loop.md#4-a-full-limbic-llm); first results on Qwen3 and Qwen3.5 are in RESULTS.md §4.7.
+* **A full Limbic LLM.** The temporal loop and the clock on a frozen pretrained decoder: tap at a third of the depth, inject at half, consolidate into adapters. The blueprint is in the [design note](docs/design/temporal-loop.md#4-a-full-limbic-llm); first results on Qwen3 and Qwen3.5 are in RESULTS.md §4.7–4.8.
 * **Multi-band horizons.** Damping sets a memory span of about $\tau/\ln(1/\rho)$ tokens; several bands with different $\rho$, to keep both recency and long recall.
 * **Pattern separation under similar keys.** A recall task with overlapping keys and a sweep of DG sparsity.
 * **Pretrained models.** Inserting HippocampalBlock or GatedDeltaMemory into an existing LLM.
@@ -225,12 +231,16 @@ Three design changes came out of debugging, each covered by a test.
 | | |
 |---|---|
 | [`docs/hippocampal_ml_architectures.docx`](docs/hippocampal_ml_architectures.docx) | The design document: circuit-to-ML mappings, Titans and Gated DeltaNet, recent inspirations, results |
-| [`research/REGISTER.md`](research/REGISTER.md) | Every result and conclusion with its status and evidence, and the backlog of planned experiments; the dated lab notebook is [`NOTEBOOK.md`](research/NOTEBOOK.md) |
+| [`research/REGISTER.md`](research/REGISTER.md) | Every result and conclusion with its status and evidence, every correction, and the backlog of planned experiments |
+| [`research/NOTEBOOK.md`](research/NOTEBOOK.md) | The dated lab notebook: how each register entry got there, round by round |
+| [`research/README.md`](research/README.md) | How the research records fit together: register, notebook, handoff note, plans and reviews |
+| [`results/README.md`](results/README.md) | The layout of `results/` by track, and which section of RESULTS.md each file supports |
+| [`experiments/README.md`](experiments/README.md) | The experiment scripts, by track, and where each writes its results |
 | [`docs/genesis.md`](docs/genesis.md) | How the project came about: the session's ideas in order, who proposed what, and the corrections made along the way |
 | [`docs/design/temporal-loop.md`](docs/design/temporal-loop.md) | The temporal loop: how the idea developed, biological stability, the design, plug-in versus new architecture, a full Limbic LLM |
 | [`docs/architecture.html`](docs/architecture.html) | Package and data-flow diagrams (download and open in a browser) |
 | [`docs/hippocampus_report.docx`](docs/hippocampus_report.docx) | Background on hippocampal structure and function |
-| [`docs/notebooks/`](docs/notebooks/) | Activation Addition notebook (GPT-2-XL) |
+| [`docs/notebooks/`](docs/notebooks/) | Activation Addition notebooks (GPT-2-XL; Qwen3 with alignment and chain-of-thought presets) |
 | [RESULTS.md](RESULTS.md) | Full experimental results |
 | [`docs/implementation-notes.md`](docs/implementation-notes.md) | Implementation details and simplifications |
 | [REFERENCES.md](REFERENCES.md) | Bibliography, grouped by circuit component; BibTeX in [`docs/references.bib`](docs/references.bib) |
@@ -241,10 +251,19 @@ Three design changes came out of debugging, each covered by a test.
 limbic_llm/         memory modules and models
   dentate_gyrus.py  ca3.py  ca2.py  ca1.py  subiculum.py  hippocampal_block.py
   neural_memory.py  titans_hybrid.py  gated_delta.py  temporal_loop.py  replay.py  models.py
-experiments/        recall, continual learning, capacity, temporal loop, op-amp sweep, pretrained models
-tests/              114 tests
-results/            experiment logs and JSON
-docs/               design document, diagrams, bibliography, notebook
+experiments/        CPU experiments: recall, continual learning, capacity, temporal loop, op-amp sweep;
+                    pretrained_loop.py (side channels on frozen models)
+  evolve/           evolution-search runner (run.py) and candidates (w1_gdn.py)
+  alignment/        CA2 norm-steering track: probe, controller, judge, run.py
+results/            experiment logs and JSON, one folder per track
+  synthetic/        CPU runs (RESULTS.md §1–4.6)
+  pretrained/       frozen Qwen models on GPU (§4.7)
+  evolve/round1/    round 1 of the evolution search (§4.8); round0/ is reserved for the planned g0–g7 arms
+  evolve/round2/    round 2 (W1b), in progress
+  alignment/        alignment-track labels and scores
+research/           REGISTER.md, NOTEBOOK.md, HANDOFF.md (GPU session), plans/, reviews/
+tests/              122 tests
+docs/               design document, design notes, diagrams, bibliography, notebooks
 ```
 
 ## Citing

@@ -1,166 +1,307 @@
 # Register of results, conclusions and experiments
 
-This file holds the current state of the project: every result with its status and evidence, every correction, and every planned experiment. [`NOTEBOOK.md`](NOTEBOOK.md) is the dated record of how each entry got here, and [`docs/genesis.md`](../docs/genesis.md) is the history of the ideas. Update this file in place when a result lands or an experiment changes status, and cite the result file.
+This file is the single source of truth for the project's current state: every result with its status and result file, every correction, every decision, every open review finding and every planned experiment. Update it in place when a result lands, a decision is made or an experiment changes status, and cite the result file.
 
-**Status:** **Supported** · **Refuted** · **Mixed** (seeds or settings disagree) · **Open** (untested or confounded) · **Fixed** (a bug, now corrected).
+**Related documents** (links are relative to `research/`; evidence paths in the tables are relative to the repository root)
+
+| Document | Role | Editing rule |
+|---|---|---|
+| `REGISTER.md` (this file) | Current state | Edit in place |
+| [`NOTEBOOK.md`](NOTEBOOK.md) | Dated lab record: how each entry got here | Do not rewrite entries; add bracketed, dated corrections |
+| [`../RESULTS.md`](../RESULTS.md) | Write-up of the CPU results (§1–4.6), the first pretrained results (§4.7) and round 1 (§4.8) | Its numbers must match this file |
+| [`HANDOFF.md`](HANDOFF.md) | Note from the GPU session that runs the pretrained jobs | Owned by the GPU session, as are `results/pretrained/*`, `results/evolve/round*/` and `experiments/evolve/` |
+| [`plans/round0_plan.md`](plans/round0_plan.md) | Round-0 diagnosis (D1–D5), runs g0–g7, diagnostics C1–C6, evaluator rules E1–E9, round-1 directions | Plan; statuses are tracked here |
+| [`reviews/2026-11-02_alignment_cot_ca1.md`](reviews/2026-11-02_alignment_cot_ca1.md) | Review RV1 of the alignment, CoT and CA1 decision tracks | Dated record, not edited. Its `file:line` anchors refer to commits `73259fc` and `241a13c` |
+| [`../docs/genesis.md`](../docs/genesis.md) | History of the ideas | |
+
+**Result files.** `results/synthetic/` (CPU; M and T rows), `results/pretrained/` (GPU; P1–P6), `results/evolve/round1/` (GPU round 1; P7–P12; the files keep their `g1_*` names, which refer to the round, not to arm g1), `results/evolve/round0/` (planned g0–g7 outputs; not created yet), `results/evolve/round2/` (round 2, in progress), `results/alignment/` (written by `experiments/alignment/run.py`; labels and aggregates only).
+
+**Status of results:** **Supported** · **Refuted** · **Mixed** (seeds or settings disagree) · **Not supported** (the predicted effect did not appear; weak evidence) · **Partly** · **Open** (untested, inconclusive or confounded) · **Fixed** (a bug, now corrected).
+**Status of experiments:** **Planned** · **Ready** (built, can run) · **Running** · **Blocked** (by a review finding or a dependency) · **Done** (with result ID) · **Superseded** (answered by another result or replaced by another item) · **Dropped** · **Duplicate** (see the named item).
+**Priority:** **High** next round · **Med** soon · **Low** later.
 **Seeds:** results are from small CPU models (0.1–0.4M parameters) or frozen 2B models, mostly single seeds. Treat a difference of a few points as noise.
+
+### ID scheme
+
+| Prefix | Meaning | Defined in |
+|---|---|---|
+| M1–M8 | Results: memory systems (CPU) | §1 |
+| T1–T21 | Results: temporal loop and clock (CPU) | §1 |
+| P1–P12 | Results: pretrained models (GPU) | §1 |
+| N1–N5 | Steering spot checks on Qwen3 (not experiments) | §1 |
+| B1–B11 | Corrections and fixed bugs. B1–B8 were C1–C8 before 2 Nov 2026 | §1 |
+| DEC1 | Decisions. DEC1 was O3 | §2 |
+| RV1.A1–A8, RV1.C1–C8, RV1.D1–D4 | Findings of review RV1 (the review itself numbers them A, C, D) | §3; the review file |
+| D1–D5 | Round-0 diagnoses | `round0_plan.md` §1 |
+| C1–C6, C1a | Round-0 diagnostics that need code | `round0_plan.md` §2; §4.1 |
+| E1–E9 | Evaluator rules for candidates | `round0_plan.md` §3 |
+| g0–g7 | Round-0 diagnostic runs: the control and the `flat` / `exp 0.98` arms. g2b and g5h are later additions on the horizon kernel | `round0_plan.md` §2; §4.1 |
+| W1–W11 | Candidates and scaling experiments on pretrained models. W5–W7 were D-a, D-b, D-c | §4.2 |
+| S1–S9 | Feedback stability programme | NOTEBOOK; §4.3 |
+| A1–A8 | Alignment track. A6.H1–A6.H4 are A6's hypotheses | NOTEBOOK; §4.4 |
+| R1–R6 | Reasoning: CA2 steering of chain-of-thought | NOTEBOOK; §4.5 |
+| J1–J6 | CA1 as a calibrated decision model | NOTEBOOK; §4.6 |
+| O1–O13 | Other open questions | §4.7 |
+| DR1–DR5 | Findings of the NOTEBOOK design review of 2 Nov 2026 (R1–R5 there before the rename) | NOTEBOOK |
+
+Sub-IDs: a letter suffix marks a variant or follow-up (P4a, C1a, g2b, g5h, W1b); a dot marks an arm or part inside an item (W1b.a, A6.H1, J3.a, W6.a, RV1.A1). Not IDs: $K = Ag\beta$ is the loop gain, and "capacity H4" and similar name round-0 lens hypotheses. The NOTEBOOK's stability findings K1–K6 map to T8, T6, T7, T9/T10/T3, T20 and a gap (S1, S2).
 
 ## 1. Results and conclusions
 
 ### Memory systems (RESULTS.md §1–3)
 
-| ID | Claim | Evidence | Seeds | Status |
-|---|---|---|---|---|
-| M1 | Hippocampal memories recall bindings beyond a 16-token window; windowed attention alone stays at chance | Strategy I 0.41, Titans 0.48, full attention 0.49, windowed 0.06 (`results/synthetic/assoc_recall.json`) | 1 | Supported |
-| M2 | Stacked DG writes and CA1 novelty-lr on Titans help | Neutral alone, 0.17 together | 1 | Refuted (warm-up untested) |
-| M3 | Novelty-prioritised replay with sleep prevents forgetting | Backward transfer −0.73 → 0.00 (`results/synthetic/continual.json`) | 1 | Supported; no uniform-replay or sleep-only control |
-| M4 | Standard Gated DeltaNet loses recall once stored pairs exceed its key size | 0.43 → 0.13 at 8 → 16 pairs (`results/synthetic/gdn_capacity.json`) | 1 | Supported |
-| M5 | Successor-bound addressing makes the GDN state exact RAM | 1.00 up to 32 pairs; counterfactual 100% new / 0% old | 1 | Supported |
-| M6 | An exact delta-rule memory beats Titans' deep memory | 1.00 against 0.48 (`results/synthetic/assoc_recall_gdn.json`) | 1 | Supported |
-| M7 | DG addresses beat dense addresses | Same final recall; DG faster early (0.905 vs 0.680 at step 500) | 1 | Open (task does not separate them) |
+| ID | Claim | Evidence | Result file | Seeds | Status |
+|---|---|---|---|---|---|
+| M1 | Hippocampal memories recall bindings beyond a 16-token window; windowed attention alone stays at chance | Strategy I 0.41, Titans 0.48, full attention 0.49, windowed 0.06 | `results/synthetic/assoc_recall.json` | 1 | Supported |
+| M2 | Stacked DG writes and CA1 novelty-lr on Titans help | Neutral alone (DG writes 0.478, CA1 + novelty-lr 0.440, plain Titans 0.483); 0.17 together, peak 0.183 at step 2,500 | `results/synthetic/assoc_recall_ablation.json`, `results/synthetic/assoc_recall.json` | 1 | Refuted (warm-up untested: J3.a) |
+| M3 | Novelty-prioritised replay with sleep prevents forgetting | Backward transfer −0.73 → 0.00 | `results/synthetic/continual.json` | 1 | Supported; no uniform-replay or sleep-only control (O1) |
+| M4 | Standard Gated DeltaNet loses recall once stored pairs exceed its key size | 0.43 → 0.13 at 8 → 16 pairs | `results/synthetic/gdn_capacity.json` | 1 | Supported |
+| M5 | Successor-bound addressing makes the GDN state exact RAM | 1.00 up to 32 pairs, dense (`tied_x8`) and DG (`dg_x8`) addresses. The counterfactual quoted in RESULTS §3 (100% new / 0% old after swapping values) has no result file or test | `results/synthetic/gdn_capacity.json` | 1 | Supported (exact recall); counterfactual unbacked |
+| M6 | An exact delta-rule memory beats Titans' deep memory | 1.00 against 0.48 | `results/synthetic/assoc_recall_gdn.json` | 1 | Supported |
+| M7 | DG addresses beat dense addresses | Same final recall; DG faster early (0.905 vs 0.680 at step 500) | `results/synthetic/assoc_recall_gdn.json` | 1 | Open (task does not separate them; O9) |
+| M8 | Wider keys alone fix standard GDN's capacity | `gdn_x8` (128-dim keys): 0.43 / 0.32 / 0.22 at 8 / 16 / 32 pairs, against 1.00 with successor binding (M5) | `results/synthetic/gdn_capacity.json` | 1 | Refuted (wider keys help, but do not fix it) |
 
-### Temporal loop and clock (RESULTS.md §4)
+### Temporal loop and clock (RESULTS.md §4.1–4.6)
 
-| ID | Claim | Evidence | Seeds | Status |
-|---|---|---|---|---|
-| T1 | The loop carries content and the clock carries elapsed time | What 1.00 / when 0.85 (loop); when 0.88 (clock); both 1.00 / 0.92 (`temporal_loop_all.json`, `_long.json`) | 1 per config | Supported |
-| T2 | "What" is learned in a sudden late jump; 1,500 steps is too short for clamped-sinusoid loops | Full design crosses 0.5 at step 1,000 of 3,000 and never within 1,500 | 2 | Supported |
-| T3 | The full design keeps closed-loop echo bounded and stationary | 0.29–0.35× the input, peak ≤ 0.53 (`_long.json`, `_long_seed1.json`) | 2 | Supported (the bound comes from the clamp) |
-| T4 | Undamped closed loops run away; damping alone overshoots early; the clamped sinusoid without control resonates | 4 → 14× (peak 63×); 1.0× early (peak 10.6×); about 3× (`_probe.json`, `_all.json`) | 1 | Supported |
-| T5 | Damping trades long recall for recency | Recall at gaps of 300–500: 0.40 undamped, 0.00 damped, 0.04–0.10 full design | 1–2 | Supported |
-| T6 | Subtractive inverted-copy feedback obeys the op-amp law on persistent echo | $y_\text{sub}/y_\text{none}$ = 0.787, 0.647, 0.475, 0.373 against $1/(1+K)$ = 0.788, 0.650, 0.482, 0.383 (`loop_systems.json`) | 3 (untrained) | Supported |
-| T7 | Delayed subtractive feedback rings above $K = 1.68$ | Stable at 1.08, growing at 2.15 and above; period about 44 tokens | 3 (untrained) | Supported |
-| T8 | Divisive feedback only compresses | Undamped kernel, $A$ = 32: 0.69 against 2.39 | 3 (untrained) | Supported |
-| T9 | Without the clamp, only subtractive feedback learns content | What 0.99 / 1.00 against 0.13 (none) and 0.15 (divisive) (`_feedback.json`, `_open.json`) | 2 | Supported |
-| T10 | Subtractive feedback bounds the echo | 1.7–2.6× the input | 2 | Refuted |
-| T11 | Closed loops favour the first event, by self-rehearsal | Older named 0.61 (undamped), 0.84 (damped), 0.63 (full design without contrast) | 1 each | Supported (mechanism is a hypothesis) |
-| T12 | The contrast against the prior reduces primacy | Older 0.63 → 0.18 | 1 | Supported, weakly; it also halves learning speed (crosses at step 1,000 vs 500) |
-| T13 | Sparse DG write keys favour the newer event | Newer 0.68, older 0.29–0.31 (`_ablations.json`) | 1 (two arms) | Supported, weakly |
-| T14 | The open loop shows little primacy | Newer 0.45 / older 0.38 (`_open.json`) | 1 | Supported, weakly (different seed) |
-| T15 | Subtractive feedback breaks primacy | Older 0.54 (seed 0), 0.38 (seed 1) | 2 | Mixed |
-| T16 | A direct EC → CA3 read completes degraded cues better than a DG read (Treves–Rolls) | At σ = 2: 0.84 direct, 0.94 DG read | 1 | Not supported |
-| T17 | A trained recency task ranks the loops | No model learned it (what 0.14–0.15) | 1 | Open (inconclusive) |
-| T18 | The clock removed a curriculum, so memory + time failed "what" | Learned by step 500 with a longer schedule | 1 | Refuted |
-| T19 | Training is deterministic | A rerun reproduced every seed-0 number exactly | — | Supported |
+| ID | Claim | Evidence | Result file | Seeds | Status |
+|---|---|---|---|---|---|
+| T1 | The loop carries content and the clock carries elapsed time | What 1.00 / when 0.85 (loop); when 0.88 (clock); both 1.00 / 0.92 | `results/synthetic/temporal_loop_all.json`, `results/synthetic/temporal_loop_long.json` | 1 per config | Supported |
+| T2 | "What" is learned in a sudden late jump; 1,500 steps is too short for clamped-sinusoid loops | Full design crosses 0.5 at step 1,000 of 3,000 (0.537 and 0.527 on two seeds) and never within 1,500 (peak 0.158). Other designs: note below | `results/synthetic/temporal_loop_long.json`, `results/synthetic/temporal_loop_long_seed1.json`, `results/synthetic/temporal_loop_all.json` | 2 | Supported |
+| T3 | The full design keeps closed-loop echo bounded and stationary | 0.29–0.35× the input, peak ≤ 0.53 | `results/synthetic/temporal_loop_long.json`, `results/synthetic/temporal_loop_long_seed1.json` | 2 | Supported (the bound comes from the clamp) |
+| T4 | Undamped closed loops run away; damping alone overshoots early; the clamped sinusoid without control resonates | 4 → 14× (peak 63×); 1.0× early (peak 10.6×); about 3× | `results/synthetic/temporal_loop_probe.json` (undamped, damped), `results/synthetic/temporal_loop_all.json` (no control) | 1 | Supported |
+| T5 | Damping trades long recall for recency | Recall at gaps of 300–500: 0.40 undamped, 0.00 damped, 0.04–0.10 full design. Open loop at 1,500 steps: 1.00 / 0.61 / 0.17 at gaps 20–140 / 140–300 / 300–500 (note below) | `results/synthetic/temporal_loop_probe.json`, `results/synthetic/temporal_loop_long.json`, `results/synthetic/temporal_loop_long_seed1.json`, `results/synthetic/temporal_loop_all.json` | 1–2 | Supported |
+| T6 | Subtractive inverted-copy feedback obeys the op-amp law on persistent echo | $y_\text{sub}/y_\text{none}$ = 0.787, 0.647, 0.475, 0.373 against $1/(1+K)$ = 0.788, 0.650, 0.482, 0.383 | `results/synthetic/loop_systems.json` | 3 (untrained) | Supported |
+| T7 | Delayed subtractive feedback rings above $K = 1.68$ | Stable at 1.08, growing at 2.15 and above; period about 44 tokens | `results/synthetic/loop_systems.json` | 3 (untrained) | Supported |
+| T8 | Divisive feedback only compresses | Undamped kernel, $A$ = 32: 0.69 against 2.39 | `results/synthetic/loop_systems.json` | 3 (untrained) | Supported |
+| T9 | Without the clamp, only subtractive feedback learns content | What 0.99 / 1.00 against 0.13 (none) and 0.15 (divisive) | `results/synthetic/temporal_loop_feedback.json`, `results/synthetic/temporal_loop_open.json` | 2 | Supported |
+| T10 | Subtractive feedback bounds the echo | 1.7–2.6× the input | `results/synthetic/temporal_loop_feedback.json`, `results/synthetic/temporal_loop_open.json` | 2 | Refuted |
+| T11 | Closed loops favour the first event, by self-rehearsal | Older named 0.61 (undamped), 0.84 (damped), 0.63 (full design without contrast) | `results/synthetic/temporal_loop_probe.json`, `results/synthetic/temporal_loop_ablations.json` | 1 each | Supported (mechanism is a hypothesis) |
+| T12 | The contrast against the prior reduces primacy | Older 0.63 → 0.18 | `results/synthetic/temporal_loop_ablations.json`, `results/synthetic/temporal_loop_probe.json` | 1 | Supported, weakly; it also halves learning speed (crosses at step 1,000 vs 500) |
+| T13 | Sparse DG write keys favour the newer event | Newer 0.68, older 0.29–0.31 | `results/synthetic/temporal_loop_ablations.json` | 1 (two arms) | Supported, weakly |
+| T14 | The open loop shows little primacy | Newer 0.45 / older 0.38 | `results/synthetic/temporal_loop_open.json` | 1 | Supported, weakly (different seed) |
+| T15 | Subtractive feedback breaks primacy | Older 0.54 (seed 0), 0.38 (seed 1) | `results/synthetic/temporal_loop_feedback.json`, `results/synthetic/temporal_loop_open.json` | 2 | Mixed |
+| T16 | A direct EC → CA3 read completes degraded cues better than a DG read (Treves–Rolls) | At σ = 2: 0.84 direct, 0.94 DG read; dense keys without contrast 0.97 | `results/synthetic/temporal_loop_ablations.json` | 1 | Not supported (O7) |
+| T17 | A trained recency task ranks the loops | No model learned it (what 0.14–0.15) | `results/synthetic/temporal_loop_recency.json` | 1 | Open (inconclusive) |
+| T18 | The clock removed a curriculum, so memory + time failed "what" | Learned by step 500 with a longer schedule (0.998) | `results/synthetic/temporal_loop_long.json` | 1 | Refuted |
+| T19 | Training is deterministic | A rerun reproduced every seed-0 number exactly: the full design's curves and rollouts are identical in the two files | `results/synthetic/temporal_loop_long.json`, `results/synthetic/temporal_loop_probe.json` | — | Supported |
+| T20 | No trained closed loop diverges numerically; the next LayerNorm rescales the stream, so runaway shows as echo outweighing input, not as overflow | `diverged_at` is null in every trained run, including echo peaks of 63× (undamped) and 189× (divisive). The untrained sweep, which has no LayerNorm, does overflow above $K_\text{crit}$ (T7) | `results/synthetic/temporal_loop_*.json` | 1–2 | Supported |
+| T21 | Subtractive feedback is a high-pass filter: at a stable loop gain it removes only about a quarter of sustained echo | Varied stream, $A$ = 4: echo 0.012 with and without it (`osc`), 0.289 against 0.278 (`flat`). Trained gains $K$ = 0.33 (seed 0) and 0.31 (seed 1), so $1/(1+K)$ ≈ 0.75 on persistent echo (T6) | `results/synthetic/loop_systems.json`, `results/synthetic/temporal_loop_feedback.json`, `results/synthetic/temporal_loop_open.json` | 2 | Supported (the quarter is T6's law at the trained gain, not a direct measurement) |
 
-### Pretrained models (RESULTS.md §4.7, `research/HANDOFF.md`)
+Notes:
+- **T2, learning speed** (RESULTS §4.6). Steps to cross 0.5: damped 500; undamped 750 (1,500-step run) and 1,000 (3,000-step run); full design 1,000 on both seeds; full design without contrast 500; DG keys 500; subtractive 2,000 (seed 0) and 1,000 (seed 1); open loop 1,250 (1,500-step run) and 1,000 (3,000-step run). The unregulated clamped sinusoids (no feedback, divisive only) did not cross in 3,000 steps. Files: `temporal_loop_probe.json`, `_all.json`, `_ablations.json`, `_feedback.json`, `_open.json` in `results/synthetic/`.
+- **T5, open loop.** The 1.00 / 0.61 / 0.17 fall-off is from the seed-0 run at 1,500 steps (`temporal_loop_all.json`). The seed-1 open loop at 3,000 steps keeps 1.00 / 1.00 / 0.82 at the same gaps (`temporal_loop_open.json`). One seed each, different seeds.
 
-| ID | Claim | Evidence | Seeds | Status |
-|---|---|---|---|---|
-| P1 | Qwen3.5's GDN layers alone do not recall a needle 500 tokens back | Exact 0.00 with attention windowed and GDN intact | 1 | Supported |
-| P2 | The side channels restore exact recall on Qwen3.5, through the GDN layers above the tap | Exact 1.00 tapping block 12, 0.00 tapping block 22 | 1 | Supported (the route is a hypothesis) |
-| P3 | With the default kernel the loop cannot reach the needle | Horizon τ/ln(1/ρ) ≈ 45 tokens; Qwen3 at the format floor, 1.842 | 1 | Supported (round-0 D1, D2) |
-| P4 | With a horizon that covers the gap, the loop alone carries needle information | Digit loss 1.38 (Qwen3) and 1.24 (Qwen3.5), below the 1.842 floor; token accuracy 0.46–0.55; exact 0.00–0.02 | 1 | Supported (partial recall) |
-| P4a | The loop recovers whole digits, not partial information about each one | Qwen3 1.381 / 0.461 equals one digit known and three at chance, $(3/5)\ln 10$ / 0.46; Qwen3.5 lies between one and two digits | 1 | Supported. Mechanism: key and value come from the same position, so nothing moves the lookup to the next digit. This motivates W1 |
-| P5 | The side channels improve WikiText perplexity on windowed models | Qwen3, all windowed: 14.6 → 12.0 (full 9.0; 41% of the loss gap). Qwen3.5, attention windowed: 16.3 → 11.2 (full 9.8; 74%) | 1 each | Open (confounded with domain adaptation, since only that condition trains) |
-| P6 | The default kernel helps Qwen3.5 when every layer is windowed | Float32 rerun at the floor, 1.843 / 0.289. The earlier 1.69 was the bf16 leak | 1 | Refuted |
-| P7 | The horizon loop recovers the *first* digit | Per-digit loss 0.001 / 2.30 / 2.30 / 2.30 (`gen01/g1_qwen3_horizon_perpos.json`); reproduces P4a exactly | 1 | Supported |
-| P8 | The horizon loop's one-pair recall uses the query | With 2 stored pairs, digit 1 goes back to near chance (loss 2.17, acc 0.23) (`gen01/g1_qwen3_horizon_pairs2.json`) | 1 | Refuted: query-independent |
-| P9 | With enough steps the horizon loop alone gives exact recall on Qwen3.5 with every layer windowed | 6000 steps: exact 1.000, loss 0.001 (`gen01/g1_qwen35_allwin_horizon_6k.json`). The 3000-step run was undertrained | 1 | Supported (1 pair only; see P8) |
-| P10 | **W1 (GDN side memory, successor-bound keys) gives exact recall on Qwen3 with every layer windowed** | Dense keys: exact 1.000, loss 0.0001, solved by step 1,200. DG keys: exact 1.000, loss 0.0001, 0.008 by step 600, 13% fewer parameters (`gen01/g1_w1_tied.json`, `g1_w1_dg.json`) | 1 | Supported (1 pair) |
-| P11 | W1 selects the queried pair | 2 pairs: exact 0.55 (dense) / 0.43 (DG). Digits 2–4 at 0.94–0.99, but digit 1 at 0.57 / 0.51 with loss 0.74 / 0.76 ≈ ln 2: a coin flip between the two stored codes. The chain is retrieved; the start is not selected (`gen01/g1_w1_*_pairs2.json`) | 1 | Partly: sequence recall yes, start selection no |
-| P12 | A horizon kernel improves LM perplexity over the default kernel | Qwen3 WikiText 12.0 → 11.5 (41% → 49% of the gap) (`gen01/g1_qwen3_lm_horizon.json`) | 1 | Supported, weakly; still confounded (O4) |
+### Pretrained models (RESULTS.md §4.7–4.8, [`../results/README.md`](../results/README.md), NOTEBOOK "Round 1")
+
+| ID | Claim | Evidence | Result file | Seeds | Status |
+|---|---|---|---|---|---|
+| P1 | Qwen3.5's GDN layers alone do not recall a needle 500 tokens back | Exact 0.00 with attention windowed and GDN intact | `results/pretrained/pretrained_qwen35_needle.json` (`windowed`) | 1 | Supported |
+| P2 | The side channels restore exact recall on Qwen3.5, through the GDN layers above the tap | Exact 1.00 tapping block 12, 0.00 tapping block 22 | `results/pretrained/pretrained_qwen35_needle.json`, `results/pretrained/pretrained_qwen35_needle_layer22.json` | 1 | Supported (the route is a hypothesis; C4) |
+| P3 | With the default kernel the loop cannot reach the needle | Horizon τ/ln(1/ρ) ≈ 45 tokens; Qwen3 at the format floor, 1.842. The gain did train (0.2689 → 0.2797), so bf16 rounding (B3) was not the only cause | `results/pretrained/pretrained_qwen3_needle.json` | 1 | Supported (round-0 D1, D2) |
+| P4 | With a horizon that covers the gap, the loop alone carries needle information | Digit loss 1.38 (Qwen3) and 1.24 (Qwen3.5), below the 1.842 floor; token accuracy 0.46–0.55; exact 0.00–0.02 | `results/pretrained/pretrained_qwen3_needle_horizon.json`, `results/pretrained/pretrained_qwen35_needle_allwin_horizon.json` (Qwen3.5 run superseded by P9) | 1 | Supported (partial recall at 3,000 steps) |
+| P4a | The loop recovers whole digits, not partial information about each one | Qwen3 1.381 / 0.461 equals one digit known and three at chance, $(3/5)\ln 10$ / 0.46; Qwen3.5 lies between one and two digits | `results/pretrained/pretrained_qwen3_needle_horizon.json`, `results/pretrained/pretrained_qwen35_needle_allwin_horizon.json` | 1 | Supported (P7 confirms the digit). Mechanism: key and value come from the same position, so nothing moves the lookup to the next digit. This motivates W1 |
+| P5 | The side channels improve WikiText perplexity on windowed models | Qwen3, all windowed: 14.6 → 12.0 (full 9.0; 41% of the loss gap). Qwen3.5, attention windowed: 16.3 → 11.2 (full 9.8; 74%) | `results/pretrained/pretrained_qwen3_lm.json`, `results/pretrained/pretrained_qwen35_lm.json` | 1 each | Open (confounded with domain adaptation, since only that condition trains; O4) |
+| P6 | The default kernel helps Qwen3.5 when every layer is windowed | Float32 rerun at the floor, 1.843 / 0.289. The earlier 1.69 was the bf16 leak (B4) | `results/pretrained/pretrained_qwen35_needle_allwin.json` | 1 | Refuted |
+| P7 | The horizon loop recovers the *first* digit | Per-digit loss 0.001 / 2.30 / 2.30 / 2.30. The run reproduces `results/pretrained/pretrained_qwen3_needle_horizon.json` (P4, P4a) exactly: loss 1.3809, token accuracy 0.4609, gain 0.3264 | `results/evolve/round1/g1_qwen3_horizon_perpos.json` | 1 | Supported |
+| P8 | The horizon loop's one-pair recall uses the query | With 2 stored pairs, digit 1 goes back to near chance (loss 2.17, acc 0.23). Needle gap 490–502 tokens (`model.gap_range`), not 501 | `results/evolve/round1/g1_qwen3_horizon_pairs2.json` | 1 | Refuted: query-independent |
+| P9 | With enough steps the horizon loop alone gives exact recall on Qwen3.5 with every layer windowed | 6000 steps: exact 1.000, loss 0.001. Supersedes the 3,000-step run (`results/pretrained/pretrained_qwen35_needle_allwin_horizon.json`, undertrained), the Qwen3.5 evidence for P4 and P4a | `results/evolve/round1/g1_qwen35_allwin_horizon_6k.json` | 1 | Supported (1 pair only; see P8, W1f) |
+| P10 | **W1 (GDN side memory, successor-bound keys) gives exact recall on Qwen3 with every layer windowed** | Dense keys: exact 1.000, loss 0.0001, solved by step 1,200. DG keys: exact 1.000, loss 0.0001, 0.008 by step 600, 12.6% fewer parameters (3,742,795 against 4,282,451) | `results/evolve/round1/g1_w1_tied.json`, `results/evolve/round1/g1_w1_dg.json` | 1 | Supported (1 pair) |
+| P11 | W1 selects the queried pair | 2 pairs: exact 0.55 (dense) / 0.43 (DG). Digits 2–4 at 0.94–0.99, but digit 1 at 0.57 / 0.51 with loss 0.74 / 0.76 ≈ ln 2: a coin flip between the two stored codes. The chain is retrieved; the start is not selected. Needle gap 490–502 tokens, not 501 | `results/evolve/round1/g1_w1_tied_pairs2.json`, `results/evolve/round1/g1_w1_dg_pairs2.json` | 1 | Partly: sequence recall yes, start selection no (W1b) |
+| P12 | A horizon kernel improves LM perplexity over the default kernel | Qwen3 WikiText 12.0 → 11.5 (41% → 49% of the gap) | `results/evolve/round1/g1_qwen3_lm_horizon.json` (against `results/pretrained/pretrained_qwen3_lm.json`) | 1 | Supported, weakly; still confounded (O4) |
+
+Notes:
+- **Learned gain and injection ratio** (every run starts at gain 0.2689). Default-kernel needle runs end at gain 0.270–0.293 with injection ratio 0.20–0.22. Horizon runs: gain 0.326 (Qwen3) and 0.277 (Qwen3.5), ratio 0.23 and 0.21. LM runs: gain 0.368 and 0.374, ratio 0.25 and 0.26. W1 (P10, P11): ratio 0.31–0.33, gain 0.34–0.37, under the same CA1 clamp. All from `results.gain` and `results["windowed+side"].inj_ratio` in the files above.
+- **W1 CPU check (P10).** A repeated context reads out the value that followed it, at cos 0.57 with dense keys and 0.85 with DG keys (`tests/test_evolve_w1.py`; numbers from NOTEBOOK "Round 1"; no result file).
+- **Round-0 refuted hypotheses** (read sharpness, contrast or the CA1 gate as the bottleneck; "the loop structurally cannot reach the needle", a CPU check at 97%) are listed in `round0_plan.md` §1. They rest on code reading and an unrecorded CPU check, so they have no P rows.
+- **Provenance of the GPU files.** Every `results/pretrained/*` and `results/evolve/round1/*` JSON records `args.dtype: "bfloat16"`, the base model's dtype. The side channels ran in float32 (commit `3c90bde`, B3); only `results/README.md` (Provenance) and RESULTS §4.7–4.8 record this. The bf16 versions are in git history (`0f5cc8c`, `775e0f2`, `a741b80`, `2297571`). The `g1_w1_*` files record the default loop arguments; the configuration actually used is under `candidate`. `results/synthetic/temporal_loop_recency.json` records `args.models: "closed_osc_ca1"` but holds three models. `args.out` and the logs' "saved …" lines give the paths from before the 2 Nov reorganisation.
+
+### Steering spot checks on Qwen3-1.7B (NOTEBOOK, 2 Nov)
+
+Abliterated target, block 14 of 28 unless stated, 4 samples × 3–4 prompts. Spot checks, not experiments.
+
+| ID | Claim | Evidence | Result file | Seeds | Status |
+|---|---|---|---|---|---|
+| N1 | Prompt-position ActAdd (the GPT-2-XL recipe) steers a chat model | No refusals at COEFF 5–20, blocks 6–14. Only the first ~10 chat-template tokens are steered; content shifts slightly, behaviour does not | `docs/notebooks/activation_additions_qwen3.ipynb` | 1 | Refuted (a failure of position, not gain) |
+| N2 | The abliterated model's own harmful − harmless direction restores refusal | 0/12 harmful samples refuse at g = 0.1–0.3 (‖v‖ 26 against ‖h‖ 180) | `docs/notebooks/activation_additions_qwen3.ipynb` | 1 | Refuted, as A6 expects (a failure of direction) |
+| N3 | The aligned sibling's direction restores refusal selectively | g ≤ 0.2: no refusals. g = 0.3: harmful 2/4, borderline 0/4, benign 0/4, degeneration ≤ 0.05 | `docs/notebooks/activation_additions_qwen3.ipynb` | 1 | Supported, weakly. Onset between 0.2 and 0.3, not saturated: gain-limited |
+| N4 | The saturation knee depends on the direction | At block 14, g = 0.3, the thinking direction degenerates on 4/4 problems (degeneration 1.00), while the refusal direction stays coherent | `docs/notebooks/activation_additions_qwen3.ipynb` | 1 | Supported, weakly. S1 must sweep the directions in use |
+| N5 | A thinking-on − thinking-off direction shortens no-think CoT at equal accuracy | 4/4 correct throughout. g = 0.2: tokens −4 to −30% on all four problems. g = 0.1: mixed, −8% to +4%. The baseline is also 4/4, so the problems are too easy | `docs/notebooks/activation_additions_qwen3.ipynb` | 1 | Open |
 
 ### Corrections and fixed bugs
 
 | ID | What was wrong | Fix | Status |
 |---|---|---|---|
-| C1 | The "when" baseline was taken as 0.25 | The bins are unequal; the prior scores 0.333 | Fixed |
-| C2 | Sliding windows were assumed to make memory the only route | They leak $L(W-1)$ tokens through depth; block windows are now the default | Fixed |
-| C3 | bf16 side channels: Adam updates rounded away | Side channels train in float32 | Fixed |
-| C4 | bf16 index arithmetic: positions merged, an anti-causal leak | Float32 indices, plus a regression test (round-0 D5) | Fixed |
-| C5 | The design note claimed an $O(1)$-state form for the loop | Only true for factorised relevance; the loop is $O(T)$ | Fixed |
-| C6 | Rollout length off by one | Gaps stop at 497 | Fixed |
-| C7 | CI depended on numpy | Torch companion-matrix roots | Fixed |
-| C8 | Interim commits rewrote the logs of runs still in progress | Logs rebuilt from JSON; in-progress logs are no longer committed | Fixed |
+| B1 | The "when" baseline was taken as 0.25 | The bins are unequal; the prior scores 0.333 | Fixed |
+| B2 | Sliding windows were assumed to make memory the only route | They leak $L(W-1)$ tokens through depth; block windows are now the default | Fixed |
+| B3 | bf16 side channels: Adam updates rounded away | Side channels train in float32 | Fixed |
+| B4 | bf16 index arithmetic: positions merged, an anti-causal leak | Float32 indices, plus a regression test (round-0 D5) | Fixed |
+| B5 | The design note claimed an $O(1)$-state form for the loop | Only true for factorised relevance; the loop is $O(T)$ | Fixed |
+| B6 | Rollout length off by one | Gaps stop at 497 | Fixed |
+| B7 | CI depended on numpy | Torch companion-matrix roots | Fixed |
+| B8 | Interim commits rewrote the logs of runs still in progress | Logs rebuilt from JSON; in-progress logs are no longer committed | Fixed |
+| B9 | The Titans meta-gradient flowed through the read path, so the training-mode update did not match the inference-mode update | The meta-gradient is taken as a partial derivative | Fixed |
+| B10 | The memory loss was averaged over features, so writes were scaled down by $1/d$ | Summed loss with a per-sample clip (a trust region) | Fixed |
+| B11 | CA3 was purely autoassociative, so a cue returned itself instead of its successor | CA3 binds each pattern to its successor | Fixed |
 
-## 2. Experiment backlog
+B9–B11 are the three bugs in RESULTS.md, "Bugs the experiments caught", and README, "Lessons from the experiments". Each is covered by a test.
 
-**Priority:** **H** next round · **M** soon · **L** later. **Status:** Planned · Running · Done (with result ID) · Dropped.
+## 2. Decisions
 
-### Round 0 diagnostics (`round0_plan.md`)
-
-| ID | Experiment | Discriminates | Priority | Status |
+| ID | Decision | Approved | Consequences | Was |
 |---|---|---|---|---|
-| g0–g7 | Control and the `flat` kernel arms (no time, no contrast, 2 pairs, taps 6 and 22) | The kernel (D2) against a downstream block (D3) | H | g2 covered by the horizon runs (P4); the rest Planned |
-| C1–C6 | Per-position logging, value probes at layers 6/14/22, loop instrumentation, eval-time ablations, window checks, held-out gaps | D3, D4, E6, E7 | H | Planned |
-| C1a | Per-digit loss and accuracy logging (the first piece of C1) | Which digit the loop recovers (P4a) | **H** (cheap) | Done (`experiments/evolve/run.py`; P7) |
-| g2b | Rerun `pretrained_qwen35_needle_allwin_horizon` with more steps | Undertraining: it left the floor only near step 2,700 of 3,000 | **H** (cheap) | Done (P9) |
-| g5 | Horizon kernel with 2 pairs | Whether one-pair recall uses the query | H | Done (P8) |
+| DEC1 | The pretrained track requires a fixed-size state (rule E2). The O(T) loop with the horizon kernel stays as the reference arm | Daniel, 2 Nov 2026, when he approved the round-1 plan. Recommended by both sessions (NOTEBOOK; HANDOFF at `53caa77`) | W1 meets it (P10). The `flat` and `exp` round-0 arms fail E2 and are diagnostics only (§4.1) | O3 |
 
-### Round 1 shortlist (scaling the small-model wins)
+## 3. Open review findings (RV1)
 
-| ID | Experiment | Hypothesis | Metric | Priority | Status |
+RV1 is [`reviews/2026-11-02_alignment_cot_ca1.md`](reviews/2026-11-02_alignment_cot_ca1.md), a review of commits `73259fc` and `241a13c`. Severity is the review's. None is fixed: since the review, `experiments/alignment/` has changed only in docstrings.
+
+| ID | Finding | Severity | Blocks | Smallest fix (from the review) | Status |
 |---|---|---|---|---|---|
-| W1 | GDN side memory with successor-bound keys, plus the clock, on Qwen3-1.7B, all layers windowed | M5 transfers to a frozen 2B model with a fixed-size state, and the address shift lifts recall from one digit (P4a) to all four | Needle digit CE and exact match; stability; recency probe | H | Done on the needle (P10, P11); stability and recency need a W1 adapter for the CPU suite |
-| W1b | W1 with context-bearing addresses so the *first* digit is selected by the queried name: (a) GDN short-conv keys (`addressing="gdn"`), (b) addresses from a causal conv or n-gram of the last few tokens, (c) a tap at a later block. 2 and 3 pairs | P11's coin flip is caused by addresses that encode mainly the current token (the space after "is" is the same in both facts) | Digit-1 accuracy with 2–3 pairs; exact | **H** | Planned (round 2) |
-| W2 | The clock on a GDN hybrid (Qwen3.5) with elapsed-time questions in long documents | T1 transfers | "When" accuracy | M | Planned |
-| W3 | Replay consolidation into LoRA adapters on the MLPs of a frozen model, against uniform replay and no replay | M3 holds, and novelty priority beats uniform | Backward transfer, capability | M | Planned |
-| W4 | `--dg-keys` (and `--read dg`) with the horizon kernel on Qwen | T13 transfers; less interference | Needle with 2+ pairs; recency probe | M | Partly covered by W1 with DG keys (P10: faster learning, not better selection in P11) |
+| RV1.A1 | The perplexity check never activates the conditional, graded and graded_self arms (they inject only at the last position, whose logits are dropped), so A6's capability metric is vacuous for them | High | A2, A6 | Prefill a prefix, teacher-force the continuation through the KV cache, score only the continuation | Open |
+| RV1.A2 | The probe is fit and calibrated on the last prompt token, but the graded arm integrates it over generated tokens (same as RV1.D2) | Med | A1 (caveat), J1; distorts A2 and A6 graded-vs-conditional | Report probe score and ECE on generated-token activations; aggregate s over generated tokens per set | Open |
+| RV1.A3 | Degenerate loops count as refusals | Med | A2, A6 | Count a refusal only when the output is non-degenerate; print degeneration for every set | Open |
+| RV1.A4 | The single-pass equivalence test passes for conditional only by its seed; the `"last"` path that `run.py` uses is untested | Med | — (test gap under A2, A6) | Test `score_positions="last"` with a padded prefill and decode steps | Open |
+| RV1.A5 | Gain and score diagnostics include pad positions | Low | — | Average over real positions; carry an EOS mask through decode | Open |
+| RV1.A6 | Data-rule bypass: an absolute or `../` value of `--name` writes raw completions inside the repository | Low (data rule) | A2, A6 (any run with `--name`) | Validate the final resolved path | Open |
+| RV1.A7 | `--direction-from` keeps the first model's layers in memory; layer counts are never compared | Low | A6 with `--direction-from`, A7 | Free the first model; assert matching layer counts and widths | Open |
+| RV1.A8 | Missing `position_ids` on left-padded passes | Low | — (absolute-position models only, not Qwen) | Pass `position_ids` derived from the mask | Open |
+| RV1.C1 | The gist direction is dominated by the attention-sink token and the stream mean, not the current thought | High | R2 (R4 via R2); the S1 gist arm | Exclude the sink from both EMAs; initialise from the first included token or subtract a corpus mean; test that the background component is near zero | Open |
+| RV1.C2 | R2/R4 cannot attribute a shorter CoT to the gist: no matched-norm random, mean or anti-gist controls, no sampling protocol, no non-inferiority margin, no truncation rate; `/no_think` is not a baseline for R1-Distill | High | R2, R4 | Add those arms; k ≥ 4 samples at T ≈ 0.6 with fixed seeds; pre-register a margin; report truncation | Open |
+| RV1.C3 | Graded gist with no probe is silently a no-op; R3 has no gain law | Med | R3 | Raise on graded mode without a probe; define R3's gain law | Open |
+| RV1.C4 | STU-PID, R3's baseline, was withdrawn on 28 Sep 2026, and its quoted figures are stale | Med | R3 | Use arXiv 2510.04309 as the published baseline; reimplement decode-time PID as an R3 ablation | Open |
+| RV1.C5 | The novelty claim misses ERSS (arXiv 2606.06188); the over-commitment risk misses STARS (arXiv 2601.22484) | Med | — (NOTEBOOK prior art) | Cite both; narrow the claim to the EMA form with negative feedback | Open |
+| RV1.C6 | "Open loop" holds only within one forward pass; sampled tokens feed the injection back | Low | S1 gist arm | Add a repetition or distinct-n metric on long gist generations | Open |
+| RV1.C7 | R1's thinking direction is confounded by template tokens | Low | R1 | Take the difference at matched content positions | Open |
+| RV1.C8 | DSEM is mis-described | Low | — | Correct the description | Open |
+| RV1.D1 | J1's hypothesis ("at equal AUROC, better calibration gives higher selectivity") is ill-posed for a gain of cap·tanh(κE) | High | J1 | Compare sources at a matched operating point (fixed harmful-refusal rate) | Open |
+| RV1.D2 | J1 measures ECE where the probe was trained, not on the signal that drives the gain (see RV1.A2) | Med | J1 | As RV1.A2, at the positions the controller uses | Open |
+| RV1.D3 | J3's premise is misstated (the harm came from stacking novelty-lr with DG writes, M2), it bundles warm-up with calibration, and ECE is undefined for the novelty target | Med | J3 | Correct the premise; run warm-up alone (J3.a); define a calibration measure | Open |
+| RV1.D4 | J1 is not a cheap add-on: two of its four arms cannot plug into `score()` | Low | J1 | Add an external score callback or make those arms conditional-only; temperature-fit LAYA | Open |
 
-### Design gaps (design review, 2 Nov)
+The review also cites lens findings "F2" (under RV1.C1) and "F4" (under RV1.C4) that are recorded nowhere else. Its `REGISTER.md:` anchors refer to this file at commits `73259fc` and `241a13c`.
 
-| ID | Experiment | Priority | Status |
-|---|---|---|---|
-| D-a | Read at about L/3, inject at L/2 (round-0 direction 4) | M | Planned |
-| D-b | Depth loop: re-run blocks L+1 … N with a CA1-novelty exit | L | Planned |
-| D-c | Multi-layer injection | L | Planned |
+## 4. Experiment backlog
 
-### Feedback stability (NOTEBOOK, stability programme)
+Every table has the same columns. "Script" names the entry point, or says "not built". The round-1 mutation directions of `round0_plan.md` §4 map to: 1 → W1, 2 → W8, 3 → W9, 4 → W5, 5 (address-shift keys) → realised by W1's successor binding, 6 → W10.
 
-| ID | Experiment | Priority | Status |
-|---|---|---|---|
-| S1 | Saturation curve on Qwen: gain sweep, open and closed loops, with downstream norms, entropy, perplexity and needle accuracy, plus a random-direction control | **H** | Planned |
-| S2 | Closed loop on Qwen up to 4k tokens, for each regulator | H | Planned |
-| S3 | Regulator ablation with ≥ 3 seeds on the CPU stability suite | H | Planned |
-| S4 | Compensated subtractive feedback to raise the critical gain | M | Planned |
-| S5 | Homeostatic gain adaptation towards a target echo | M | Planned |
-| S6 | Novelty-gated gain (the acetylcholine switch) | M | Planned |
-| S7 | Norm-preserving injection against additive injection | M | Planned |
-| S8 | Multi-band damping | M | Planned |
+### 4.1 Round 0 diagnostics ([`plans/round0_plan.md`](plans/round0_plan.md))
 
-### Alignment: CA2 as a norm-steering controller (NOTEBOOK, proposal)
+g0–g7: 1,000 steps on Qwen3, every layer windowed; pass means eval loss ≤ 1.82 and token accuracy ≥ 0.315 (floor 1.842 / 0.28); output `results/evolve/round0/<name>.json`.
 
-| ID | Experiment | Priority | Status |
-|---|---|---|---|
-| A1 | Harm probe at the tap: AUROC and calibration (layer sweep) | **H** | Built (`experiments/alignment`); ready to run |
-| A2 | Escalating controller against static, conditional (CAST) and no steering, on harmful prompts, XSTest and perplexity (HarmBench and MMLU later) | M | Built; ready to run (set the cap from S1) |
-| A3 | Escalation and recovery under multi-turn pressure | M | Planned |
-| A4 | Controller stability: ringing between refusing and complying | M | Planned |
-| A5 | Robustness to adaptive attacks on the probe | L | Planned |
-| A6 | **Re-align an unaligned model with runtime hooks** (Daniel). Abliterated Qwen3-1.7B and the never-aligned base, against the aligned reference. Arms: none, static refusal direction, conditional, graded controller, controller without the aligned sibling. Hypotheses H1–H4 in the notebook | **H** (standalone alignment track) | Built (`--direction-from`, arm `graded_self`); ready to run |
-| A7 | Scale and hybrid check of A6 on `Huihui-Qwen3.5-9B-abliterated`. It loads as `AutoModelForMultimodalLM`, so `pretrained_loop.py` model loading and `find_blocks` need changes | M | Planned |
+| ID | Experiment | Hypothesis → metric | Script | Depends on / blocked by | Priority | Status |
+|---|---|---|---|---|---|---|
+| g0 | Control with the matched schedule | Stays at the floor → loss, token accuracy | `experiments/pretrained_loop.py` | Useful only beside a flat arm | Low | Ready; candidate to drop (its arms are superseded) |
+| g1 | `flat` kernel | D2 against D3: a pass means the kernel was the barrier → loss, token accuracy | `experiments/pretrained_loop.py --kernel flat` | — | — | Superseded by P4 (the horizon kernel left the floor, so the kernel binds). Fails E2 (DEC1) |
+| g2 | `exp` kernel, ρ 0.98, τ 16 (w(500) ≈ 0.54) | A slow decay is enough → loss, token accuracy | `experiments/pretrained_loop.py --kernel exp --rho 0.98` | — | Low | Ready. Not covered: the horizon runs (P4, P9) used ρ 0.95, τ 32, a close variant. Fails E2 |
+| g3 | `flat --no-time` | The loop is the route; the clock is not needed → loss | `experiments/pretrained_loop.py` | — | — | Superseded by W1e (the same question on W1) |
+| g4 | `flat --no-contrast` | The value arrives through the content-addressed read, not the uniform prior → loss | `experiments/pretrained_loop.py` | — | — | Superseded by P8 and P10 (the prior path is query-independent; W1 has no prior). Fails E2 |
+| g5 | `flat --pairs 2` | Forces key addressing → loss with 2 pairs | `experiments/pretrained_loop.py` | — | Low | Ready; never run (P8 ran 2 pairs on the horizon kernel: g5h). Candidate to drop: fails E2 |
+| g6 | `flat` at tap 6 | D3a/b: the readout depends on depth → loss | `experiments/pretrained_loop.py --layer 6` | — | — | Superseded by P10 (W1 decodes the value at tap 14). Depth is carried by W1b.c and W5. Fails E2 |
+| g7 | `flat` at tap 22 | As g6 | `experiments/pretrained_loop.py --layer 22` | — | — | Superseded, as g6 |
+| g2b | Rerun `pretrained_qwen35_needle_allwin_horizon` with more steps | It was undertrained → exact | `experiments/evolve/run.py` | — | — | Done (P9) |
+| g5h | Horizon kernel (exp, ρ 0.95, τ 32) with 2 pairs. Was "g5" in this register; not the round-0 flat arm | One-pair recall uses the query → digit-1 loss | `experiments/evolve/run.py --pairs 2` | — | — | Done (P8) |
+| C1 | Per-position loss and accuracy; save the side-channel `state_dict` | Which digits arrive → per-digit CE (rule E9) | `experiments/evolve/run.py` | — | — | Done (`per_pos` in each result, `.pt` beside each JSON; P7). Same as E9 |
+| C1a | Per-digit loss and accuracy, the first half of C1 | Which digit the loop recovers (P4a) | `experiments/evolve/run.py` | — | — | Done (P7) |
+| C2 | Linear probe for the value digits on frozen Qwen3 states at layers 6, 14 and 22 | D3a: the tap encodes the value → probe accuracy | not built (GPU script) | — | — | Superseded by P10 (W1 reads the value exactly at tap 14) |
+| C3 | Loop instrumentation: M's share on block 0 and cos(Δ, wv(x_needle) − prior) at the answer rows | Where the O(T) loop loses the needle | not built | — | High | Planned |
+| C4 | Eval-time ablations on a trained Qwen3.5 attention-only checkpoint: zero the injection at positions < 128 or ≥ 400; batch-mean and swapped injections | D4: local write carried by GDN, or readout at the query → exact, loss | not built | C1 (done); a Qwen3.5 checkpoint, which needs a rerun of `pretrained_qwen35_needle` through `experiments/evolve/run.py` (no `.pt` exists) | High | Planned. O5 is a duplicate |
+| C5 | `check_window` on every windowed layer, plus an end-to-end side-off perturbation test | The base does not leak by itself (rule E7) → bitwise-equal logits | not built (`pretrained_loop.py` checks only the first windowed layer) | — | High | Planned. Same as E7 |
+| C6 | Held-out evaluation: `--eval-seq-len` (gaps 373, 757, 1013), random needle offset, natural-text filler at eval only | Generalisation (rule E6) → min over conditions of ln 10 − digit CE | not built | — | High | Planned. Blocks W1's E6 score. Same as the E6 harness |
+| — | taskeval-H2 phase test at seq-len 508 | The osc phase hole | cannot run (block mode needs seq-len divisible by the window) | — | — | Dropped (`round0_plan.md` §2) |
 
-Alignment track data rule: commit only judge scores, refusal labels and aggregates. Raw completions to harmful prompts stay off the repository.
+### 4.2 Pretrained candidates and scaling (W)
 
-### Reasoning: CA2 steering of chain-of-thought (NOTEBOOK, proposal)
+| ID | Experiment | Hypothesis → metric | Script | Depends on / blocked by | Priority | Status |
+|---|---|---|---|---|---|---|
+| W1 | GDN side memory with successor-bound keys, plus the clock, on Qwen3-1.7B, all layers windowed | M5 transfers to a frozen 2B model with a fixed-size state, and the address shift lifts recall from one digit (P4a) to all four → needle digit CE and exact; stability; recency | `experiments/evolve/w1_gdn.py` via `experiments/evolve/run.py` | — | High | Done on the needle (P10, P11). Stability and recency: W1c. E6: C6. LM: W1d |
+| W1b | Context-bearing addresses so the queried name selects the *first* digit; 2 and 3 pairs | P11's coin flip comes from addresses that encode mainly the current token (the space after "is" is the same in both facts) → digit-1 accuracy with 2–3 pairs; exact | see W1b.a–c | — | High | Running (round 2, `results/evolve/round2/`) |
+| W1b.a | GDN short-conv keys (`addressing="gdn"`) | As W1b | `experiments/evolve/w1_gdn.py --w1-addressing gdn` (6 heads for the budget) | — | High | Running (round 2) |
+| W1b.b | Addresses from a learned causal conv over the last K positions' hidden states (the n-gram idea; rule E4 forbids token ids) | As W1b | `experiments/evolve/w1_gdn.py --w1-ctx K` | — | High | Running (round 2: K = 4, dense and DG keys) |
+| W1b.c | A tap at a later block, where the residual at "is" carries more of the name | As W1b | `experiments/evolve/run.py --layer` | — | High | Running (round 2: tap 21). Overlaps W5 |
+| W1c | W1 adapter for the CPU stability and recency suites | W1 passes the two must-pass fitness criteria → closed-loop echo, zero-shot older/newer named | not built (`experiments/temporal_loop.py` cannot host W1) | — | High | Planned |
+| W1d | W1 on WikiText-103 | No LM regression (rule E8) → perplexity against the default-kernel loop (12.01, P5) and the horizon kernel (11.53, P12) | `experiments/evolve/run.py --task lm --candidate evolve.w1_gdn:W1Side` | — | Med | Ready. `round0_plan.md`'s E8 threshold (11.9) is the superseded bf16 figure |
+| W1e | W1 without the clock (`--no-time`), the live form of g3 | The memory alone is the route → needle exact, digit CE | `experiments/evolve/run.py --candidate evolve.w1_gdn:W1Side --no-time` | — | Med | Ready |
+| W1f | Two-pair runs on Qwen3.5: P9's horizon kernel and W1 | P9's exact recall uses the query (P8's caveat) → digit-1 accuracy, exact | `experiments/evolve/run.py --pairs 2` | — | High | Ready |
+| W2 | The clock on a GDN hybrid (Qwen3.5) with elapsed-time questions in long documents | T1 transfers → "when" accuracy | not built (needs a new `--task`) | — | Med | Planned |
+| W3 | Replay consolidation into LoRA adapters on the MLPs of a frozen model, against uniform replay and no replay | M3 holds, and novelty priority beats uniform → backward transfer, capability | not built | Rule E3's budget must cover the adapters; needs a continual-learning fitness term. Its uniform-replay control: see O1 | Med | Planned |
+| W4 | `--dg-keys` (and `--read dg`) with the horizon kernel on Qwen | T13 transfers; less interference → needle with 2+ pairs; recency probe | `experiments/pretrained_loop.py --dg-keys --loop-arg read=dg` | — | Med | Ready. Not covered by W1's DG keys (a different module); T13's recency transfer is untested |
+| W5 | Read at about L/3, inject at L/2 (round-0 direction 4). Was D-a | The readout depends on depth → needle digit CE | not built (tap = inject today) | `round0_plan.md` made it conditional on g6/g7 or C2, now superseded. Overlaps W1b.c | Med | Planned |
+| W6 | Depth loop: re-run blocks L+1 … N with a CA1-novelty exit. Was D-b | Big-loop recurrence helps multi-step recall → accuracy against extra compute | not built | A task: W6.a. J5 is its exit arm | Low | Planned |
+| W6.a | Multi-hop recall task for the depth loop | — | not built | — | Low | Planned |
+| W7 | Multi-layer injection. Was D-c | — | not built | — | Low | Planned |
+| W8 | Fixed-state multi-timescale φ-feature loop: S ← ρS + φ(k)vᵀ, per-head learnable decay, one head initialised at ρ ≥ 0.995 (round-0 direction 2) | Keeps the loop within rule E2 → needle digit CE; stability | not built | High value only if g2 passes. Overlaps S8 | Med | Planned |
+| W9 | Write selectivity: gate writes on novelty or salience, and replace the unweighted prior with a decayed running mean (round-0 direction 3) | Removes the uniform shift that washes the needle out (D3c) → needle digit CE | not built | — | Low | Planned |
+| W10 | Gap curriculum: short gaps first, held-out E6 gaps fixed (round-0 direction 6) | → held-out digit CE | not built (task-code change) | C6 | Low | Planned |
+| W11 | Joint light fine-tuning of the base and the side channels (training-plan step 2, `docs/design/temporal-loop.md` §4) | → needle, LM perplexity | not built | — | Low | Planned |
 
-| ID | Experiment | Priority | Status |
-|---|---|---|---|
-| R1 | Thinking-minus-non-thinking direction on Qwen3 hybrid checkpoints, injected in no-think mode: accuracy against tokens | M | Planned |
-| R2 | Gist (momentum) steering during thinking: accuracy against reasoning tokens on GSM8K, MATH-500 and AIME, against full thinking, `/no_think`, budget truncation, SEAL and the concise vector | **H** | Planned (gist mode built in `steering.py`) |
-| R3 | Regulated gist: gain from agreement between the gist and the current token, released on backtracking; against STU-PID | M | Planned |
-| R4 | Over-commitment checks: flip analysis, "wait" rate, GPQA-Diamond, wall-clock time and tokens-to-correct | M | Planned (with R2) |
-| R5 | Memory-retrieved gist vectors from successful traces (hippocampal version of STIR and DSEM) | L | Planned |
+### 4.3 Feedback stability (S) (NOTEBOOK, stability programme)
 
-The gist arm is positive feedback. S1 must include it before R2 runs at high gain.
+| ID | Experiment | Hypothesis → metric | Script | Depends on / blocked by | Priority | Status |
+|---|---|---|---|---|---|---|
+| S1 | Saturation curve on Qwen: fixed gain g ∈ {0.05, 0.1, 0.2, 0.5, 1, 2} × ‖h‖, open and closed loops, plus a matched-norm random-direction control | Additive injection saturates the frozen model past a knee → downstream residual norms, attention and logit entropy, WikiText perplexity, needle accuracy | not built | Must include the gist arm before R2 runs at high gain (RV1.C1; RV1.C6 adds distinct-n) | High | Planned |
+| S2 | Closed loop on Qwen up to 4k tokens, for each regulator and for none | → echo against sequence length | not built | — | High | Planned |
+| S3 | Regulator ablation with ≥ 3 seeds on the CPU stability suite: clamp, divisive, subtractive, projection and saturation, alone and combined | Current stability numbers (T3–T15) hold across seeds → echo, what, older/newer named | `experiments/temporal_loop.py` | Overlaps O2 | High | Ready |
+| S4 | Compensated subtractive feedback: a lead–lag filter, or a shorter or distributed delay | Raising the critical gain above 1.68 (T7) suppresses more echo and breaks closed-loop primacy → $K_\text{crit}$, echo, older named | `experiments/loop_systems.py` for the analysis; the kernel is not built | — | Med | Planned |
+| S5 | Homeostatic gain: adapt log g slowly towards a target echo ratio r* | → echo tracking, stability margin | not built | — | Med | Planned |
+| S6 | Novelty-gated gain, the acetylcholine switch (also the blueprint's gate in `docs/design/temporal-loop.md` §4) | Suppressing injection while input is novel → echo, recall | not built | — | Med | Planned |
+| S7 | Norm-preserving injection against additive injection, at matched effect sizes | It moves the S1 knee → S1 metrics | not built | S1 | Med | Planned |
+| S8 | Multi-band damping: several ρ bands (spans from about 45 to 1,000 tokens) | One design gets both recency and long reach without losing stability → recall by gap, older named, echo | not built | Part of W8; same as the README roadmap item "multi-band horizons" | Med | Planned |
+| S9 | S1 for steering directions: refusal, thinking and random directions at g ∈ {0.1, 0.2, 0.3, 0.4, 0.5, 0.75} | The knee depends on the direction (N4) → degeneration, perplexity, downstream norms | not built (sweep) | — | High | Planned |
 
-### CA1 as a calibrated decision model (JEV, LAYA) (NOTEBOOK, proposal)
+### 4.4 Alignment: CA2 as a norm-steering controller (A) (NOTEBOOK, proposal)
 
-| ID | Experiment | Priority | Status |
-|---|---|---|---|
-| J1 | Decision source for the alignment controller: linear probe, calibrated head, LAYA-style external encoder, guard model. AUROC, ECE in and out of distribution, A2 selectivity at a fixed cap | **H** (cheap add-on to A1/A2) | Planned |
-| J2 | LAYA-style CA1 comparator for the loop: joint encoder over the stream and the CA3 retrieval, outputting injection strength, write/no-write and replay priority, trained on the counterfactual benefit of injecting | M | Planned |
-| J3 | Revisit M2 with a calibrated CA1 novelty signal for Titans | L | Planned |
-| J4 | Calibrated "on track" decision gating the gist gain and early stopping of thinking (with R3) | M | Planned |
-| J5 | Calibrated exit for a depth loop (with D-b), against Ouro's gate | L | Planned |
+Data rule: commit only judge scores, refusal labels and aggregates. Raw completions to harmful prompts stay off the repository.
 
-### Other open questions
+| ID | Experiment | Hypothesis → metric | Script | Depends on / blocked by | Priority | Status |
+|---|---|---|---|---|---|---|
+| A1 | Harm probe at the tap, with a layer sweep | Harmfulness is linearly decodable (A6.H1) → AUROC, ECE | `experiments/alignment/run.py --layer-sweep` | Caveat RV1.A2 (ECE on the wrong positions) | High | Ready |
+| A2 | Escalating controller against static, conditional (CAST) and no steering, on harmful prompts, XSTest and perplexity (HarmBench and MMLU later) | Graded steering is more selective at lower capability cost → attack success, over-refusal, perplexity | `experiments/alignment/run.py --arms` | Blocked by RV1.A1, RV1.A3, RV1.A6. Cap from S1. Its arms are a subset of A6's; J1 sweeps its decision source | Med | Blocked |
+| A3 | Escalation and recovery under multi-turn pressure | E_t rises on persistent attempts and falls on benign turns (A6.H4) → attack success over turns, recovery | not built (multi-turn) | — | Med | Planned |
+| A4 | Controller stability: ringing between refusing and complying | The delayed integral controller stays below the S1 knee and the T7 limit → oscillation of the gain | not built | S1, T7 | Med | Planned |
+| A5 | Robustness to adaptive attacks on the probe | → attack success under probe-aware attacks | not built | A1 | Low | Planned |
+| A6 | **Re-align an unaligned model with runtime hooks** (Daniel). Abliterated Qwen3-1.7B and the never-aligned base, against the aligned reference. Arms: none, static refusal direction, conditional, graded controller, controller without the aligned sibling | A6.H1–A6.H4 in the notebook → attack success, over-refusal, capability, degeneration, controller dynamics | `experiments/alignment/run.py` (`--direction-from`, arm `graded_self`) | Blocked by RV1.A1, RV1.A3, RV1.A6 (and RV1.A7 with `--direction-from`). Depends on A1 and S1. Spot checks N2, N3: the sibling direction needs g ≥ 0.3, so sweep past 0.3; `graded_self` needs a direction estimate other than the self difference of means | High (standalone alignment track) | Blocked |
+| A7 | Scale and hybrid check of A6 on `Huihui-Qwen3.5-9B-abliterated` | → as A6 | not built (it loads as `AutoModelForMultimodalLM`, so `pretrained_loop.py` model loading and `find_blocks` need changes) | A6; RV1.A7 | Med | Planned |
+| A8 | **Gain law** (Daniel): additive-constant, tanh $G\tanh(\kappa E)$, squared $G\tanh(\kappa E^2)$ and exponential $\min(G, g_0(e^{\kappa E}-1))$ schedules at matched maximum gain. Gain on the existing refusal component, $g(h\cdot\hat d)\hat d$, is excluded: $h\cdot\hat d\approx 0$ after abliteration | Superlinear schedules stay near zero on weak evidence and escalate fast on strong evidence → selectivity (harmful − borderline refusal), degeneration, perplexity | not built (needs new modes in `steering.py`) | Run with A6 | High | Planned |
 
-| ID | Experiment | Priority | Status |
-|---|---|---|---|
-| O1 | Replay controls: uniform replay; sleep only against awake replay | M | Planned |
-| O2 | Multi-seed replication of T11–T15 | H | Planned |
-| O3 | Decide whether the pretrained track requires a fixed-size state (round-0 decision). Recommended yes by both sessions, keeping the O(T) loop with the horizon kernel as the reference arm | H | Adopted for round 1 (Daniel approved the plan, 2 Nov); W1 meets it |
-| O4 | Separate memory from domain adaptation in P5: horizon kernel, and an arm with the loop's memory ablated | M | Horizon arm done (P12); memory-ablated arm Planned |
-| O5 | Qwen3.5 eval-time ablations: zero the injection early or late to locate the GDN route (round-0 C4) | M | Planned |
+### 4.5 Reasoning: CA2 steering of chain-of-thought (R) (NOTEBOOK, proposal)
+
+The gist arm is positive feedback. S1 must include it before R2 runs at high gain. A reasoning runner is not built yet.
+
+| ID | Experiment | Hypothesis → metric | Script | Depends on / blocked by | Priority | Status |
+|---|---|---|---|---|---|---|
+| R1 | Thinking-minus-non-thinking direction on Qwen3 hybrid checkpoints, injected in no-think mode | → accuracy against tokens | `experiments/alignment/steering.py` (fixed direction); runner not built | RV1.C7 (take the difference at matched content positions) | Med | Planned. Spot-checked (N4, N5): collapse at g = 0.3. Needs harder problems (MATH-500, GSM8K hard) and n ≥ 100 |
+| R2 | Gist (momentum) steering during thinking on GSM8K, MATH-500 and AIME, against full thinking, `/no_think`, budget truncation, SEAL and the concise vector | Gist steering cuts reasoning tokens at equal accuracy → accuracy against reasoning tokens | `experiments/alignment/steering.py` (gist mode); runner not built | Blocked by RV1.C1, RV1.C2. S1 (gist arm) | High | Blocked |
+| R3 | Regulated gist: gain from agreement between the gist and the current token, released on backtracking. Baseline: PID steering (arXiv 2510.04309) and a decode-time PID ablation, not the withdrawn STU-PID | Negative feedback keeps the gain while on track → accuracy against tokens | not built (no gain law) | Blocked by RV1.C3, RV1.C4. Run with J4 | Med | Blocked |
+| R4 | Over-commitment checks: flip analysis, "wait" rate, GPQA-Diamond, wall-clock time and tokens-to-correct | The measurement set of R2 → flips, backtracking rate | as R2 | R2; RV1.C2 | Med | Blocked (with R2) |
+| R5 | Memory-retrieved gist vectors from successful traces (hippocampal version of STIR and DSEM) | → accuracy against tokens | not built | R2 | Low | Planned |
+| R6 | **Repetition-regulated gain** (Daniel): negative feedback from a repetition signal, $g_t = g_0 e^{-\gamma R_t}$ with $R_t = \lambda_r R_{t-1} + r_t$. Candidate $r_t$: n-gram repeat rate, $\cos(h_t, h_{t-k})$, logit-entropy drop. Also decode-only injection (no prefill) | Regulation delays collapse at fixed accuracy → collapse onset, accuracy against tokens, against a fixed gain (N4) | not built (needs a regulator in `steering.py`) | Related to S5, R3 and J4; uses RV1.C6's repetition metric | High | Planned |
+
+### 4.6 CA1 as a calibrated decision model (J) (NOTEBOOK, proposal: JEV, LAYA)
+
+| ID | Experiment | Hypothesis → metric | Script | Depends on / blocked by | Priority | Status |
+|---|---|---|---|---|---|---|
+| J1 | Decision source for the alignment controller: linear probe, calibrated head, LAYA-style external encoder, guard model | To be reworded per RV1.D1: compare sources at a matched operating point → borderline refusal at a fixed harmful-refusal rate; AUROC; ECE in and out of distribution, on generated tokens | `experiments/alignment/run.py` (linear probe only; no external score callback) | Blocked by RV1.D1, RV1.D4, RV1.A2/RV1.D2. A decision-source sweep inside A2 | High | Blocked |
+| J2 | LAYA-style CA1 comparator for the loop: joint encoder over the stream and the CA3 retrieval, outputting injection strength, write/no-write and replay priority, trained on the counterfactual benefit of injecting | → what-when, recency probe, stability suite, then the Qwen needle | not built | — | Med | Planned |
+| J3 | Revisit M2 with a calibrated CA1 novelty signal for Titans | Premise corrected (RV1.D3): the harm came from stacking novelty-lr with DG writes, not from CA1 novelty-lr alone → recall; a calibration measure for the novelty target (a binarised event or a reliability curve of z) | `experiments/assoc_recall.py` (no calibrated-CA1 option) | Blocked by RV1.D3. J3.a first | Low | Blocked |
+| J3.a | Warm up `novelty_lr`, or stop gradients through novelty, as its own arm | M2's harm is early noise from an untrained novelty signal (RESULTS §1) → recall of the stacked model | not built (no warm-up option in `experiments/assoc_recall.py`) | — | Low | Planned |
+| J4 | Calibrated "on track" decision gating the gist gain and early stopping of thinking | → accuracy against tokens, against PID control | not built | Run with R3 (Blocked) | Med | Planned |
+| J5 | Calibrated exit for a depth loop, against Ouro's gate | → accuracy against compute | not built | W6 | Low | Planned |
+| J6 | Calibrated CA1 with a proper scoring rule and reliability diagrams; JEPA-style target with SIGReg | → ECE, reliability, downstream recall | not built | Overlaps J2 and J3 | Low | Planned |
+
+### 4.7 Other open questions (O)
+
+| ID | Experiment | Hypothesis → metric | Script | Depends on / blocked by | Priority | Status |
+|---|---|---|---|---|---|---|
+| O1 | Replay controls: uniform replay; sleep only against awake replay | M3's effect needs novelty priority and sleep → backward transfer | `experiments/continual.py` (new conditions needed) | Also W3's uniform-replay control | Med | Planned |
+| O2 | Multi-seed replication of T11–T15 | → older/newer named, echo | `experiments/temporal_loop.py --seed` | Overlaps S3 | High | Ready |
+| O3 | Fixed-size state for the pretrained track | — | — | — | — | Moved: see DEC1 |
+| O4 | Separate memory from domain adaptation in P5: horizon kernel, and an arm with the loop's memory ablated | → perplexity | `experiments/evolve/run.py --task lm`; memory ablation not built | — | Med | Horizon arm Done (P12); memory-ablated arm Planned |
+| O5 | Qwen3.5 eval-time ablations: zero the injection early or late to locate the GDN route | — | — | — | — | Duplicate: see C4 |
+| O6 | Multi-seed replication of the P results (rule E6 requires ≥ 2 seeds; O2 covers only T11–T15) | → the P metrics | `experiments/evolve/run.py --seed` | — | Med | Ready |
+| O7 | Replicate T16 (Treves–Rolls noisy cue) | → recall under cue noise | `experiments/temporal_loop.py` | — | Low | Ready |
+| O8 | Compensate the delayed CA1 feedback through theta timing or GABA_B | → $K_\text{crit}$, echo | not built | S4 covers only lead–lag or delay shaping | Low | Planned |
+| O9 | Pattern separation on similar keys, plus a DG-sparsity sweep from 1% to 25% | DG addresses beat dense ones once keys overlap (would resolve M7) → recall | not built (needs a task with overlapping keys) | — | Med | Planned |
+| O10 | Deep against linear memory on nonlinear associations; the cost of chunk-start gradients | Does M6 hold beyond linear associations? → recall | not built | — | Low | Planned |
+| O11 | Neurogenesis and consolidation scheduling: fixed, surprise-triggered, adaptive | → backward transfer, recall | not built | — | Low | Planned |
+| O12 | CA2 identity steering: per-speaker vectors on multi-speaker recall, plus a post-hoc pretrained version. First use of `CA2Modulator` | → multi-speaker recall | not built | — | Low | Planned |
+| O13 | HippocampalBlock (Strategy I) inside a pretrained LLM (W1 covers only the GatedDeltaMemory half) | → needle, LM perplexity | not built | — | Low | Planned |

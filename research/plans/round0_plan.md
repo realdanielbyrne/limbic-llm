@@ -1,5 +1,21 @@
 # Round 0 plan: why the side channels fail the Qwen3 needle task
 
+**Status (2 Nov 2026).** Round 0 is finished, and this plan is now a record. The text below is unchanged apart from bracketed notes. Current statuses are in [`../REGISTER.md`](../REGISTER.md) and the dated account is in [`../NOTEBOOK.md`](../NOTEBOOK.md).
+
+| Item | Outcome |
+|---|---|
+| Arms g0–g7 (§2) | None ran as written; `results/evolve/round0/` was never created. g2 was **not** covered: the horizon runs that stood in for it used `--kernel exp --rho 0.95 --tau 32` (P4), not ρ 0.98, τ 16. g1, g4, g6 and g7 are superseded by P4, P8 and P10, and by DEC1 (the flat kernel fails E2). g3 is re-scoped as W1e (W1 without the clock). The flat 2-pair arm g5 never ran; the horizon kernel with 2 pairs (register g5h, P8) answered the same question for the horizon loop. |
+| C1 | Done: `experiments/evolve/run.py` logs per-digit loss (C1a, P7) and saves the side-channel checkpoint |
+| C2 | Superseded by P10 (see the D3 note) |
+| C3, C5, C6 | Planned. C6 blocks W1's E6 score |
+| C4 | Planned; the same experiment as O5. Needs a Qwen3.5 checkpoint |
+| D1, D5 | Hold |
+| D4 | Holds; the route is still unresolved (C4, O5). The Qwen3.5 all-windowed fp32 rerun in D4 and §2 finished at the floor, 1.843 / exact 0.00 (P6) |
+| D2 | Supported as a binding constraint: with a horizon that covers the gap the loop left the floor (P4) and recovered the first digit (P4a, P7) |
+| D3 | Still open for the loop; P7 and P10 bear on it (note under the table in §1) |
+| Taskeval-H2 phase test | Dropped (seq-len 508 cannot be run, §2 caveats) |
+| §4 directions | 1 → W1 (P10, P11); 2 → W8; 3 → W9; 4 → W5; 5 → realised by W1's successor binding; 6 → W10 |
+
 ## 1. Diagnosis
 
 Ranked surviving explanations:
@@ -11,6 +27,8 @@ Ranked surviving explanations:
 | D3 | Open; the key unknown | **Some block sits downstream of the read.** The contrast prior is an unweighted mean over available positions. It already sends a needle share of about 3-4.5%, and a needle-to-recent gradient ratio of about 0.075, to `wv`, whatever the gap. With pairs=1 no addressing is needed. Yet zero bits arrive. Candidate causes: (a) tap-14 states at block-0 positions do not linearly encode the value; (b) the frozen windowed upper layers ignore a ~4% component inside a 0.2‖h‖ injection; (c) a uniform prior shift washes out. If (a) holds, no kernel fix helps. | prior `temporal_loop.py:269-273`; `--pairs` default 1 at `pretrained_loop.py:677` |
 | D4 | Holds | **Qwen3.5 attention-only exact 1.0 is carried by the intact GDN layers, not by loop retrieval.** The all-windowed fp32 rerun uses the same tap and the same side channels. It stays at 1.83-1.85 train loss through step 3000 (eval line not yet logged). The route is unresolved. Either the loop re-injects locally and the 8 GDN layers above the tap carry the value forward, or the readout happens at the query. The finished tap-22 run (GDN below the tap only) ends at eval 1.734 / tok_acc 0.345 / exact 0, which leans toward "layers above the tap must carry or decode". | GDN left unwindowed `pretrained_loop.py:234-245`; `reach()` `:335-338` |
 | D5 | Holds; removes evidence | **The pre-fix all-windowed sub-floor result (eval 1.692) was an anti-causal leak, not long-range transfer.** bf16 `arange` in `decay_kernel` and `loop_kernel` merges positions. I checked on CPU: `arange(512, bf16)` has only 385 distinct values, and 505..511 become [504, 506, 508, 508, 508, 510, 512], so the `d>=0` mask lets earlier positions see later ones. That gives the d1/d2 predictions their own targets. Side channels now run in fp32. | `temporal_loop.py:94, 109-111`; `.float()` at `pretrained_loop.py:291, 294` |
+
+[Status note, 2 Nov 2026, on D3: P7 and P10 bear on it directly. The horizon loop recovers digit 1 from tap-14 states (P7), and W1, a fixed-state memory at the same tap, recovers all four digits on Qwen3 with every layer windowed (P10), with the frozen windowed upper layers decoding its injection. So the tap-14 states carry the value (D3a does not hold), and the upper layers can read an injected value. What remains open is whether the loop's own injection gives the needle too small a share (D3b, D3c).]
 
 True but not the binding constraint yet (they matter only after D2/D3 are fixed):
 - The osc phase hole (taskeval H2).
@@ -49,8 +67,8 @@ Refuted:
 
 **Caveats**
 - The flat and exp kernels are diagnostics, not candidates. Like the default loop, they store an O(T) memory (`temporal_loop.py:262`) and so fail rule E2 below.
-- I did not include the taskeval-H2 phase test (seq-len 508). `main` requires `seq-len % window == 0` for block mode (`pretrained_loop.py` in `main`, the `--seq-len must be a multiple` check), so that run cannot be made.
-- The post-fix Qwen3.5 all-windowed rerun now running is the existing control for "no long-range leak after the fix". Its eval line should be read when it finishes. No new arm is needed for it.
+- I did not include the taskeval-H2 phase test (seq-len 508). `main` requires `seq-len % window == 0` for block mode (`pretrained_loop.py` in `main`, the `--seq-len must be a multiple` check), so that run cannot be made. [Dropped.]
+- The post-fix Qwen3.5 all-windowed rerun now running is the existing control for "no long-range leak after the fix". Its eval line should be read when it finishes. No new arm is needed for it. [2 Nov 2026: it finished at the floor, 1.843 / exact 0.00 (P6).]
 
 **Diagnostics that need a code change, or a GPU scratch script under /tmp**
 
@@ -83,7 +101,7 @@ Refuted:
 | E5 Precision | Position and index arithmetic stays in fp32 or integers. | Covered by the bf16 variant of E1. Also lint `arange(..., dtype=h.dtype)` patterns. |
 | E6 Held-out generalisation (needs C6) | Training uses seq-len 512 and the fixed layout. Fitness is measured on held-out gaps (seq-len 384/768/1024), a random needle offset, natural-text filler, pairs ∈ {2, 3}, and ≥ 2 training seeds. Eval sequences are already drawn from a disjoint rng, `seed+999` (`:724`). | Fitness = min over seeds and conditions of (ln10 − mean digit CE). Reject any candidate whose training loss is below the floor while held-out stays at the floor (it memorised the layout). |
 | E7 Window integrity | The base must not leak by itself. | C5 checks: every windowed layer, plus the end-to-end side-off perturbation test. |
-| E8 No LM regression | Side channels must not hurt language modelling. | Qwen3 WikiText-103 windowed+side perplexity ≤ 11.9 (current result). |
+| E8 No LM regression | Side channels must not hurt language modelling. | Qwen3 WikiText-103 windowed+side perplexity ≤ 11.9 (current result). [Correction, 2 Nov 2026: 11.9 was the superseded bf16 figure (11.91). The fp32 result is 12.01 with the default kernel (P5) and 11.53 with the horizon kernel (P12). W1 has no LM run yet (W1d).] |
 | E9 Metric | Per-digit CE and accuracy relative to the 0.8·ln10 format floor. Exact match is a secondary metric only. | Uses C1 logging. |
 
 ## 4. Round-1 mutation directions, ranked by expected value
@@ -97,7 +115,7 @@ The ranking depends on round 0. If g1, g2 and g6/g7 all stay at the floor and th
 2. **Fixed-state multi-timescale loop.** Replace exp(s·(q·k−1)) with a positive feature map φ. Keep the delay of τ and use per-head learnable decay, with S updated as ρS + φ(k)vᵀ and at least one head initialised with ρ ≥ 0.995. This keeps the loop and theta framing and is the state-space version of g2. High value if g2 passes.
 3. **Write selectivity in place of the unweighted prior.** Gate writes on novelty or salience so filler is not stored. Replace the `avail`-mask mean (`:270-273`) with a decayed running mean, which fits a fixed state. This targets D3c (the uniform shift that washes the needle out).
 4. **Read and write depth.** Allow writing at a lower layer and injecting at the tap, or injecting at two blocks, with the parameter budget covering both. Conditional on g6/g7 or C2 showing that the readout depends on depth.
-5. **Address-shift keys.** Include x_pre shifted back by one token, and the TimeChannel lag features, in k and q, so each answer position finds the next digit (capacity H4). Only useful once g1 or g5 show retrieval working. Test with pairs ≥ 2.
+5. **Address-shift keys.** Include x_pre shifted back by one token, and the TimeChannel lag features, in k and q, so each answer position finds the next digit (capacity H4). Only useful once g1 or g5 show retrieval working. Test with pairs ≥ 2. [2 Nov 2026: realised by W1's successor binding, which writes each value under the previous position's address (P10). Pairs ≥ 2 is P11 and W1b.]
 6. **Gap curriculum on the training side** (short gaps first, then long), keeping the E6 held-out gaps fixed. This is a task-code change.
 
 Lowest value, not recommended: changing sharpness, tuning the phase or τ, toggling contrast, or adjusting gain init or the tanh λ under the current O(T) loop. Each is refuted or fails E2.

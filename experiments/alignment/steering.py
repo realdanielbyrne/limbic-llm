@@ -34,7 +34,7 @@ the last prompt token during prefill, then each generated token. State (E, the
 conditional decision) carries across forward calls, so prefill followed by
 token-by-token decoding with a KV cache matches a single pass. Call ``reset()``
 between sequences. The controller runs in float32 whatever the model's dtype
-(bf16 index arithmetic is unsafe; see register C4).
+(bf16 index arithmetic is unsafe; see register B4).
 """
 
 from __future__ import annotations

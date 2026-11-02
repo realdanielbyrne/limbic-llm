@@ -133,7 +133,7 @@ A second Claude session on Daniel's GPU machine (geof) ran these and pushed its 
 
 ### 5.6 Design review, stability and alignment (Daniel)
 
-The next morning Daniel asked how the Qwen implementation relates to the circuit: whether DG reuses a mixture-of-experts router, how skip paths and feedback are wired, whether the CA2 injection is a single layer, and what plays the neocortex. **Claude's** answers, taken from the code and run settings, are in the lab notebook's design review. In short:
+The next morning Daniel asked how the Qwen implementation relates to the circuit: whether DG reuses a mixture-of-experts router, how skip paths and feedback are wired, whether the CA2 injection is a single layer, and what plays the neocortex. **Claude's** answers, taken from the code and run settings, are in the [lab notebook's design review](../research/NOTEBOOK.md#design-review-how-the-qwen-side-channels-map-onto-the-circuit-2-nov-2026). In short:
 
 - Both Qwen models are dense, and DG keys were off in every Qwen run.
 - The skips and the feedback live inside one hook at one block, with feedback running over time rather than depth.
@@ -168,6 +168,22 @@ This became three records:
 
 **Claude** built the alignment track (`experiments/alignment/`). On the second question it answered "partly": the loop's injection averages *older* content, excluding the current circuit, and subtracts the long-run mean, while the alignment controller steers along a fixed direction. Claude added a *gist* direction, a fast-minus-slow running average of the stream before injection (momentum, open loop, capped), and flagged it as positive feedback for the stability programme. A literature survey found fixed reasoning-steering vectors already cutting chain-of-thought tokens by 10–70%, plus feedback-controlled and memory-retrieved steering. It found nothing that steers with the model's own running average of its current thought under negative feedback. Recorded as R1–R5, with over-commitment, the loss of useful backtracking, as the main risk.
 
+### 5.9 First steering runs: regulate the CoT gain, strengthen the alignment gain (Daniel)
+
+Daniel asked for a Qwen version of the GPT-2-XL ActAdd notebook that could test both the alignment and the CoT additions from one config switch. Claude built it (`docs/notebooks/activation_additions_qwen3.ipynb`) and spot-checked it on the abliterated Qwen3-1.7B. The results, N1–N5 in the register, were:
+- Prompt-position ActAdd does nothing to a chat model.
+- The abliterated model's own refusal direction does nothing.
+- The aligned sibling's direction makes half the harmful samples refuse at gain 0.3, while benign prompts are still answered.
+- The thinking direction collapses into repetition at that same gain.
+
+> "The Cot experiment points to a need for a feedback regularization to prevent repeats. The alignment tests point to a need for possibly stronger gain, maybe multipliciative or exponential (squared) instead of additive?"
+
+**Claude** agreed on both and narrowed each.
+
+For CoT, the collapse is a cliff between gain 0.2 and 0.3. A repetition signal, integrated like the harm score and fed back negatively onto the gain, is the regulator that is missing. It joins homeostatic gain (S5) and the regulated gist (R3), and is recorded as R6.
+
+For alignment, only the sibling-direction case is limited by gain; the other two failures are of position and direction. The injection is already multiplicative in the stream norm, so the superlinearity belongs in the gain *schedule*, as a function of harm evidence (squared or exponential in $E_t$). Gain on the existing refusal component would amplify nothing, because abliteration leaves $h\cdot\hat d \approx 0$. A superlinear schedule may help selectivity as well as strength, and the refusal direction's own saturation knee has to be measured before stronger gain is trusted. Recorded as A8 and S9.
+
 ## 6. Findings so far
 
 Small models (about 0.1M parameters, CPU), mostly single seeds; final numbers are in [RESULTS.md](../RESULTS.md).
@@ -175,11 +191,12 @@ Small models (about 0.1M parameters, CPU), mostly single seeds; final numbers ar
 | Question | Result |
 |---|---|
 | Does each channel carry its answer? | The memory loop gives *what* 1.00 and *when* 0.85. The clock alone gives *when* 0.88 with *what* at chance. Windowed attention alone is at chance on *what* (0.11) and at the prior on *when* (0.34). |
-| Does the clamped, damped loop with CA1 control stay bounded? | Yes. The echo is 0.27–0.35 of the input across 520 tokens (peak 0.53). Without control it reaches 3× (clamped sinusoid), 1.4× early (damped) and 8.7× rising to 38× (undamped). |
+| Does the clamped, damped loop with CA1 control stay bounded? | Yes. The echo is 0.29–0.35 of the input across 520 tokens on two seeds (peak 0.53). Without control it reaches about 3× (clamped sinusoid), 1.0× early with a peak of 10.6× (damped), and 4× rising to 14× with a peak of 63× (undamped). |
 | Does the full design still learn? | Yes, given 3000 steps. *What* 1.00 on two seeds, *when* 0.98–1.00. "What" is learned in a sudden late jump whose timing varies. |
 | Do new tokens dominate in a closed loop? | Not by damping alone. Probed with an older and a newer event, the undamped loop names the older event 61% of the time and the damped loop 84%. A closed loop re-stores its own echo every circuit, so per-trace damping does not damp rehearsed content (primacy by self-rehearsal). The full design with the contrast drops to 18%, sparse dentate-gyrus write keys flip it (68% newer), and an open loop that does not re-store its echo shows little primacy. |
 | Is the CA1 inverted copy an op-amp? | Yes, for persistent echo. On an untrained loop, subtractive/none = 0.787, 0.647, 0.475, 0.373 against $1/(1+K)$ = 0.788, 0.650, 0.482, 0.383. It rings above $K = 1.68$, as predicted. |
-| Pretrained models | On Qwen3.5-2B with only attention windowed, the side channels restore exact needle recall at about 500 tokens (1.00 vs 0.00), reproduced after the bf16 fix. Moving the tap from block 12 to block 22 drops it to 0.00, so the success depends on the Gated DeltaNet layers after the tap. The loop failed on Qwen3, but its kernel ($\rho = 0.7$, $\tau = 16$) gives a weight of about $10^{-19}$ at a 500-token lag: the needle was out of the loop's reach. With a horizon that covers the gap, the loop alone carries needle information 500 tokens back in both models (digit loss 1.84 → 1.38 and 1.24, below the format floor), though not yet exact recall. |
+| Pretrained models | On Qwen3.5-2B with only attention windowed, the side channels restore exact needle recall at about 500 tokens (1.00 vs 0.00), reproduced after the bf16 fix. Moving the tap from block 12 to block 22 drops it to 0.00, so the success depends on the Gated DeltaNet layers after the tap. The loop failed on Qwen3, but its kernel ($\rho = 0.7$, $\tau = 16$) gives a weight of about $10^{-19}$ at a 500-token lag: the needle was out of the loop's reach. With a horizon that covers the gap, the loop alone carries needle information 500 tokens back in both models (digit loss 1.84 → 1.38 and 1.24, below the format floor), though not exact recall in those runs. |
+| Round 1 on the pretrained models | Exact recall with every layer windowed. On Qwen3, W1, a Gated DeltaNet side memory whose keys bind each value to the previous position's address (the successor rule of §§2–3), recalls all four digits exactly (1.00), with a fixed-size state and fewer parameters than the loop. The horizon loop on Qwen3 had recovered only the first digit. On Qwen3.5 the horizon loop also reaches 1.00 given 6,000 steps. Both results hold for one stored fact: with two, W1 retrieves the digit chain but picks which fact to start from by a coin flip (exact 0.43–0.55). Register P7–P12. |
 
 ## 7. Corrections made along the way
 
@@ -216,5 +233,9 @@ The current list, with status and priority, is kept in [`research/REGISTER.md`](
 | [`../RESULTS.md`](../RESULTS.md) | All experimental results |
 | [`../limbic_llm/temporal_loop.py`](../limbic_llm/temporal_loop.py) | `HippocampalLoop`, `TimeChannel` |
 | [`../experiments/`](../experiments/) | `temporal_loop.py` (CLI), `loop_systems.py` (op-amp test), `pretrained_loop.py` (frozen HF models) |
+| [`../research/REGISTER.md`](../research/REGISTER.md) | Every result, correction and planned experiment, with status and evidence |
+| [`../research/NOTEBOOK.md`](../research/NOTEBOOK.md) | The dated lab notebook: rounds, design review, proposals |
 | [`../research/HANDOFF.md`](../research/HANDOFF.md) | Notes from the GPU session |
+| [`../research/plans/`](../research/plans/), [`../research/reviews/`](../research/reviews/) | Round plans (round 0) and dated reviews (RV1) |
+| [`../results/`](../results/) | Raw JSON and logs: `synthetic/` (CPU), `pretrained/` (GPU), `evolve/round1/`, `alignment/` |
 | [`../REFERENCES.md`](../REFERENCES.md) | Bibliography |

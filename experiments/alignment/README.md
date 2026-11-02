@@ -33,6 +33,12 @@ A runtime side channel that steers a model away from harmful outputs, more stron
 
 The results JSON (`results/alignment/<name>.json`) holds labels, scores and aggregates only. Response text is written only when `--private-dir` is given, and that directory must lie outside the repository (`judge.assert_private` refuses otherwise). Never commit completions to harmful prompts.
 
+## Interactive notebook
+
+[`docs/notebooks/activation_additions_qwen3.ipynb`](../../docs/notebooks/activation_additions_qwen3.ipynb) runs the same controller and probe interactively. Its config cell switches alignment and CoT steering, a prompt-pair or difference-of-means vector, and ActAdd or controller injection. First spot checks on the abliterated model (register N1–N5, NOTEBOOK "First steering runs on real models"):
+- The aligned sibling's direction (`DIRECTION_FROM="Qwen/Qwen3-1.7B"`) starts to restore refusal selectively only at a gain of 0.3 (block 14). Sweep `--gain` and `--cap` past 0.3 in A6.
+- The thinking direction collapses into repetition at that same gain. Regulating the CoT gain against repetition is R6; the gain-law comparison for alignment is A8.
+
 ## Running
 
 ```bash
