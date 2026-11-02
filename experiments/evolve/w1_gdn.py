@@ -20,7 +20,8 @@ at the space after "is" is the same in both facts. Two options:
 
   --w1-ctx K          addresses from a learned causal depthwise conv over the last K positions,
                       a_t = norm(W_a conv_K(x)_{≤t}); values and gates still come from x_t
-                      (initialised to the current position, so K = 1 is W1)
+                      (initialised to the current position, so K = 1 is W1; ``--w1-ctx-init
+                      uniform`` starts from an even average of the K positions instead)
   --w1-addressing gdn GatedDeltaNet's own mode: separate q/k/v with short causal convs and no
                       explicit successor binding (the conv has to learn the shift)
 
@@ -52,6 +53,8 @@ def split_args(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
     ap.add_argument("--w1-beta-bias", type=float, default=0.0, help="β = σ(b) at init (write strength)")
     ap.add_argument("--w1-chunk", type=int, default=64)
     ap.add_argument("--w1-ctx", type=int, default=1, help="context positions in the address (tied/dg); 1 = W1")
+    ap.add_argument("--w1-ctx-init", choices=["identity", "uniform"], default="identity",
+                    help="context conv at init: current position only, or an even average of the K positions")
     return ap.parse_known_args(argv)
 
 
@@ -62,12 +65,16 @@ class GDNLoop(nn.Module):
 
     def __init__(self, d_model: int, addressing: str = "tied", heads: int = 8, d_head: int = 64,
                  key_expansion: int = 1, sparsity: float = 0.05, decay_bias: float = -7.0,
-                 beta_bias: float = 0.0, chunk: int = 64, max_gain: float = 0.9, ctx: int = 1) -> None:
+                 beta_bias: float = 0.0, chunk: int = 64, max_gain: float = 0.9, ctx: int = 1,
+                 ctx_init: str = "identity") -> None:
         super().__init__()
         if ctx > 1 and addressing == "gdn":
             raise ValueError("--w1-ctx applies to tied/dg addressing; gdn mode has its own convs")
         self.norm = nn.LayerNorm(d_model)
         self.ctx = CausalConv1d(d_model, ctx) if ctx > 1 else None   # starts as the current position
+        if self.ctx is not None and ctx_init == "uniform":
+            with torch.no_grad():
+                self.ctx.conv.weight.fill_(1.0 / ctx)
         self.mem = GatedDeltaNet(d_model, n_heads=heads, d_head=d_head, addressing=addressing,
                                  key_expansion=key_expansion, dg_sparsity=sparsity,
                                  init_decay_bias=decay_bias, chunk_size=chunk)
@@ -111,7 +118,8 @@ class W1Side(nn.Module):
         w = w or split_args([])[0]
         self.time = TimeChannel(d_model) if getattr(args, "time", True) else None
         self.loop = GDNLoop(d_model, w.w1_addressing, w.w1_heads, w.w1_dhead, w.w1_key_expansion,
-                            w.w1_sparsity, w.w1_decay_bias, w.w1_beta_bias, w.w1_chunk, ctx=w.w1_ctx)
+                            w.w1_sparsity, w.w1_decay_bias, w.w1_beta_bias, w.w1_chunk, ctx=w.w1_ctx,
+                            ctx_init=w.w1_ctx_init)
         self.w1 = vars(w)
 
     def forward(self, h: torch.Tensor) -> tuple[torch.Tensor, LoopStats]:

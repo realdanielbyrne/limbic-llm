@@ -22,10 +22,11 @@ def side(**kw):
 
 
 @pytest.mark.parametrize("addressing,ctx", [("tied", 1), ("dg", 1), ("tied", 4), ("dg", 4), ("gdn", 1)])
+@pytest.mark.parametrize("ctx_init", ["identity", "uniform"])
 @pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
-def test_strictly_causal(addressing, ctx, dtype):
+def test_strictly_causal(addressing, ctx, ctx_init, dtype):
     """E1: perturbing h[:, t0:] leaves the output before t0 bitwise unchanged, also for bf16 input."""
-    m = side(addressing=addressing, heads=2, dhead=16, key_expansion=2, chunk=8, ctx=ctx)
+    m = side(addressing=addressing, heads=2, dhead=16, key_expansion=2, chunk=8, ctx=ctx, ctx_init=ctx_init)
     with torch.no_grad():
         m.loop.gain_logit.fill_(2.0)
         m.time.out.weight.normal_(0, 0.1)                         # the clock starts as identity
