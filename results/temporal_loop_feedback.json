@@ -1,0 +1,98 @@
+{
+  "args": {
+    "suite": null,
+    "models": "closed_osc,closed_osc_div,closed_osc_sub",
+    "name": "custom",
+    "task": "single",
+    "memory": true,
+    "time": true,
+    "kernel": "osc",
+    "rho": 0.7,
+    "amp": 1.0,
+    "loop": "open",
+    "ca1_control": true,
+    "contrast": true,
+    "dg_keys": false,
+    "read": "direct",
+    "feedback": null,
+    "clamp": null,
+    "project": null,
+    "saturate": null,
+    "forward_gain": 1.0,
+    "fb_beta": 1.0,
+    "tau": 16,
+    "window": 16,
+    "d": 64,
+    "d_key": 32,
+    "steps": 3000,
+    "batch": 32,
+    "lr": 0.003,
+    "eval_every": 500,
+    "seed": 0,
+    "out": "results/temporal_loop_feedback.json"
+  },
+  "results": {
+    "closed_osc": {
+      "config": {
+        "memory": true,
+        "time": false,
+        "loop": "closed",
+        "kernel": "osc",
+        "ca1_control": false
+      },
+      "params": 111746,
+      "curve": [
+        [
+          500,
+          0.126953125,
+          0.884765625
+        ],
+        [
+          1000,
+          0.15234375,
+          0.896484375
+        ],
+        [
+          1500,
+          0.1484375,
+          0.978515625
+        ],
+        [
+          2000,
+          0.14453125,
+          0.98046875
+        ],
+        [
+          2500,
+          0.10546875,
+          0.990234375
+        ],
+        [
+          3000,
+          0.1328125,
+          0.9921875
+        ]
+      ],
+      "diverged_at": null,
+      "seconds": 783.1579167842865,
+      "what": 0.1328125,
+      "when": 0.9921875,
+      "long": {
+        "what_gap_20_140": 0.23999999463558197,
+        "what_gap_140_300": 0.10526315867900848,
+        "what_gap_300_500": 0.20000000298023224,
+        "probe_newer_named": 0.11328125,
+        "probe_older_named": 0.0859375,
+        "cue_noise_0.0": 0.1171875,
+        "cue_noise_0.5": 0.1171875,
+        "cue_noise_1.0": 0.109375,
+        "cue_noise_2.0": 0.07421875,
+        "inj_ratio_16_128": 1.7684781551361084,
+        "inj_ratio_128_320": 2.224229574203491,
+        "inj_ratio_320_519": 2.161794662475586,
+        "inj_ratio_max": 7.1999921798706055,
+        "gain": 0.3281124532222748
+      }
+    }
+  }
+}
