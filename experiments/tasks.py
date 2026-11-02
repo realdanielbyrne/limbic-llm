@@ -47,17 +47,24 @@ class WhatWhenTask:
     [filler … E_k … filler (gap Δ) … Q] → answer E_k (what), then answer bin(Δ) (when).
     Δ is drawn from ``gaps``; ``bins`` are elapsed-time intervals (log-spaced by default).
     Only the two answers are scored.
+
+    With ``distractor=True`` a different, older event E_j appears ``sep`` tokens before
+    E_k, and the answers refer to the most recent event. A loop whose feedback does not
+    decay returns both events equally, so this tests whether new input dominates.
+    ``last_old`` holds the older event's token for the latest batch.
     """
 
     def __init__(self, n_filler=16, n_events=8, gaps=(20, 140), bins=(20, 35, 60, 100, 140),
-                 pre=(4, 20), length=None, seed=0):
+                 pre=(4, 20), length=None, seed=0, distractor=False, sep=(20, 60)):
         self.n_filler, self.n_events = n_filler, n_events
         self.gaps, self.bins, self.pre = gaps, bins, pre
         self.E0 = n_filler
         self.Q = n_filler + n_events
         self.B0 = self.Q + 1
         self.vocab = self.B0 + len(bins) - 1
-        self.length = length or (pre[1] + gaps[1] + 3)
+        self.distractor, self.sep = distractor, sep
+        self.length = length or (pre[1] + (sep[1] if distractor else 0) + gaps[1] + 3)
+        self.last_old = None
         self.g = torch.Generator().manual_seed(seed)
 
     def bin_of(self, gap: torch.Tensor) -> torch.Tensor:
@@ -71,6 +78,11 @@ class WhatWhenTask:
         gap = torch.randint(self.gaps[0], self.gaps[1], (B,), generator=self.g)
         ev = torch.randint(0, self.n_events, (B,), generator=self.g)
         b = torch.arange(B)
+        if self.distractor:                      # an older, different event comes first
+            old = (ev + torch.randint(1, self.n_events, (B,), generator=self.g)) % self.n_events
+            seq[b, p] = self.E0 + old
+            p = p + torch.randint(self.sep[0], self.sep[1], (B,), generator=self.g)
+            self.last_old = self.E0 + old
         q = p + gap
         seq[b, p] = self.E0 + ev
         seq[b, q] = self.Q

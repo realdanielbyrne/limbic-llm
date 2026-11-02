@@ -13,7 +13,11 @@ Suites (pick with --suite, or build one model from the flags):
   stability   closed-loop memory with kernel flat / exp / osc, and osc + CA1 control
               trained on gaps ≤ 140, then run on 520-token sequences to see whether
               feedback stays bounded and new input keeps dominating
-  all         both
+  recency     the stability models on a recency task: an older, different event
+              comes 20–60 tokens before the target, and the answer is the most recent.
+              Undamped feedback returns both events equally; tests whether new input
+              dominates. Reports how often the model names the older event.
+  all         what_when + stability
 
 Usage
   python experiments/temporal_loop.py --suite what_when
@@ -59,6 +63,7 @@ SUITES = {
     "stability": ["closed_flat", "closed_exp", "closed_osc", "closed_osc_ca1"],
 }
 SUITES["all"] = SUITES["what_when"] + SUITES["stability"]
+SUITES["recency"] = SUITES["stability"]
 
 
 def build(cfg: dict, vocab: int, args) -> TemporalLoopLM:
@@ -75,21 +80,27 @@ def answer_acc(logits, tgt, mask):
 
 @torch.no_grad()
 def evaluate(model, task, n=4, B=128):
+    """Accuracy on what and when; with a distractor, also how often the older event is named."""
     model.eval()
-    w = c = 0.0
+    w = c = o = 0.0
     for _ in range(n):
         inp, tgt, what, when, _ = task.batch(B)
         lg = model(inp).logits
         w += answer_acc(lg, tgt, what)
         c += answer_acc(lg, tgt, when)
+        if task.distractor:
+            o += (lg.argmax(-1)[what] == task.last_old).float().mean().item()
     model.train()
-    return w / n, c / n
+    return w / n, c / n, (o / n if task.distractor else None)
 
 
 @torch.no_grad()
 def long_rollout(model, args, seed):
-    """520-token sequences, gaps 20–500: does recall survive and does feedback stay bounded?"""
-    task = WhatWhenTask(gaps=(20, 500), length=520, seed=seed)
+    """~520-token sequences, gaps up to ~500: does recall survive and does feedback stay bounded?"""
+    if args.task == "recent":
+        task = WhatWhenTask(gaps=(20, 440), length=520, seed=seed, distractor=True)
+    else:
+        task = WhatWhenTask(gaps=(20, 497), length=520, seed=seed)
     model.eval()
     inp, tgt, what, _, gap = task.batch(64)
     out = model(inp)
@@ -100,6 +111,8 @@ def long_rollout(model, args, seed):
     for lo, hi in [(20, 140), (140, 300), (300, 500)]:
         sel = (gap[q[:, 0]] >= lo) & (gap[q[:, 0]] < hi)
         res[f"what_gap_{lo}_{hi}"] = correct[sel].mean().item() if sel.any() else None
+    if task.distractor:
+        res["older_named"] = (pred[what] == task.last_old).float().mean().item()
     if out.loop is not None:
         r = out.loop.inj_ratio
         for lo, hi in [(args.tau, 128), (128, 320), (320, 519)]:
@@ -112,8 +125,9 @@ def long_rollout(model, args, seed):
 
 def train(name: str, cfg: dict, args) -> dict:
     torch.manual_seed(args.seed)
-    task = WhatWhenTask(seed=args.seed)
-    val = WhatWhenTask(seed=args.seed + 999)
+    recent = args.task == "recent"
+    task = WhatWhenTask(seed=args.seed, distractor=recent)
+    val = WhatWhenTask(seed=args.seed + 999, distractor=recent)
     model = build(cfg, task.vocab, args)
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, args.lr, total_steps=args.steps, pct_start=0.1)
@@ -132,14 +146,17 @@ def train(name: str, cfg: dict, args) -> dict:
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         opt.step(); sched.step()
         if step % args.eval_every == 0 or step == args.steps:
-            w, c = evaluate(model, val)
-            curve.append((step, w, c))
-            print(f"[{name:15s}] step {step:5d} loss {loss.item():.3f} what {w:.3f} when {c:.3f} "
+            w, c, o = evaluate(model, val)
+            curve.append((step, w, c) if o is None else (step, w, c, o))
+            older = "" if o is None else f" older {o:.3f}"
+            print(f"[{name:15s}] step {step:5d} loss {loss.item():.3f} what {w:.3f} when {c:.3f}{older} "
                   f"({time.time() - t0:.0f}s)", flush=True)
     res = {"config": cfg, "params": sum(p.numel() for p in model.parameters()), "curve": curve,
            "diverged_at": diverged, "seconds": time.time() - t0}
     if curve:
         res["what"], res["when"] = curve[-1][1], curve[-1][2]
+        if len(curve[-1]) > 3:
+            res["older_named"] = curve[-1][3]
     if diverged is None:
         res["long"] = long_rollout(model, args, args.seed + 7)
         print(f"[{name:15s}] long rollout {json.dumps({k: (round(v, 3) if isinstance(v, float) else v) for k, v in res['long'].items()})}", flush=True)
@@ -151,6 +168,9 @@ def main():
     ap.add_argument("--suite", choices=list(SUITES), help="run a preset suite")
     ap.add_argument("--models", help="comma-separated preset names (overrides --suite)")
     ap.add_argument("--name", default="custom", help="name for a model built from the flags below")
+    ap.add_argument("--task", choices=["single", "recent"], default=None,
+                    help="single: one event; recent: an older distractor event precedes it "
+                         "(default: recent for --suite recency, else single)")
     g = ap.add_argument_group("loop and clock (used when neither --suite nor --models is given)")
     g.add_argument("--memory", action=argparse.BooleanOptionalAction, default=True)
     g.add_argument("--time", action=argparse.BooleanOptionalAction, default=True)
@@ -177,6 +197,8 @@ def main():
     t.add_argument("--seed", type=int, default=0)
     t.add_argument("--out", default=None)
     args = ap.parse_args()
+    if args.task is None:
+        args.task = "recent" if args.suite == "recency" else "single"
 
     if args.models:
         runs = {n: PRESETS[n] for n in args.models.split(",")}
@@ -186,7 +208,10 @@ def main():
         runs = {args.name: dict(memory=args.memory, time=args.time, kernel=args.kernel, rho=args.rho, amp=args.amp,
                                 loop=args.loop, ca1_control=args.ca1_control, contrast=args.contrast,
                                 dg_keys=args.dg_keys)}
-    out = Path(args.out or f"results/temporal_loop_{args.suite or 'custom'}.json")
+    stem = args.suite or "custom"
+    if args.task == "recent" and args.suite != "recency":
+        stem += "_recent"
+    out = Path(args.out or f"results/temporal_loop_{stem}.json")
     out.parent.mkdir(parents=True, exist_ok=True)
     results = json.loads(out.read_text())["results"] if out.exists() else {}
     for name, cfg in runs.items():
@@ -202,6 +227,8 @@ def main():
         else:
             lg = r.get("long", {})
             extra = f"  inj late {lg['inj_ratio_320_519']:.3f}" if "inj_ratio_320_519" in lg else ""
+            if "older_named" in r:
+                extra += f"  older named {r['older_named']:.3f}"
             print(f"{n:15s} what {r['what']:.3f}  when {r['when']:.3f}{extra}")
 
 
