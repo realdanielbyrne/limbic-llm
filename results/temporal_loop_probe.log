@@ -9,3 +9,4 @@
 [closed_exp     ] step  1000 loss 0.071 what 1.000 when 0.953 (267s)
 [closed_exp     ] step  1500 loss 0.033 what 1.000 when 0.971 (413s)
 [closed_exp     ] step  2000 loss 0.027 what 1.000 when 0.984 (573s)
+[closed_exp     ] step  2500 loss 0.076 what 1.000 when 0.971 (711s)

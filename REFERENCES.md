@@ -15,6 +15,8 @@ The bibliography for limbic-llm, grouped by the part of the hippocampal mapping 
 | `shazeer2017outrageously` | Shazeer et al. (2017). *Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer.* ICLR | DG as an expert gate |
 | `perez2018film` | Perez et al. (2018). *FiLM: Visual Reasoning with a General Conditioning Layer.* AAAI | `CA2Modulator` |
 | `qwenputer2026` | divagr.com (2026). *Qwenputer.* Blog post | Gated DeltaNet state as RAM |
+| `qwen2025qwen3` | Qwen Team (2025). *Qwen3 Technical Report.* arXiv:2505.09388 | Attention-only pretrained target |
+| `qwen2026qwen35` | Qwen Team (2026). *Qwen3.5.* Model release | Gated DeltaNet hybrid pretrained target |
 
 ## Hippocampal anatomy, physiology and theory
 

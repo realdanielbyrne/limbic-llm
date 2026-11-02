@@ -37,6 +37,14 @@
    {
     "key": "qwenputer2026",
     "text": "divagr.com (2026). Qwenputer: Gated DeltaNet State as RAM. https://divagr.com/blog/qwenputer."
+   },
+   {
+    "key": "qwen2025qwen3",
+    "text": "Qwen Team (2025). Qwen3 Technical Report. https://arxiv.org/abs/2505.09388."
+   },
+   {
+    "key": "qwen2026qwen35",
+    "text": "Qwen Team (2026). Qwen3.5. Model release, February 2026. https://huggingface.co/Qwen/Qwen3.5-397B-A17B"
    }
   ]
  },
