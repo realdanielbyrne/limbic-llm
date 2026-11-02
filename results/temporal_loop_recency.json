@@ -1,0 +1,93 @@
+{
+  "args": {
+    "suite": "recency",
+    "models": null,
+    "name": "custom",
+    "task": "recent",
+    "memory": true,
+    "time": true,
+    "kernel": "osc",
+    "rho": 0.7,
+    "amp": 1.0,
+    "loop": "open",
+    "ca1_control": true,
+    "contrast": true,
+    "dg_keys": false,
+    "tau": 16,
+    "window": 16,
+    "d": 64,
+    "d_key": 32,
+    "steps": 3000,
+    "batch": 32,
+    "lr": 0.003,
+    "eval_every": 500,
+    "seed": 0,
+    "out": null
+  },
+  "results": {
+    "closed_flat": {
+      "config": {
+        "memory": true,
+        "time": false,
+        "loop": "closed",
+        "kernel": "flat",
+        "ca1_control": false
+      },
+      "params": 111746,
+      "curve": [
+        [
+          500,
+          0.115234375,
+          0.837890625,
+          0.111328125
+        ],
+        [
+          1000,
+          0.12109375,
+          0.94140625,
+          0.138671875
+        ],
+        [
+          1500,
+          0.150390625,
+          0.9609375,
+          0.09765625
+        ],
+        [
+          2000,
+          0.123046875,
+          0.943359375,
+          0.123046875
+        ],
+        [
+          2500,
+          0.138671875,
+          0.951171875,
+          0.115234375
+        ],
+        [
+          3000,
+          0.13671875,
+          0.96875,
+          0.134765625
+        ]
+      ],
+      "diverged_at": null,
+      "seconds": 1214.9420080184937,
+      "what": 0.13671875,
+      "when": 0.96875,
+      "older_named": 0.134765625,
+      "long": {
+        "what_gap_20_140": 0.22727273404598236,
+        "what_gap_140_300": 0.25,
+        "what_gap_300_500": 0.09090909361839294,
+        "older_named": 0.0625,
+        "inj_ratio_16_128": 0.6541747450828552,
+        "inj_ratio_128_320": 5.588414669036865,
+        "inj_ratio_320_519": 11.299790382385254,
+        "inj_ratio_max": 30.34135627746582,
+        "gain": 0.29345938563346863
+      }
+    }
+  }
+}
