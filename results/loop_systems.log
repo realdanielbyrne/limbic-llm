@@ -1,0 +1,53 @@
+initial g = 0.269; subtractive loop rings for K = A·g·β > 1.680 (A·β > 6.25), period ≈ 44.1 tokens
+osc  none        A=  0.5  inj mid     0.001  late     0.001  max      0.008
+osc  none        A=  1.0  inj mid     0.003  late     0.003  max      0.017
+osc  none        A=  2.0  inj mid     0.006  late     0.006  max      0.034
+osc  none        A=  4.0  inj mid     0.012  late     0.012  max      0.070
+osc  none        A=  8.0  inj mid     0.024  late     0.023  max      0.146
+osc  none        A= 16.0  inj mid     0.048  late     0.047  max      0.314
+osc  none        A= 32.0  inj mid     0.096  late     0.095  max      0.659
+osc  divisive    A=  0.5  inj mid     0.001  late     0.001  max      0.008
+osc  divisive    A=  1.0  inj mid     0.003  late     0.003  max      0.017
+osc  divisive    A=  2.0  inj mid     0.006  late     0.006  max      0.034
+osc  divisive    A=  4.0  inj mid     0.012  late     0.012  max      0.070
+osc  divisive    A=  8.0  inj mid     0.024  late     0.023  max      0.144
+osc  divisive    A= 16.0  inj mid     0.047  late     0.046  max      0.295
+osc  divisive    A= 32.0  inj mid     0.092  late     0.091  max      0.540
+osc  subtractive A=  0.5  inj mid     0.001  late     0.001  max      0.008
+osc  subtractive A=  1.0  inj mid     0.003  late     0.003  max      0.017
+osc  subtractive A=  2.0  inj mid     0.006  late     0.006  max      0.034
+osc  subtractive A=  4.0  inj mid     0.012  late     0.012  max      0.068
+osc  subtractive A=  8.0  inj mid     0.388  late     1.917  max      6.737
+osc  subtractive A= 16.0  inj mid 36914.644  late 17146746.667  max 225126112.000
+osc  subtractive A= 32.0  inj mid 16108435456.000  late 729287952258389.375  max 19211990010429440.000
+flat none        A=  0.5  inj mid     0.024  late     0.034  max      0.115
+flat none        A=  1.0  inj mid     0.049  late     0.069  max      0.240
+flat none        A=  2.0  inj mid     0.098  late     0.138  max      0.514
+flat none        A=  4.0  inj mid     0.198  late     0.278  max      1.085
+flat none        A=  8.0  inj mid     0.397  late     0.557  max      2.131
+flat none        A= 16.0  inj mid     0.790  late     1.117  max      3.817
+flat none        A= 32.0  inj mid     1.595  late     2.385  max      9.640
+flat divisive    A=  0.5  inj mid     0.024  late     0.034  max      0.114
+flat divisive    A=  1.0  inj mid     0.048  late     0.067  max      0.233
+flat divisive    A=  2.0  inj mid     0.095  late     0.128  max      0.462
+flat divisive    A=  4.0  inj mid     0.174  late     0.225  max      0.840
+flat divisive    A=  8.0  inj mid     0.287  late     0.351  max      1.355
+flat divisive    A= 16.0  inj mid     0.429  late     0.504  max      2.099
+flat divisive    A= 32.0  inj mid     0.599  late     0.690  max      3.068
+flat subtractive A=  0.5  inj mid     0.024  late     0.034  max      0.116
+flat subtractive A=  1.0  inj mid     0.049  late     0.069  max      0.244
+flat subtractive A=  2.0  inj mid     0.098  late     0.138  max      0.530
+flat subtractive A=  4.0  inj mid     0.204  late     0.289  max      1.170
+flat subtractive A=  8.0  inj mid     1.947  late     9.532  max     43.531
+flat subtractive A= 16.0  inj mid 102131.747  late 46742748.000  max 539732928.000
+flat subtractive A= 32.0  inj mid 36471229781.333  late 1702224522641408.000  max 33363853563658240.000
+osc  subtractive A=  4.0 β=0.25 K=0.27  inj late     0.012  max      0.068
+osc  subtractive A=  4.0 β=0.50 K=0.54  inj late     0.012  max      0.068
+osc  subtractive A=  4.0 β=1.00 K=1.08  inj late     0.012  max      0.068
+osc  subtractive A=  4.0 β=2.00 K=2.15  inj late     0.956  max      3.361
+osc  subtractive A=  4.0 β=4.00 K=4.30  inj late 4286472.667  max 56277028.000
+persistent input (one repeated token): subtractive / none should approach 1/(1 + K)
+exp  persistent A= 1.0 K=0.27  none 0.0065  sub 0.0051  ratio 0.787  (1/(1+K) = 0.788)
+exp  persistent A= 2.0 K=0.54  none 0.0130  sub 0.0084  ratio 0.647  (1/(1+K) = 0.650)
+exp  persistent A= 4.0 K=1.08  none 0.0264  sub 0.0125  ratio 0.475  (1/(1+K) = 0.482)
+exp  persistent A= 6.0 K=1.61  none 0.0401  sub 0.0150  ratio 0.373  (1/(1+K) = 0.383)

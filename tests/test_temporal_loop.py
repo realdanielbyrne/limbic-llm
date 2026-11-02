@@ -70,9 +70,10 @@ def _naive_loop(m: HippocampalLoop, h: torch.Tensor) -> torch.Tensor:
     tau = m.tau
     W = loop_kernel(T, tau, m.kernel, m.rho, m.amp)
     x_pre = m.norm(h)
-    q = F.normalize(m.wq(x_pre), dim=-1)
+    q = m._keys(x_pre) if m.read == "dg" else F.normalize(m.wq(x_pre), dim=-1)
     out = h.clone()
     energy = h.new_zeros(B, T)
+    injs = h.new_zeros(B, T, D)
     for t in range(tau, T):
         src = m.norm(out[:, :t]) if m.loop == "closed" else x_pre[:, :t]
         k, v = m._keys(src), m.wv(src)
@@ -88,8 +89,11 @@ def _naive_loop(m: HippocampalLoop, h: torch.Tensor) -> torch.Tensor:
             delta = Fb
         d = (t - torch.arange(t)).float()
         kE = torch.where(d >= tau, (1 - m.energy_rho) * m.energy_rho ** (d - tau), torch.zeros_like(d))
-        E = (energy[:, :t] * kE).sum(-1, keepdim=True) if m.ca1_control else h.new_zeros(B, 1)
-        inj, _ = m._inject(h[:, t:t + 1], delta, E)
+        use = m.feedback != "none" and t >= 2 * tau
+        E = (energy[:, :t] * kE).sum(-1, keepdim=True) if use else h.new_zeros(B, 1)
+        ybar = (kE[None, :, None] * injs[:, :t]).sum(1, keepdim=True) if use and m.feedback == "subtractive" else None
+        inj, _ = m._inject(h[:, t:t + 1], delta, E, ybar)
+        injs[:, t:t + 1] = inj
         out[:, t:t + 1] = h[:, t:t + 1] + inj
         energy[:, t] = (inj.norm(dim=-1) / h[:, t:t + 1].norm(dim=-1)).squeeze(-1) ** 2
     return out
@@ -158,3 +162,73 @@ def test_model_forward_backward_and_causal():
         t2 = tok.clone(); t2[:, 40] = (t2[:, 40] + 1) % 30
         b = m(t2).logits
     assert torch.allclose(a[:, :40], b[:, :40], atol=1e-5)
+
+
+@pytest.mark.parametrize("loop", ["open", "closed"])
+@pytest.mark.parametrize("feedback,clamp", [("subtractive", False), ("divisive", False), ("subtractive", True)])
+@pytest.mark.parametrize("read", ["direct", "dg"])
+def test_feedback_modes_and_read_paths_match_reference(loop, feedback, clamp, read):
+    torch.manual_seed(2)
+    m = HippocampalLoop(16, d_key=8, tau=4, kernel="osc", loop=loop, feedback=feedback, clamp=clamp,
+                        project=clamp, saturate=clamp, dg_keys=(read == "dg"), read=read, forward_gain=3.0)
+    with torch.no_grad():
+        m.gain_logit.fill_(0.0)
+    h = torch.randn(2, 23, 16)
+    with torch.no_grad():
+        fast, _ = m(h)
+        ref = _naive_loop(m, h)
+    assert torch.allclose(fast, ref, atol=1e-5)
+
+
+def test_default_ca1_control_equals_explicit_parts():
+    torch.manual_seed(3)
+    a = HippocampalLoop(16, d_key=8, tau=4, loop="closed")
+    b = HippocampalLoop(16, d_key=8, tau=4, loop="closed", feedback="divisive", clamp=True, project=True,
+                        saturate=True)
+    b.load_state_dict(a.state_dict())
+    h = torch.randn(2, 23, 16)
+    assert torch.equal(a(h)[0], b(h)[0])
+    off = HippocampalLoop(16, d_key=8, tau=4, ca1_control=False)
+    assert (off.feedback, off.clamp, off.project, off.saturate) == ("none", False, False, False)
+
+
+def _persistent_ratio(feedback, A, seed=0):
+    torch.manual_seed(seed)
+    m = HippocampalLoop(32, tau=8, kernel="exp", loop="closed", contrast=False, feedback=feedback,
+                        clamp=False, project=False, saturate=False, forward_gain=A)
+    h = torch.randn(1, 32).expand(4, 256, 32).contiguous()     # one repeated token: persistent echo
+    with torch.no_grad():
+        return m(h)[1].inj_ratio[:, 192:].mean().item()
+
+
+def test_subtractive_feedback_obeys_op_amp_law_on_persistent_echo():
+    A = 4.0
+    K = A * torch.sigmoid(torch.tensor(-1.0)).item()
+    ratio = _persistent_ratio("subtractive", A) / _persistent_ratio("none", A)
+    assert abs(ratio - 1 / (1 + K)) < 0.03
+
+
+def test_subtractive_feedback_rings_above_critical_gain():
+    import importlib.util, pathlib as pl
+    spec = importlib.util.spec_from_file_location(
+        "loop_systems", pl.Path(__file__).resolve().parents[1] / "experiments" / "loop_systems.py")
+    ls = importlib.util.module_from_spec(spec); spec.loader.exec_module(ls)
+    Kc, period = ls.critical_gain(8, 0.9)
+    g = torch.sigmoid(torch.tensor(-1.0)).item()
+    stable = _persistent_ratio("subtractive", 0.8 * Kc / g)
+    unstable = _persistent_ratio("subtractive", 1.5 * Kc / g)
+    assert stable < 1.0 and unstable > 100 * stable
+
+
+def test_cue_noise_only_affects_reads_and_dg_read_ignores_wq():
+    torch.manual_seed(4)
+    m = HippocampalLoop(16, d_key=8, tau=4, dg_keys=True, read="dg")
+    h = torch.randn(2, 23, 16)
+    m(h)[0].sum().backward()
+    assert m.wq.weight.grad is None and m.wk.weight.grad is not None
+    with torch.no_grad():
+        clean = m(h)[0]
+        m.cue_noise = 1.0
+        noisy = m(h)[0]
+    assert torch.equal(clean[:, :4], noisy[:, :4])               # nothing is read in the first circuit
+    assert not torch.allclose(clean, noisy)

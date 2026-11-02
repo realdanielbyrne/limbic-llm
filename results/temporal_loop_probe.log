@@ -1,3 +1,11 @@
 [closed_flat    ] step   500 loss 2.216 what 0.141 when 0.889 (130s)
 [closed_flat    ] step  1000 loss 0.192 what 0.984 when 0.848 (259s)
 [closed_flat    ] step  1500 loss 0.064 what 0.994 when 0.965 (390s)
+[closed_flat    ] step  2000 loss 0.019 what 1.000 when 0.973 (521s)
+[closed_flat    ] step  2500 loss 0.068 what 1.000 when 0.982 (651s)
+[closed_flat    ] step  3000 loss 0.005 what 1.000 when 0.982 (774s)
+[closed_flat    ] long rollout {"what_gap_20_140": 1.0, "what_gap_140_300": 0.895, "what_gap_300_500": 0.4, "probe_newer_named": 0.246, "probe_older_named": 0.613, "inj_ratio_16_128": 4.25, "inj_ratio_128_320": 9.502, "inj_ratio_320_519": 14.008, "inj_ratio_max": 63.437, "gain": 0.315}
+[closed_exp     ] step   500 loss 2.467 what 0.621 when 0.871 (132s)
+[closed_exp     ] step  1000 loss 0.071 what 1.000 when 0.953 (267s)
+[closed_exp     ] step  1500 loss 0.033 what 1.000 when 0.971 (413s)
+[closed_exp     ] step  2000 loss 0.027 what 1.000 when 0.984 (573s)

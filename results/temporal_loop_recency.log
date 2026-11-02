@@ -14,3 +14,14 @@
 [closed_exp     ] long rollout {"what_gap_20_140": 0.091, "what_gap_140_300": 0.1, "what_gap_300_500": 0.091, "older_named": 0.125, "inj_ratio_16_128": 1.372, "inj_ratio_128_320": 1.436, "inj_ratio_320_519": 0.834, "inj_ratio_max": 7.645, "gain": 0.257}
 [closed_osc_ca1 ] step   500 loss 3.261 what 0.129 when 0.340 older 0.111 (224s)
 [closed_osc_ca1 ] step  1000 loss 3.256 what 0.121 when 0.340 older 0.139 (448s)
+[closed_osc_ca1 ] step  1500 loss 2.419 what 0.137 when 0.881 older 0.100 (669s)
+[closed_osc_ca1 ] step  2000 loss 2.266 what 0.123 when 0.941 older 0.123 (882s)
+[closed_osc_ca1 ] step  2500 loss 2.164 what 0.145 when 0.957 older 0.117 (1116s)
+[closed_osc_ca1 ] step  3000 loss 2.185 what 0.152 when 0.945 older 0.150 (1389s)
+[closed_osc_ca1 ] long rollout {"what_gap_20_140": 0.136, "what_gap_140_300": 0.15, "what_gap_300_500": 0.182, "older_named": 0.141, "inj_ratio_16_128": 0.318, "inj_ratio_128_320": 0.316, "inj_ratio_320_519": 0.316, "inj_ratio_max": 0.444, "gain": 0.494}
+
+baselines: what 0.125 (chance), when 0.333 (majority bin)
+closed_flat     what 0.137  when 0.969  inj late 11.300  older named 0.135
+closed_exp      what 0.143  when 0.967  inj late 0.834  older named 0.143
+closed_osc_ca1  what 0.152  when 0.945  inj late 0.316  older named 0.150
+finished
