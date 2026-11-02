@@ -1,0 +1,54 @@
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 14025.96it/s]
+pairs 2: {
+ "block14": {
+  "probe_name_at_query_space": 0.9560975432395935,
+  "probe_name_at_fact_space": 1.0,
+  "probe_name_at_query_name": 1.0
+ },
+ "block21": {
+  "probe_name_at_query_space": 0.9829268455505371,
+  "probe_name_at_fact_space": 0.9963414669036865,
+  "probe_name_at_query_name": 1.0
+ },
+ "w1_addresses_block14": {
+  "checkpoint": "results/evolve/round1/g1_w1_tied_pairs2.pt",
+  "mean_cos_between_fact_addresses": 0.7847877980093472,
+  "query_address_closer_to_queried_fact": 0.50634765625
+ },
+ "w1_addresses_block21": {
+  "checkpoint": "results/evolve/round2/r2_w1b_late21_pairs2.pt",
+  "mean_cos_between_fact_addresses": 0.8801633570110425,
+  "query_address_closer_to_queried_fact": 0.50634765625
+ },
+ "chance": {
+  "name": 0.04,
+  "queried_fact": 0.5
+ }
+}
+pairs 3: {
+ "block14": {
+  "probe_name_at_query_space": 0.9463414549827576,
+  "probe_name_at_fact_space": 1.0,
+  "probe_name_at_query_name": 1.0
+ },
+ "block21": {
+  "probe_name_at_query_space": 0.995121955871582,
+  "probe_name_at_fact_space": 0.9975589513778687,
+  "probe_name_at_query_name": 1.0
+ },
+ "w1_addresses_block14": {
+  "checkpoint": "results/evolve/round1/g1_w1_tied_pairs2.pt",
+  "mean_cos_between_fact_addresses": 0.7850889767869376,
+  "query_address_closer_to_queried_fact": 0.34033203125
+ },
+ "w1_addresses_block21": {
+  "checkpoint": "results/evolve/round2/r2_w1b_late21_pairs2.pt",
+  "mean_cos_between_fact_addresses": 0.8797752982354723,
+  "query_address_closer_to_queried_fact": 0.34033203125
+ },
+ "chance": {
+  "name": 0.04,
+  "queried_fact": 0.3333333333333333
+ }
+}
+saved results/evolve/round3/probe_cue.json

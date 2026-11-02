@@ -23,7 +23,10 @@ at the space after "is" is the same in both facts. Two options:
                       (initialised to the current position, so K = 1 is W1; ``--w1-ctx-init
                       uniform`` starts from an even average of the K positions instead)
   --w1-addressing gdn GatedDeltaNet's own mode: separate q/k/v with short causal convs and no
-                      explicit successor binding (the conv has to learn the shift)
+                      explicit successor binding (the conv has to learn the shift).
+                      ``limbic_llm.gated_delta`` starts those convs at the identity (current token
+                      only; RV2 B12), so ``--w1-conv-init random`` restores PyTorch's default and
+                      ``--w1-conv-init shift`` puts the key conv on the previous token
 
 Run through ``experiments/evolve/run.py --candidate evolve.w1_gdn:W1Side``; extra flags below.
 """
@@ -53,6 +56,8 @@ def split_args(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
     ap.add_argument("--w1-beta-bias", type=float, default=0.0, help="β = σ(b) at init (write strength)")
     ap.add_argument("--w1-chunk", type=int, default=64)
     ap.add_argument("--w1-ctx", type=int, default=1, help="context positions in the address (tied/dg); 1 = W1")
+    ap.add_argument("--w1-conv-init", choices=["identity", "random", "shift"], default="identity",
+                    help="gdn mode: q/k/v short-conv init (identity = current token, as in gated_delta)")
     ap.add_argument("--w1-ctx-init", choices=["identity", "uniform"], default="identity",
                     help="context conv at init: current position only, or an even average of the K positions")
     return ap.parse_known_args(argv)
@@ -66,7 +71,7 @@ class GDNLoop(nn.Module):
     def __init__(self, d_model: int, addressing: str = "tied", heads: int = 8, d_head: int = 64,
                  key_expansion: int = 1, sparsity: float = 0.05, decay_bias: float = -7.0,
                  beta_bias: float = 0.0, chunk: int = 64, max_gain: float = 0.9, ctx: int = 1,
-                 ctx_init: str = "identity") -> None:
+                 ctx_init: str = "identity", conv_init: str = "identity") -> None:
         super().__init__()
         if ctx > 1 and addressing == "gdn":
             raise ValueError("--w1-ctx applies to tied/dg addressing; gdn mode has its own convs")
@@ -79,6 +84,15 @@ class GDNLoop(nn.Module):
                                  key_expansion=key_expansion, dg_sparsity=sparsity,
                                  init_decay_bias=decay_bias, chunk_size=chunk)
         nn.init.constant_(self.mem.w_beta.bias, beta_bias)
+        if addressing == "gdn" and conv_init != "identity":
+            convs = (self.mem.conv_q, self.mem.conv_k, self.mem.conv_v)
+            with torch.no_grad():
+                if conv_init == "random":
+                    for c in convs:
+                        c.conv.reset_parameters()
+                else:                                             # key of write t = input at t − 1
+                    self.mem.conv_k.conv.weight.zero_()
+                    self.mem.conv_k.conv.weight[:, 0, -2] = 1.0
         self.max_gain = max_gain
         self.gain_logit = nn.Parameter(torch.tensor(-1.0))
         self.log_lambda = nn.Parameter(torch.tensor(0.0))
@@ -119,7 +133,7 @@ class W1Side(nn.Module):
         self.time = TimeChannel(d_model) if getattr(args, "time", True) else None
         self.loop = GDNLoop(d_model, w.w1_addressing, w.w1_heads, w.w1_dhead, w.w1_key_expansion,
                             w.w1_sparsity, w.w1_decay_bias, w.w1_beta_bias, w.w1_chunk, ctx=w.w1_ctx,
-                            ctx_init=w.w1_ctx_init)
+                            ctx_init=w.w1_ctx_init, conv_init=w.w1_conv_init)
         self.w1 = vars(w)
 
     def forward(self, h: torch.Tensor) -> tuple[torch.Tensor, LoopStats]:

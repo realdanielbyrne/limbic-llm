@@ -101,3 +101,19 @@ def test_runner_end_to_end(tmp_path):
     assert rec["candidate"]["args"]["w1_heads"] == 2
     assert len(rec["results"]["windowed+side"]["per_pos"]) >= 2
     assert out.with_suffix(".pt").exists()
+
+
+@pytest.mark.parametrize("conv_init", ["random", "shift"])
+def test_gdn_conv_init_options(conv_init):
+    """B12 control: gdn mode can start without identity convs; shift puts the key on t − 1."""
+    m = side(addressing="gdn", heads=2, dhead=16, chunk=8, conv_init=conv_init)
+    w = m.loop.mem.conv_k.conv.weight
+    if conv_init == "shift":
+        assert torch.all(w[:, 0, -2] == 1) and torch.all(w[:, 0, -1] == 0)
+    else:
+        assert not torch.all(w[:, 0, -1] == 1)
+    h = torch.randn(1, 30, D)
+    y, _ = m(h)
+    h2 = h.clone()
+    h2[:, 12:] += 1.0
+    assert torch.equal(y[:, :12], m(h2)[0][:, :12])
