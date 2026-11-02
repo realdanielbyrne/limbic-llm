@@ -14,6 +14,16 @@ model predicts token t + 1, through the same CA1 control as the loop: error-only
 along h removed), norm ``g·‖h‖`` with g ≤ G·σ(gain_logit), saturating. The memory stores the
 stream before injection (open loop), so it obeys rule E2 (state independent of T) and E1 (causal).
 
+Round 2 (W1b) gives the address context, so the queried name can select the start of a chain.
+With two stored codes W1 recalled digits 2–4 but flipped a coin on digit 1 (P11): its address
+at the space after "is" is the same in both facts. Two options:
+
+  --w1-ctx K          addresses from a learned causal depthwise conv over the last K positions,
+                      a_t = norm(W_a conv_K(x)_{≤t}); values and gates still come from x_t
+                      (initialised to the current position, so K = 1 is W1)
+  --w1-addressing gdn GatedDeltaNet's own mode: separate q/k/v with short causal convs and no
+                      explicit successor binding (the conv has to learn the shift)
+
 Run through ``experiments/evolve/run.py --candidate evolve.w1_gdn:W1Side``; extra flags below.
 """
 
@@ -26,14 +36,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from limbic_llm.gated_delta import GatedDeltaNet
+from limbic_llm.gated_delta import CausalConv1d, GatedDeltaNet, _gates, _run
 from limbic_llm.temporal_loop import LoopStats, TimeChannel
 
 
 def split_args(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
     """Take the --w1-* flags; the rest go to ``pretrained_loop``."""
     ap = argparse.ArgumentParser(add_help=False)
-    ap.add_argument("--w1-addressing", choices=["tied", "dg"], default="tied")
+    ap.add_argument("--w1-addressing", choices=["tied", "dg", "gdn"], default="tied")
     ap.add_argument("--w1-heads", type=int, default=8)
     ap.add_argument("--w1-dhead", type=int, default=64)
     ap.add_argument("--w1-key-expansion", type=int, default=1)
@@ -41,6 +51,7 @@ def split_args(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
     ap.add_argument("--w1-decay-bias", type=float, default=-7.0, help="α = exp(−softplus(b)); −7 → α^500 ≈ 0.63")
     ap.add_argument("--w1-beta-bias", type=float, default=0.0, help="β = σ(b) at init (write strength)")
     ap.add_argument("--w1-chunk", type=int, default=64)
+    ap.add_argument("--w1-ctx", type=int, default=1, help="context positions in the address (tied/dg); 1 = W1")
     return ap.parse_known_args(argv)
 
 
@@ -51,9 +62,12 @@ class GDNLoop(nn.Module):
 
     def __init__(self, d_model: int, addressing: str = "tied", heads: int = 8, d_head: int = 64,
                  key_expansion: int = 1, sparsity: float = 0.05, decay_bias: float = -7.0,
-                 beta_bias: float = 0.0, chunk: int = 64, max_gain: float = 0.9) -> None:
+                 beta_bias: float = 0.0, chunk: int = 64, max_gain: float = 0.9, ctx: int = 1) -> None:
         super().__init__()
+        if ctx > 1 and addressing == "gdn":
+            raise ValueError("--w1-ctx applies to tied/dg addressing; gdn mode has its own convs")
         self.norm = nn.LayerNorm(d_model)
+        self.ctx = CausalConv1d(d_model, ctx) if ctx > 1 else None   # starts as the current position
         self.mem = GatedDeltaNet(d_model, n_heads=heads, d_head=d_head, addressing=addressing,
                                  key_expansion=key_expansion, dg_sparsity=sparsity,
                                  init_decay_bias=decay_bias, chunk_size=chunk)
@@ -62,8 +76,22 @@ class GDNLoop(nn.Module):
         self.gain_logit = nn.Parameter(torch.tensor(-1.0))
         self.log_lambda = nn.Parameter(torch.tensor(0.0))
 
+    def _context_read(self, x: torch.Tensor) -> torch.Tensor:
+        """GatedDeltaNet's tied/dg path with addresses from the context conv (values from x_t)."""
+        m, (B, T, _) = self.mem, x.shape
+        a = m.address(self.ctx(x)[0])                             # (B, H, T, Dk), context address
+        k = torch.cat([a.new_zeros(B, m.h, 1, m.dk), a[:, :, :-1]], 2)   # key of write t = address of t − 1
+        v = m._heads(m.wv(x), m.dv)
+        alpha, beta = _gates(m.w_alpha, m.w_beta, x)
+        o, _, _ = _run(a, k, v, alpha, beta, None, m.chunk_size)
+        o = m.norm(o).transpose(1, 2).reshape(B, T, m.h * m.dv)
+        if m.wg is not None:
+            o = o * F.silu(m.wg(x))
+        return m.wo(o)
+
     def forward(self, h: torch.Tensor) -> tuple[torch.Tensor, LoopStats]:
-        o, _, _ = self.mem(self.norm(h))                          # (B, T, D), causal
+        x = self.norm(h)
+        o = self._context_read(x) if self.ctx is not None else self.mem(x)[0]   # (B, T, D), causal
         hn = F.normalize(h, dim=-1)
         e = o - (o * hn).sum(-1, keepdim=True) * hn               # error-only injection
         s = torch.tanh(o.norm(dim=-1) / self.log_lambda.exp())    # saturation
@@ -83,7 +111,7 @@ class W1Side(nn.Module):
         w = w or split_args([])[0]
         self.time = TimeChannel(d_model) if getattr(args, "time", True) else None
         self.loop = GDNLoop(d_model, w.w1_addressing, w.w1_heads, w.w1_dhead, w.w1_key_expansion,
-                            w.w1_sparsity, w.w1_decay_bias, w.w1_beta_bias, w.w1_chunk)
+                            w.w1_sparsity, w.w1_decay_bias, w.w1_beta_bias, w.w1_chunk, ctx=w.w1_ctx)
         self.w1 = vars(w)
 
     def forward(self, h: torch.Tensor) -> tuple[torch.Tensor, LoopStats]:

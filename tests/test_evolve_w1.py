@@ -21,14 +21,16 @@ def side(**kw):
     return W1Side(D, type("A", (), {"time": True})(), ns).eval()
 
 
-@pytest.mark.parametrize("addressing", ["tied", "dg"])
+@pytest.mark.parametrize("addressing,ctx", [("tied", 1), ("dg", 1), ("tied", 4), ("dg", 4), ("gdn", 1)])
 @pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
-def test_strictly_causal(addressing, dtype):
+def test_strictly_causal(addressing, ctx, dtype):
     """E1: perturbing h[:, t0:] leaves the output before t0 bitwise unchanged, also for bf16 input."""
-    m = side(addressing=addressing, heads=2, dhead=16, key_expansion=2, chunk=8)
+    m = side(addressing=addressing, heads=2, dhead=16, key_expansion=2, chunk=8, ctx=ctx)
     with torch.no_grad():
         m.loop.gain_logit.fill_(2.0)
         m.time.out.weight.normal_(0, 0.1)                         # the clock starts as identity
+        if m.loop.ctx is not None:
+            m.loop.ctx.conv.weight.normal_(0, 0.5)                # context taps active
     h = torch.randn(2, 70, D).to(dtype).float()
     y, _ = m(h)
     for t0 in (1, 7, 8, 9, 33, 69):
@@ -70,13 +72,22 @@ def test_successor_binding_retrieves_the_next_value():
     assert sparse.argmax().item() == 5 and sparse[5] > dense[5]
 
 
-def test_parameter_budget_at_qwen_width():
-    """E3: at Qwen3-1.7B's width the default W1 stays within the 4.4M trainable-parameter budget."""
-    m = W1Side(2048, type("A", (), {"time": True})(), split_args([])[0])
+@pytest.mark.parametrize("argv", [[], ["--w1-addressing=dg", "--w1-heads=4", "--w1-key-expansion=4"],
+                                  ["--w1-ctx=4"], ["--w1-addressing=gdn", "--w1-heads=6"]])
+def test_parameter_budget_at_qwen_width(argv):
+    """E3: at Qwen3-1.7B's width every round-1/2 configuration stays within the 4.4M budget."""
+    m = W1Side(2048, type("A", (), {"time": True})(), split_args(argv)[0])
     assert sum(p.numel() for p in m.parameters()) <= 4_400_000
-    m = W1Side(2048, type("A", (), {"time": True})(),
-               split_args(["--w1-addressing=dg", "--w1-heads=4", "--w1-key-expansion=4"])[0])
-    assert sum(p.numel() for p in m.parameters()) <= 4_400_000
+
+
+def test_context_address_starts_as_w1():
+    """W1b: the context conv starts at the current position, so it reproduces W1 before training."""
+    torch.manual_seed(0)
+    a = GDNLoop(D, heads=2, d_head=16, chunk=8)
+    b = GDNLoop(D, heads=2, d_head=16, chunk=8, ctx=4)
+    b.load_state_dict({**a.state_dict(), **{k: v for k, v in b.state_dict().items() if k.startswith("ctx")}})
+    x = torch.randn(2, 40, D)
+    assert torch.allclose(a(x)[0], b(x)[0], atol=1e-5)
 
 
 def test_runner_end_to_end(tmp_path):
