@@ -9,3 +9,4 @@
 [memory_time    ] step  1000 loss 0.251 what 1.000 when 0.850 (281s)
 [memory_time    ] step  1500 loss 0.259 what 1.000 when 0.883 (421s)
 [memory_time    ] step  2000 loss 0.166 what 0.998 when 0.932 (562s)
+[memory_time    ] step  2500 loss 0.196 what 1.000 when 0.918 (708s)
