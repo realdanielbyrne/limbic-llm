@@ -773,3 +773,36 @@ The scattered runs above started before the block fix, so about 4% of their fact
 | Tap 14, seed 0 | 0.602 | overall 0.70 (chance 0.33) | — |
 
 **With a longer schedule all three seeds learn content selection.** Seed 1 does so fully; seed 2 does so substantially, with its loss still falling at step 6,000. So selection is slow to learn, not a seed-0 accident. P21 is now Supported across seeds, and P25 is revised. Tap 14 also learns, more slowly (P23).
+
+---
+
+## Round 6a: held-out evaluation of W1i (rule E6, round-0 C6) (2 Nov 2026)
+
+**Request (Daniel).** Evaluation only: extend `eval_by_query.py` with `--seq-len` and `--text-file`, keep everything else as trained, and evaluate the seed-0, seed-1 (6000 steps) and 5-code checkpoints on length, number of stored codes, and filler type, with windowed and full-attention controls at every setting.
+
+**Tooling.** `eval_by_query.py` now:
+- scores the windowed base and full attention on the same batches as the side-channel model;
+- computes only the answer positions' logits, so 2048-token batches fit;
+- fills candidate flags added after a run from their defaults.
+
+Natural filler is the WikiText-103 **test** split, disjoint from the LM runs' training split (1.26M characters, kept on geof). Before the sweep, the seed-0 checkpoint at its training settings reproduced its earlier numbers (exact 0.84, digit 1 0.98 on 64 sequences).
+
+**Results** (exact; digit 1 in brackets where informative; 384 sequences each; windowed 0.00 and full attention 0.97–1.00 throughout)
+
+| Checkpoint | Length 512 / 768 / 1024 / 2048 | Codes 1 / 2 / 3 / 4 / 5 (seq 512) | Natural filler (seq 512) |
+|---|---|---|---|
+| Seed 0, trained on 3 codes | 0.89 / 0.86 / 0.90 / 0.88 | 1.00 / 0.98 / 0.89 / 0.82 / 0.79 | **0.09** (0.29) |
+| Seed 1, 3 codes, 6000 steps | 0.88 / 0.90 / 0.89 / 0.87 (digit 1 1.00 throughout) | 1.00 / 0.96 / 0.88 / 0.85 / 0.80 (digit 1 1.00 throughout) | **0.45** (0.83) |
+| Trained on 5 codes | 0.72 / 0.72 / 0.68 / 0.65 | 0.99 / 0.96 / 0.86 / 0.82 / 0.72 | **0.16** (0.49) |
+
+**What it shows**
+1. **Length generalises (P30).** At 2048 tokens the queried code's first digit is still selected at 0.98–1.00 in every gap bin, out to gaps of 1,690+ tokens, more than three times the training maximum (502). Exact recall falls gently with gap (0.94 → 0.79), as the chain store takes in more filler writes. A fixed-size memory that generalises across length in this way is what rule E6 asks for.
+2. **Code count generalises (P31).** Models trained on 3 codes select the queried one among 4 or 5 (digit 1 0.93–1.00 at every rank). Exact falls with load, the interference of P24, but selection does not.
+3. **Natural filler breaks it (P32).** Full attention is unaffected (0.98–1.00), so the task is no harder for the base model. The event detector fires far more on natural text (seed 0's mean write strength goes from 0.04 to 0.17), so the goal field is overwritten: the dense-writes failure of round 3. The learned write policy picked up what is *rare in random-token filler*, not what is *worth storing*. Seed 1 is the most robust: its detector shifts least, and it keeps 0.83 on digit 1.
+
+This answers Daniel's earlier question about inference-time memory. The memory does work at inference, and it generalises across length and load. But the *policy* for when to write is specific to its training distribution.
+
+**Proposed round 6b** (for the checkpoint)
+- Train W1i with natural filler, or a random/natural mix, and evaluate on both. Does the event detector learn "first digit of a fact" rather than "rare token"?
+- Optionally, a sparsity regulariser or an explicit write budget per window on the events, to make the policy robust to filler.
+- Then RULER-style multi-key and multi-value evaluation (RV2) on the most robust checkpoint.

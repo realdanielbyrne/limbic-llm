@@ -103,6 +103,7 @@ Commit only finished runs: the JSON and its `.log`. Never commit:
 | Unreliable attribution | Cosine-argmax "which fact did the read return" disagreed with behaviour (RV3.F3) | Base conclusions on behavioural accuracy |
 | Designs that fail on paper | Dense context-keyed writes overwrite each other; a linear key shares the token component across facts | One-hot toy check before building |
 | Scattered-layout window artefacts | Scattered facts could straddle a 64-token window block (RV3.F2) | `ScatterNeedleTask` resamples them (`block=`), fixed in `672406d`. The round-4 scattered runs predate the fix (≈4% straddled), so P21 seed 0 and the round-5 seed reruns ran on slightly different task versions |
+| Training-format policies | W1i's event detector learned what is rare in random-token filler; natural text triggers far more events and overwrites the goal field (P32) | Evaluate on natural filler (`eval_by_query.py --text-file`); train on the target text distribution |
 | Shared working tree | Another session's uncommitted edits were in the same files | Check `git status` before committing; name others' work in the message |
 | Command chains | A failed step was hidden by a later one in a pipe | `set -o pipefail`; check `rc=` in `queue.status` |
 
@@ -116,5 +117,7 @@ Commit only finished runs: the JSON and its `.log`. Never commit:
 | 3 | Is the cue present? Do a start store and CA3 settling help? | Probe; W1g (DG start store); W1h (settling) | The name is decodable but W1's addresses discard it (P17). W1g "won" 2 pairs, later shown to be a shortcut (P18). Settling hurt as built (P20). W1 is not CA3 (B16) |
 | 4 | Why do 3 pairs fail? Do event-gated writes work? | Diagnostic; scattered task; W1i (S&A goal field) | A positional shortcut explains the failure. W1i selects by content at every rank, on one seed (P21, P22) |
 | 5 | Does W1i replicate and scale; is the chain loss decay? | Seeds 1–2, 4–5 pairs, DG chain keys, tap 14 at 6,000 steps, LM (W1d), CPU suite (W1c) | The chain loss is interference, not decay (P24). Seeds 1–2 did not learn selection by step 3,000 but did at 6,000 (seed 1 fully, seed 2 partly; P25), so P21 holds across seeds with a longer schedule. 5 pairs selected at every rank and 4 pairs only partly (seed 0, P26). DG chain keys did not help (P27). W1i with the clock passes the CPU must-pass checks, one seed (P28). LM perplexity 12.29, a narrow E8 miss, confounded by the tap (P29). Tap 14 learns partial selection at 6,000 steps (P23) |
+
+| 6a | Does W1i generalise beyond its training format (rule E6)? | Evaluation only: seq 512–2048, 1–5 codes, natural filler; 3 checkpoints with windowed and full controls | Yes for length (gaps up to about 2,000, digit 1 0.98–1.00; P30) and for code count (P31). No for natural filler: exact 0.09–0.45, because the event detector fires about 4× more and the goal field is overwritten (P32) |
 
 Each round's entry in NOTEBOOK has the full tables. Update this table at each checkpoint.
