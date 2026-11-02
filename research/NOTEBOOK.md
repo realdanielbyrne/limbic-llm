@@ -764,4 +764,12 @@ The scattered runs above started before the block fix, so about 4% of their fact
 
 **Daniel's question: is training a fair test if the memory works at inference?** Yes. Training fits the side channel's parameters once, offline; that is the policy for *how* to remember. The memory state is written by the delta rule during the forward pass, at inference, with no gradients. Every evaluated code is new, so a correct answer was stored and retrieved at inference time. What training does not establish is generality: the policy was trained on this format only.
 
-**Pending:** seeds 1 and 2 at 6000 steps (do they make the late drop?), and tap 14 at 6000 steps.
+**6000-step reruns** (added after the entry above; all scattered, 3 pairs)
+
+| Run | Exact | Digit 1 by rank | Exact by rank |
+|---|---|---|---|
+| Seed 1, tap 21 | **0.891** | **1.00 / 1.00 / 1.00** | 0.88 / 0.87 / 0.88 |
+| Seed 2, tap 21 | 0.781 | 0.74 / 0.72 / 0.86 | 0.64 / 0.63 / 0.81 |
+| Tap 14, seed 0 | 0.602 | overall 0.70 (chance 0.33) | — |
+
+**With a longer schedule all three seeds learn content selection.** Seed 1 does so fully; seed 2 does so substantially, with its loss still falling at step 6,000. So selection is slow to learn, not a seed-0 accident. P21 is now Supported across seeds, and P25 is revised. Tap 14 also learns, more slowly (P23).
