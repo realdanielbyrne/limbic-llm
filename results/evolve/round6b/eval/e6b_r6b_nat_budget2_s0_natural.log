@@ -1,0 +1,2 @@
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 14810.56it/s]
+{"pairs": 3, "seq_len": 512, "exact": 0.34375, "digit1": 0.4557291666666667, "digit1_acc_by_queried_rank": [0.48091603053435117, 0.47619047619047616, 0.4094488188976378], "controls_exact": {"windowed": 0.0, "full": 1.0}}

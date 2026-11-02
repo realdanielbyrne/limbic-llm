@@ -894,3 +894,36 @@ python experiments/alignment/run.py --model mlabonne/Qwen3-1.7B-abliterated --di
     --dtype bfloat16 --device cuda --n-eval 100 --max-new-tokens 96 --gains 0.1,0.2,0.3,0.4 --caps 0.2,0.3,0.4,0.5 \
     --ppl-data hf:Salesforce/wikitext:wikitext-2-raw-v1:test:text --private-dir ~/limbic_private/a6 --name a6_qwen3_abliterated
 ```
+
+---
+
+## Round 6b: training on natural filler, and a write budget (2 Nov 2026)
+
+**Request (Daniel).** Run the proposed 6b test: train W1i with natural or mixed filler and evaluate on both kinds. Mid-round, Daniel added: "add a write-budget or sparsity constraint on events".
+
+**Tooling**
+- `run.py --needle-mix p`: a share p of sequences use natural filler, the rest random.
+- `eval_by_query.py --random-filler`.
+- W1i `--w1i-budget B --w1i-budget-window W`. Each write is scaled by clamp(1 − u_t/B, 0, 1), where u_t counts the detector's attempted events over the previous W tokens. This is structural, causal and has a fixed-size state; a loss penalty would have needed a change to `pretrained_loop.py`.
+
+Training text is a 5M-character slice of the WikiText-103 train split; evaluation text is the held-out test split.
+
+**Results** (W1i, 3 pairs, scattered, tap 21, 6000 steps; exact / digit 1 on held-out natural, then random filler; windowed 0.00 and full 1.00 throughout)
+
+| Run | Natural filler | Random filler | Events (mean ε overall / at first digits) |
+|---|---|---|---|
+| Natural, seed 0 | **0.93 / 0.99** | 0.89 / 0.97 | 0.12 / 0.25 |
+| Natural, seed 1 | 0.33 / 0.45 | 0.36 / 0.45 | 0.14 / 0.18 |
+| Mixed 50/50, seed 0 | 0.35 / 0.45 | 0.36 / 0.43 | 0.08 / 0.09 |
+| Natural, refractory 0.95, seed 0 | **0.94 / 0.99** | **0.91 / 0.99** | 0.15 / 0.33 |
+| Natural, budget 2 per 64 | 0.34 / 0.46 | 0.33 / 0.42 | **0.002 / 0.001** |
+| Random, budget 2 per 64 | 0.05 / 0.16 | 0.34 / 0.42 | 0.003 / 0.003 |
+
+**What it shows**
+1. **Training on natural text fixes the filler problem, when selection is learned (P33).** Natural-trained seed 0 scores 0.93 on held-out natural filler, against 0.09 for the random-trained seed 0 in P32, and keeps 0.89 on random filler. With a longer refractory period (0.95) it is the best W1i so far: 0.94 / 0.91, digit 1 0.99 on both. Its events stay selective on natural text (0.15 overall, 0.33 at first digits). The detector learned what is worth storing rather than what is rare.
+2. **Learnability is still the bottleneck (P34).** Natural seed 1 and the 50/50 mix did not make the late drop within 6000 steps. So 2 of 4 natural-type runs learned selection. Mixing filler did not make it easier.
+3. **The write budget, as built, kills the mechanism (P35).** At initialisation the detector fires at about 0.12 per token, about 8 per 64 tokens against a budget of 2. Every write was starved from step 0, the gradient switched the detector off (ε ≈ 0.002), and selection was never learned on either filler. A budget has to start above the initial firing density (or be annealed down), or the detector has to start sparse. The longer refractory period, a softer form of rationing, helped instead.
+
+**Proposed next** (for the checkpoint)
+- A budget that does not bind at initialisation: set B at or above the initial density (≈ 8 per 64) and anneal it down, or start the event bias at about −5.
+- A learnability study, the main open problem. Seeds × {random, natural} with refractory 0.95, and learning rate or warm-up variations, to find a schedule that makes the late drop reliable.
