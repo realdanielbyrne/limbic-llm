@@ -116,6 +116,10 @@ This file holds the current state of the project: every result with its status a
 | A3 | Escalation and recovery under multi-turn pressure | M | Planned |
 | A4 | Controller stability: ringing between refusing and complying | M | Planned |
 | A5 | Robustness to adaptive attacks on the probe | L | Planned |
+| A6 | **Re-align an unaligned model with runtime hooks** (Daniel). Abliterated Qwen3-1.7B and the never-aligned base, against the aligned reference. Arms: none, static refusal direction, conditional, graded controller, controller without the aligned sibling. Hypotheses H1–H4 in the notebook | **H** (standalone alignment track) | Planned (after A1, S1) |
+| A7 | Scale and hybrid check of A6 on `Huihui-Qwen3.5-9B-abliterated` | M | Planned |
+
+Alignment track data rule: commit only judge scores, refusal labels and aggregates. Raw completions to harmful prompts stay off the repository.
 
 ### Other open questions
 

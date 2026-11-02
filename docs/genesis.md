@@ -154,6 +154,12 @@ This became three records:
 - Biology: CA2 supports social recognition memory and in mice also *promotes* aggression through the lateral septum, so it acts as a context selector rather than an enforcer of norms.
 - Prior art: circuit breakers already reroute harmful representations towards incoherent or refusal states, but by fine-tuning. What is new here is a runtime, graded controller: a leaky integral of a harm score drives a capped steering gain. Plain novelty is not the same as harm, so the score should come from a harm probe, or from "norm novelty", a mismatch against a memory of aligned behaviour.
 
+### 5.7 Re-aligning an unaligned model (Daniel)
+
+> "Yes on an open model these protections can be dropped, but on closed models that would be impossible. This might be a whole separate area of research that could be used in conjunction with the other hippocampus model constructs being explored in this research or as a standalone alignment research. One potential experiment could be to start with a purposefully unaligned model (ablated models on huggingface) and then add in the hooks to see if an unaligned model can be made to act like an aligned model."
+
+**Claude** found suitable models on the Hub: abliterated Qwen3-1.7B variants next to the aligned and base models already in use. It also found supporting evidence: LLMs encode harmfulness separately from refusal, and jailbreaks or harmful fine-tuning leave the harmfulness judgement intact (Zhao et al. 2025). So the harmfulness representation can drive the controller while the hook supplies the refusal direction. Restoring refusal by adding the direction back is close to a tautology for an abliterated model. The informative tests are selectivity (over-refusal), capability cost, multi-turn persistence, and the never-aligned base model. Recorded as A6–A7 in the register, with a data rule: raw completions to harmful prompts are never committed.
+
 ## 6. Findings so far
 
 Small models (about 0.1M parameters, CPU), mostly single seeds; final numbers are in [RESULTS.md](../RESULTS.md).

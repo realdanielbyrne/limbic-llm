@@ -324,6 +324,10 @@
     "text": "Mazeika, M., Phan, L., Yin, X., et al. (2024). HarmBench: A Standardized Evaluation Framework for Automated Red Teaming and Robust Refusal. In International Conference on Machine Learning. https://arxiv.org/abs/2402.04249"
    },
    {
+    "key": "zhao2025llms",
+    "text": "Zhao, J., Huang, J., Wu, Z., Bau, D., & Shi, W. (2025). LLMs Encode Harmfulness and Refusal Separately. In Advances in Neural Information Processing Systems. https://arxiv.org/abs/2507.11878"
+   },
+   {
     "key": "rottger2024xstest",
     "text": "Röttger, P., Kirk, H. R., Vidgen, B., Attanasio, G., Bianchi, F., & Hovy, D. (2024). XSTest: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models. In Proceedings of NAACL. https://arxiv.org/abs/2308.01263"
    }

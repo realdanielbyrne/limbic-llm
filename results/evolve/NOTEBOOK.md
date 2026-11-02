@@ -195,3 +195,56 @@ $$s_t = \text{harm score},\qquad E_t = \lambda E_{t-1} + s_t,\qquad h_t \leftarr
 - **A5 Robustness.** Adaptive attacks aimed at the probe. Note that a runtime hook on an open-weight model can simply be removed, so this is a deployment-side safety layer, not a guarantee.
 
 **Risks:** over-refusal; probe evasion; degeneration that harms ordinary use; removability on open weights. Evaluation uses standard public safety benchmarks.
+
+---
+
+## Proposal: re-aligning an unaligned model with runtime hooks (2 Nov 2026)
+
+**Idea (Daniel).** Start from a model whose alignment has been deliberately removed (an "abliterated" model on Hugging Face), add the CA2 steering hooks, and test whether the unaligned model can be made to behave like an aligned one. On an open-weight model the hooks can be stripped; on a closed model they cannot, because the provider runs the inference stack. That makes this a deployment-side safety layer for closed models, and a research tool on open ones. It could be its own line of alignment research, or one that works together with the other hippocampal mechanisms.
+
+**Why it is promising.** [Zhao et al. (NeurIPS 2025)](https://arxiv.org/abs/2507.11878) found that LLMs encode *harmfulness* separately from *refusal*:
+- Jailbreaks, and adversarial fine-tuning towards accepting harmful requests, mostly weaken the refusal signal and leave the internal harmfulness judgement intact.
+- Their "Latent Guard" reads that representation to detect unsafe inputs, comparably to Llama Guard 3 8B.
+
+Abliteration removes the refusal direction ([Arditi et al. 2024](https://arxiv.org/abs/2406.11717)) by orthogonalising the weights that write to the residual stream. If the harmfulness representation survives it, as it survives jailbreaks, it can supply the controller's input $s_t$: CA1's "norm novelty" signal. The refusal direction, injected by the hook, supplies the output $\hat d$.
+
+**Models** (all fit on one RTX 5090 in bf16)
+
+| Role | Model |
+|---|---|
+| Aligned reference | `Qwen/Qwen3-1.7B` (post-trained) |
+| Alignment removed | [`mlabonne/Qwen3-1.7B-abliterated`](https://hf.co/mlabonne/Qwen3-1.7B-abliterated), [`huihui-ai/Huihui-Qwen3-1.7B-abliterated-v2`](https://hf.co/huihui-ai/Huihui-Qwen3-1.7B-abliterated-v2) |
+| Never aligned | `Qwen/Qwen3-1.7B-Base` (already in use) |
+| Scale and hybrid check | `huihui-ai/Huihui-Qwen3.5-9B-abliterated` (Gated DeltaNet hybrid) |
+
+**Arms**
+1. No hook.
+2. Static refusal direction at layer L (CAA / ActAdd). Because abliteration removes the model's ability to *write* the refusal direction but not to *read* it, adding it back is expected to restore refusal, perhaps indiscriminately. This is the ceiling and the over-refusal baseline.
+3. Conditional steering (CAST-style switch).
+4. The graded controller from the CA2 proposal, $h \leftarrow h - G\tanh(\kappa E_t)\lVert h\rVert\hat d$ with $E_t = \lambda E_{t-1} + s_t$, where $s_t$ comes from a harmfulness probe.
+5. The same controller with $\hat d$ estimated from the unaligned model alone, without access to the aligned sibling.
+
+**What would be informative.** Arm 2 restoring refusal is close to a tautology. The questions are:
+- whether the graded controller restores refusal *selectively* (harmful prompts, not benign ones that only look harmful);
+- whether it does so at a capability cost below static addition;
+- whether it holds under multi-turn pressure;
+- whether it works on the **never-aligned base model**, where alignment was never a single removable direction.
+
+**Hypotheses**
+- **H1.** Harmfulness stays linearly decodable at the tap in abliterated and base models: probe AUROC well above chance, near the aligned model's.
+- **H2.** The controller cuts attack success on the abliterated model to near the aligned reference, with less over-refusal than static addition.
+- **H3.** On the base model it restores less, because the refusal behaviour itself was never trained.
+- **H4.** Escalation via $E_t$ blocks persistent multi-turn attempts better than per-turn steering, and recovers on benign turns.
+
+**Metrics**
+- Attack success on HarmBench, judged by its classifier.
+- Over-refusal on XSTest.
+- Capability: an MMLU subset and WikiText perplexity.
+- Degeneration rate (the Asimov freeze).
+- Controller dynamics: $E_t$, the gain, and ringing.
+
+**Data handling.** Evaluating abliterated models means they generate responses to harmful benchmark prompts. Only judge scores, refusal labels and aggregate metrics go into this repository. Raw completions to harmful prompts stay on the GPU machine and are never committed.
+
+**Dependencies.** S1, the saturation knee, sets the controller's cap $G$. A1, the harm probe, is step one.
+
+**Recommendation on scope.** Run it as a separate track inside this repository for now (`experiments/alignment/`, with its own section of the register), because it reuses the hooks, the CA1 control and the stability analysis. Split it into its own repository once it has results of its own.

@@ -120,6 +120,7 @@ The bibliography for limbic-llm, grouped by the part of the hippocampal mapping 
 | `zou2023representation` | Zou et al. (2023). *Representation Engineering: A Top-Down Approach to AI Transparency.* arXiv:2310.01405 | Reading and steering concepts in activations |
 | `zou2024improving` | Zou et al. (2024). *Improving Alignment and Robustness with Circuit Breakers.* NeurIPS | Rerouting harmful representations towards incoherent or refusal states |
 | `mazeika2024harmbench` | Mazeika et al. (2024). *HarmBench: A Standardized Evaluation Framework for Automated Red Teaming and Robust Refusal.* ICML | Attack-success benchmark |
+| `zhao2025llms` | Zhao, Huang, Wu, Bau & Shi (2025). *LLMs Encode Harmfulness and Refusal Separately.* NeurIPS | Harmfulness survives jailbreaks and harmful fine-tuning; the controller's input |
 | `rottger2024xstest` | Röttger et al. (2024). *XSTest: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models.* NAACL | Over-refusal benchmark |
 
 ## Continual learning and replay
