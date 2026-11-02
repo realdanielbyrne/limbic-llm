@@ -74,16 +74,17 @@ const bdr = { style: BorderStyle.SINGLE, size: 1, color: "C0C8D0" };
 const borders = { top: bdr, bottom: bdr, left: bdr, right: bdr };
 function table(header, rows, widths, size = 17) {
   const total = widths.reduce((a, b) => a + b, 0);
+  const keep = rows.length <= 12;
   const cell = (text, i, opts) => new TableCell({
     borders, width: { size: widths[i], type: WidthType.DXA },
     shading: { fill: opts.fill, type: ShadingType.CLEAR }, margins: { top: 50, bottom: 50, left: 80, right: 80 },
-    children: [new Paragraph({ children: [new TextRun({ text, font: "Calibri", size: opts.size, bold: opts.bold, color: opts.color })] })],
+    children: [new Paragraph({ keepNext: keep && !opts.last, children: [new TextRun({ text, font: "Calibri", size: opts.size, bold: opts.bold, color: opts.color })] })],
   });
   return new Table({
     width: { size: total, type: WidthType.DXA }, columnWidths: widths,
     rows: [
       new TableRow({ tableHeader: true, children: header.map((t, i) => cell(t, i, { fill: NAVY, size: 19, bold: true, color: "FFFFFF" })) }),
-      ...rows.map((r, ri) => new TableRow({ children: r.map((t, i) => cell(t, i, { fill: ri % 2 === 0 ? LIGHT_BG : "FFFFFF", size, bold: i === 0, color: BODY })) })),
+      ...rows.map((r, ri) => new TableRow({ cantSplit: true, children: r.map((t, i) => cell(t, i, { fill: ri % 2 === 0 ? LIGHT_BG : "FFFFFF", size, bold: i === 0, color: BODY, last: ri === rows.length - 1 })) })),
     ],
   });
 }
@@ -112,7 +113,7 @@ C.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 200 },
 C.push(spacer(500));
 C.push(new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Daniel Byrne", font: "Calibri", size: 24, color: BODY })] }));
 C.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 60 },
-  children: [new TextRun({ text: "Version 2 · November 2026", font: "Calibri", size: 22, color: "666666" })] }));
+  children: [new TextRun({ text: "Version 3 · November 2026", font: "Calibri", size: 22, color: "666666" })] }));
 C.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 60 },
   children: [new TextRun({ text: "Code: github.com/realdanielbyrne/limbic-llm", font: "Consolas", size: 19, color: MED_BLUE })] }));
 C.push(new Paragraph({ alignment: AlignmentType.CENTER,
@@ -133,13 +134,21 @@ const toc = [
   [false, "", "5.3  CA1 as Predictive Comparison (LLM-JEPA, LeJEPA)"],
   [false, "", "5.4  Looped Transformers as Big-Loop Recurrence"],
   [false, "", "5.5  Revised Component Mapping"],
-  [true, "6.", "Implementation Strategy I: Direct Hippocampal Architecture"],
-  [true, "7.", "Implementation Strategy II: Titans-Hippocampal Hybrid"],
-  [true, "8.", "limbic-llm: Implementation and Results"],
-  [true, "9.", "Prior Art and Positioning"],
-  [true, "10.", "Connections to Continual Learning and Catastrophic Forgetting"],
-  [true, "11.", "Open Questions and Future Directions"],
-  [true, "12.", "References"],
+  [true, "6.", "Closing the Loop: Feedback, Time and a Full Architecture"],
+  [false, "", "6.1  From Static to Dynamic Activation Addition"],
+  [false, "", "6.2  How the Biological Loop Stays Stable"],
+  [false, "", "6.3  Skip Paths and CA1 Negative Feedback"],
+  [false, "", "6.4  Clamped, Damped Re-entry and a Sense of Time"],
+  [false, "", "6.5  Plug-in or New Architecture?"],
+  [false, "", "6.6  A Full Limbic LLM"],
+  [false, "", "6.7  Experiment: What, When, and Loop Stability"],
+  [true, "7.", "Implementation Strategy I: Direct Hippocampal Architecture"],
+  [true, "8.", "Implementation Strategy II: Titans-Hippocampal Hybrid"],
+  [true, "9.", "limbic-llm: Implementation and Results"],
+  [true, "10.", "Prior Art and Positioning"],
+  [true, "11.", "Connections to Continual Learning and Catastrophic Forgetting"],
+  [true, "12.", "Open Questions and Future Directions"],
+  [true, "13.", "References"],
 ];
 for (const [major, num, title] of toc) {
   C.push(new Paragraph({ spacing: { before: major ? 100 : 30, after: 30 }, indent: { left: major ? 0 : 360 }, children: [
@@ -147,7 +156,7 @@ for (const [major, num, title] of toc) {
     new TextRun({ text: title, font: "Calibri", size: major ? 22 : 21, bold: major, color: major ? NAVY : BODY })] }));
 }
 C.push(spacer(200));
-C.push(note("What is new in version 2: the Gated DeltaNet mapping (4.7), CA2 as activation steering, CA1 as a calibrated decision readout, looped transformers as big-loop recurrence (Section 5), measured results from the limbic-llm package (Section 8), prior art (Section 9), and a full bibliography (Section 12).", ACCENT_AMBER));
+C.push(note("New in version 3: Section 6, closing the loop \u2014 dynamic activation addition, how the biological loop stays stable, the direct entorhinal path to CA3, CA1 negative feedback as an op-amp, clamped damped re-entry, a clock of elapsed time, the plug-in versus new-architecture question, a full Limbic LLM blueprint, and the what-when and loop-stability experiment. Version 2 added Gated DeltaNet (4.7), recent inspirations (Section 5), limbic-llm results (Section 9), prior art (Section 10) and the bibliography (Section 13).", ACCENT_AMBER));
 
 // ═══ 1. INTRODUCTION
 C.push(h1("1. Introduction and Motivation"));
@@ -289,14 +298,86 @@ C.push(table(["Component", "Version 1 mapping", "Current mapping", "Key inspirat
   ["CA1", "Output logits → comparator", "Calibrated decision readout of memory vs. input", "JEV, LAYA, LLM-JEPA, LeJEPA"],
   ["Subiculum", "Output projection", "Gain-modulated router of CA1 decisions", "Burst amplification"],
   ["EC→…→EC loop", "Not modeled", "Looped, weight-shared depth with a novelty-driven exit", "Ouro, REMERGE"],
+  ["Theta rhythm and time cells", "Not modeled", "Loop period τ, clamped damped re-entry, clock of elapsed time", "Hasselmo 2002, Shankar & Howard"],
 ], [1300, 2000, 3260, 2800], 16));
 
-// ═══ 6. STRATEGY I
-C.push(h1("6. Implementation Strategy I: Direct Hippocampal Architecture"));
+// ═══ 6. CLOSING THE LOOP
+C.push(h1("6. Closing the Loop: Feedback, Time and a Full Architecture"));
+C.push(p("This section records how the temporal-loop design was reached, in the order the reasoning developed, and the experiment that tests it. The code is limbic_llm/temporal_loop.py; a fuller write-up is docs/design/temporal-loop.md."));
+C.push(h2("6.1  From Static to Dynamic Activation Addition"));
+C.push(p("Activation Addition injects one fixed vector, chosen by a user, into a middle layer. CA2’s signal is dynamic and internal. The dynamic version taps an inner layer, writes a time-lagged window of its activations into an associative (CA3) memory, retrieves related context, contrasts it against a negative, and re-injects the difference, with a stronger signal where the contrast is strong. One mechanism then spans three regions: the memory stores and predicts (CA3), the contrast measures novelty (CA1), and the re-injection is the side channel (CA2)."));
+C.push(p("Two problems follow. First, a linear memory cannot supply the negative by negating the query, since S(−q) = −Sq. The negative is taken instead as the model’s prior: the episode’s retrieval minus what the model would expect from everything it has seen, so the contrast is what this episode adds. Second, injections change later activations, which are written back and injected again: positive feedback that can run away."));
+C.push(eq("Δ_{t} = F_{t} − m_{t} μ_{t},     F_{t} = Σ_{s} w(t−s) a(t,s) v_{s}"));
+C.push(h2("6.2  How the Biological Loop Stays Stable"));
+C.push(p("The circuit operates near a critical threshold between excitation and inhibition, held by basket, chandelier and O-LM interneurons, and seizures begin there when the balance fails. The hippocampus’s role as the negative-feedback sensor of the stress axis shows the opposite case: when that feedback is damaged, the result is the self-reinforcing glucocorticoid cascade (Sapolsky, Krey and McEwen, 1986). Each safeguard maps onto a design element:"));
+C.push(table(["Biological mechanism", "Effect", "Design element"], [
+  ["Feedback inhibition (basket cells)", "Inhibition grows with activity", "Gain divided by recent injection energy"],
+  ["Acetylcholine encoding/retrieval switch", "Recurrent CA3 synapses suppressed during encoding", "Store the stream from before injection"],
+  ["Theta-phase separation", "Encoding and retrieval at opposite phases", "Loop period τ; nothing returns within a circuit"],
+  ["Attenuated big-loop re-entry", "Slow, weak return path", "Attenuation ρ < 1 per circuit"],
+  ["Self-terminating bursts", "CA3 bursts end within ~100 ms", "Saturating gain"],
+  ["Sparse dentate-gyrus input", "Bounded activity entering CA3", "k-WTA on written keys"],
+], [3000, 3160, 3200]));
+C.push(spacer(80));
+C.push(p("The acetylcholine switch also refines the gain rule. Biology suppresses recall when the input is novel, so two signals must be kept apart: input-versus-memory mismatch, which calls for encoding, and memory-versus-prior contrast, which says how much the memory has to contribute (Hasselmo, Bodelón and Wyble, 2002)."));
+C.push(h2("6.3  Skip Paths and CA1 Negative Feedback"));
+C.push(p("There is no projection from the dentate gyrus to CA1; mossy fibers end in CA3 and the hilus. The skip into CA1 comes from entorhinal layer III, which the HippocampalBlock already has. The neglected path is the direct one from entorhinal layer II to CA3. Treves and Rolls (1992) argued that the dentate gyrus drives storage while the direct path supplies the retrieval cue, because a pattern-separated cue maps to a different code than the stored one. The loop therefore writes with dentate-gyrus keys and reads with a dense query taken directly from the stream."));
+C.push(p("CA1 pyramidal cells do not project back to CA3, but GABAergic back-projection interneurons in CA1 do (Sik, Ylinen, Penttonen and Buzsáki, 1994). The arrangement is a negative-feedback amplifier: CA3’s recurrence is a high-gain stage A, the inhibitory back-projection is the feedback network β, and the closed-loop gain is set by the stable feedback path."));
+C.push(eq("G = A / (1 + Aβ) ≈ 1/β     (Aβ ≫ 1)"));
+C.push(p("In the design, CA1 injects only the part of the contrast that the stream lacks, and divides the gain by the injection energy from the previous circuit, so the injection never exceeds a fixed fraction G < 1 of the incoming signal:"));
+C.push(eq("e_{t} = Δ_{t} − proj_{h}(Δ_{t}),     g_{t} = G tanh(‖Δ_{t}‖/λ) / (1 + κE_{t})"));
+C.push(h2("6.4  Clamped, Damped Re-entry and a Sense of Time"));
+C.push(p("Feedback should return as a clamped sinusoid that decays on every circuit around the loop, so new tokens dominate and fed-back content is attenuated. Content written at time s returns once per circuit of period τ, in a phase window, attenuated by ρ on each pass and bounded by an amplitude A ≤ 1, while new input enters at weight 1:"));
+C.push(eq("w(Δ) = A ρ^{Δ/τ − 1} [cos(2πΔ/τ)]_{+},     Δ = t − s ≥ τ"));
+C.push(p("The same loop carries time. Transformers know token order within their context through positional encodings, but nothing tells them how long ago an event happened once it has left the attention window. The hippocampus has time cells that fire in sequence across a delay (MacDonald et al., 2011), and a bank of leaky integrators with log-spaced time constants gives a scale-invariant code for elapsed time (Shankar and Howard, 2012). A time channel implements that bank, with damped oscillators for phase, driven by a learned salience and added to the stream:"));
+C.push(eq("L_{j}(t) = (1 − ρ_{j}) Σ_{s≤t} ρ_{j}^{t−s} u_{s},     ρ_{j} = exp(−1/τ_{j}),   τ_{j} ∈ {4, 8, …, 256}"));
+C.push(h2("6.5  Plug-in or New Architecture?"));
+C.push(table(["Piece", "Closest existing mechanism", "Plugs into"], [
+  ["Associative memory of the stream", "Gated DeltaNet, linear attention, Titans", "Hybrid linear-attention layers"],
+  ["Side-channel injection", "Activation Addition, CAA, CAST", "Residual-stream hooks on a frozen model"],
+  ["Memory-retrieved steering", "Dynamic Steering with Episodic Memory", "The same hooks"],
+  ["Damped oscillatory kernel", "RetNet, LRU decays", "Any linear recurrence"],
+  ["Clock of elapsed time", "Time-cell and Laplace models", "A new side channel"],
+  ["Looped depth", "Ouro, Universal Transformers", "Weight-shared blocks"],
+], [3000, 3360, 3000]));
+C.push(spacer(80));
+C.push(p("Each piece has a precedent and can be attached to an existing model on its own. The combination is a new architecture: a closed loop that writes the model’s own lagged activations into a fast associative memory, re-injects contrastive, time-tagged feedback that is damped on every circuit, and regulates it with negative feedback, beside a clock of elapsed time. The open loop is a plug-in; the closed, regulated, timed loop is a new organisation."));
+C.push(h2("6.6  A Full Limbic LLM"));
+C.push(p("In the brain, consolidated long-term memory lives in cortical synapses, and white matter is the long-range wiring between areas. In a transformer, the weights of the layer stack are the consolidated cortical memory and the depth is the cortical hierarchy, while the residual stream is the white-matter bus that every layer reads and writes. The hippocampal side channels connect to that bus. Around a pretrained decoder, frozen at first:"));
+C.push(bullet(" at about one third of the depth, where features are abstract but not task-specific.", "An entorhinal tap"));
+C.push(bullet(" with sparse dentate-gyrus write keys, an exact delta-rule store with damped multi-band decays, a direct entorhinal read query, CA2 contrast and identity steering, CA1 negative-feedback control, and an acetylcholine gate that suppresses injection while input is novel.", "A hippocampal loop"));
+C.push(bullet(" at about half the depth, together with the time channel, so later layers integrate memory and elapsed time.", "Injection"));
+C.push(bullet(" re-running the upper block, with CA1 novelty deciding when to stop.", "An optional big loop"));
+C.push(bullet(" replaying high-novelty episodes offline into adapters on the frozen stack, moving episodic memory into the cortex.", "Consolidation"));
+C.push(p("Training would start with the side-loop parameters alone, on long documents with the context window deliberately truncated so that memory is the only route to distant information, then a light joint fine-tune, then consolidation for continual learning."));
+C.push(h2("6.7  Experiment: What, When, and Loop Stability"));
+C.push(p("In the what-when task an event token (8 types) is followed by 20–140 filler tokens and a query. The model must say what happened (chance 0.125) and when, in four log-spaced elapsed-time bins. The bins cover 15, 25, 40 and 40 of the 120 possible gaps, so a model that only learns the prior scores 0.333 on when. Attention sees only 16 tokens and there is no absolute position embedding, so content can only arrive through the memory loop and elapsed time only through the side channels. The stability suite trains closed loops, which write their own feedback back into memory, on 160-token sequences and then runs them on 520-token sequences, measuring the injection as a fraction of the incoming signal."));
+const TL = (() => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "results", "temporal_loop_all.json"), "utf8")).results; } catch (e) { return null; } })();
+const f3 = x => (x === null || x === undefined) ? "—" : Number(x).toFixed(3);
+if (TL) {
+  const label = { window: "Window attention only", memory: "Memory loop", time: "Time channel", memory_time: "Memory loop + time channel",
+    closed_flat: "Closed loop, undamped (flat)", closed_exp: "Closed loop, damped (exp)", closed_osc: "Closed loop, clamped damped sinusoid",
+    closed_osc_ca1: "Clamped damped sinusoid + CA1 control" };
+  const ww = ["window", "memory", "time", "memory_time"].filter(k => TL[k]);
+  C.push(table(["Model", "What (chance 0.125)", "When (prior 0.333)"], ww.map(k => [label[k], f3(TL[k].what), f3(TL[k].when)]), [5160, 2100, 2100]));
+  C.push(spacer(80));
+  const st = ["closed_flat", "closed_exp", "closed_osc", "closed_osc_ca1"].filter(k => TL[k]);
+  C.push(table(["Closed loop (520-token run)", "What", "Inj. 16–128", "Inj. 128–320", "Inj. 320–519", "Max"],
+    st.map(k => TL[k].diverged_at ? [label[k], "diverged", "—", "—", "—", "—"] :
+      [label[k], f3(TL[k].what), f3(TL[k].long.inj_ratio_16_128), f3(TL[k].long.inj_ratio_128_320), f3(TL[k].long.inj_ratio_320_519), f3(TL[k].long.inj_ratio_max)]),
+    [3360, 1000, 1250, 1250, 1250, 1250], 16));
+  C.push(spacer(80));
+  C.push(p(fs.existsSync(path.join(__dirname, "temporal_loop_findings.txt")) ? fs.readFileSync(path.join(__dirname, "temporal_loop_findings.txt"), "utf8").trim() : ""));
+} else {
+  C.push(note("Results pending: run python experiments/temporal_loop.py --suite all."));
+}
+
+// ═══ 7. STRATEGY I
+C.push(h1("7. Implementation Strategy I: Direct Hippocampal Architecture"));
 C.push(note("Implemented in limbic-llm as HippocampalBlock and HippocampalLM. The code below is the design sketch; the package versions add the sequential CA3 store, CA2 modulation, causal masking and streaming state."));
-C.push(h2("6.1  Architecture Overview"));
+C.push(h2("7.1  Architecture Overview"));
 C.push(p("This strategy translates the trisynaptic circuit into a module usable either as a standalone sequence model or as a memory block inside a larger transformer. It has five stages, EC embedding, DG sparse gating, CA3 associative memory, CA1 comparison and subicular output, plus a residual skip that routes the EC embedding directly to CA1."));
-C.push(h2("6.2  DG Sparse Gating Module"));
+C.push(h2("7.2  DG Sparse Gating Module"));
 C.push(...codeBlock([
   "class DentateGyrus(nn.Module):",
   "    def __init__(self, d_model, expansion=8, sparsity=0.04):",
@@ -312,7 +393,7 @@ C.push(...codeBlock([
   "        mask = torch.zeros_like(h).scatter(-1, top.indices, 1.0)",
   "        return F.relu(h) * mask                  # ~4% of units active",
 ]));
-C.push(h2("6.3  CA3 Associative Memory with a Sequence Store"));
+C.push(h2("7.3  CA3 Associative Memory with a Sequence Store"));
 C.push(...codeBlock([
   "class CA3(nn.Module):",
   "    def forward(self, dg_code, store=None):",
@@ -327,7 +408,7 @@ C.push(...codeBlock([
   "        store.cues[weakest] = h[idx]             # cue h_t ...",
   "        store.successors[weakest] = h[idx + 1]   # ... bound to h_t+1",
 ]));
-C.push(h2("6.4  CA1 Comparator Layer"));
+C.push(h2("7.4  CA1 Comparator Layer"));
 C.push(...codeBlock([
   "class CA1Comparator(nn.Module):",
   "    def forward(self, retrieved, current):",
@@ -336,14 +417,14 @@ C.push(...codeBlock([
   "        novelty = torch.sigmoid(self.novelty_head(phi))  # P(mismatch)",
   "        return self.fuse(phi), novelty",
 ]));
-C.push(h2("6.5  Offline Replay and Consolidation"));
+C.push(h2("7.5  Offline Replay and Consolidation"));
 C.push(p("High-novelty sequences are stored in a prioritized replay buffer together with the logits the model produced at encoding time. During an offline sleep phase, replayed traces train only the slow (neocortical) parameters at a low learning rate, with a distillation term that anchors the function as well as the labels."));
 C.push(...codeBlock([
   "buffer.add(seq, priority=novelty.mean(1), logits=out.logits)   # awake",
   "loss = task_loss + consolidator.replay_loss(batch_size=16)     # interleaved replay",
   "consolidator.sleep(steps=200)                                  # slow params only",
 ]));
-C.push(h2("6.6  Forward Pass"));
+C.push(h2("7.6  Forward Pass"));
 C.push(...codeBlock([
   "def forward(self, x, store=None, context=None):  # x: EC embedding",
   "    code = self.dg(x)                             # pattern separation",
@@ -355,12 +436,12 @@ C.push(...codeBlock([
   "    return out, novelty, store",
 ]));
 
-// ═══ 7. STRATEGY II
-C.push(h1("7. Implementation Strategy II: Titans-Hippocampal Hybrid"));
+// ═══ 8. STRATEGY II
+C.push(h1("8. Implementation Strategy II: Titans-Hippocampal Hybrid"));
 C.push(note("Implemented in limbic-llm as TitansHippocampalLayer and TitansHippocampalLM, with each hippocampal addition behind its own flag, and with memory_type=\"gated_delta\" to swap the deep memory for an exact delta-rule memory."));
-C.push(h2("7.1  Enhancing Titans with Hippocampal Principles"));
+C.push(h2("8.1  Enhancing Titans with Hippocampal Principles"));
 C.push(p("Titans already implements surprise-based encoding, momentum and adaptive forgetting. This strategy adds four features it lacks: DG sparse gating on memory writes, a CA1 comparator in the MAC variant, novelty-scaled memory learning rates, and replay-based consolidation. The experiments added a fifth, sequential (key → next value) writes."));
-C.push(h2("7.2  DG-Gated, Novelty-Scaled Memory Writes"));
+C.push(h2("8.2  DG-Gated, Novelty-Scaled Memory Writes"));
 C.push(...codeBlock([
   "def write(self, x, state, novelty=None):",
   "    feat = self.norm(x)",
@@ -374,7 +455,7 @@ C.push(...codeBlock([
   "    S = eta * S - clip(g)                      # momentum + trust region",
   "    M = (1 - alpha) * M + S                    # forgetting",
 ]));
-C.push(h2("7.3  CA1 Comparator in MAC"));
+C.push(h2("8.3  CA1 Comparator in MAC"));
 C.push(...codeBlock([
   "for chunk in chunks(x):",
   "    retrieved = memory.read(chunk, state)              # state before the chunk",
@@ -382,13 +463,13 @@ C.push(...codeBlock([
   "    y = attention(chunk, kv=[persistent, fused, chunk])",
   "    state = memory.write(y, state, novelty)            # written after the chunk",
 ]));
-C.push(h2("7.4  Replay-Based Consolidation"));
+C.push(h2("8.4  Replay-Based Consolidation"));
 C.push(p("The Titans memory learns online but never transfers what it learns into the persistent parameters. Replaying high-surprise sequences into Persistent Memory and other slow parameters during an offline phase creates a complementary learning system: a fast hippocampal learner and a slow cortical consolidator."));
 
-// ═══ 8. RESULTS
-C.push(h1("8. limbic-llm: Implementation and Results"));
+// ═══ 9. RESULTS
+C.push(h1("9. limbic-llm: Implementation and Results"));
 C.push(p("limbic-llm is a PyTorch research library, not a pretrained LLM. It provides the memory modules and four small decoder-only language models that share an embedding, an LM head and a next-token loss, so they can be compared on equal terms. Models in the experiments have 0.2–0.4 million parameters with d_model = 64 and run on a CPU. The package has 51 tests covering causality, memory rules, streaming state and regressions. Results are from single seeds and are sanity checks rather than benchmarks."));
-C.push(h2("8.1  One-Shot Associative Recall"));
+C.push(h2("9.1  One-Shot Associative Recall"));
 C.push(p("Each sequence presents 6 random key→value pairs, then 40 filler tokens, then queries every key in shuffled order. Only recalled values are scored, so chance is 1/16 = 0.0625. Local models see 16 tokens at a time, so the study pairs are out of their direct view at query time. Training ran for 3,000 steps."));
 C.push(table(["Model", "Params", "Recall"], [
   ["Full attention (reference, sees everything)", "221 k", "0.485"],
@@ -404,7 +485,7 @@ C.push(table(["Model", "Params", "Recall"], [
 ], [5560, 1600, 2200]));
 C.push(spacer(80));
 C.push(p("Both memory systems recall bindings from well outside their attention window, which windowed attention cannot. Replacing the deep Titans memory with an exact delta-rule memory raises recall from 0.48 to 1.00, and DG addresses reach high recall faster (0.905 vs. 0.680 at step 500) while finishing slightly lower. The hippocampal additions are neutral individually but slow optimization badly when combined, probably because the novelty-scaled learning rate is noisy before CA1 has learned anything."));
-C.push(h2("8.2  Gated DeltaNet Capacity"));
+C.push(h2("9.2  Gated DeltaNet Capacity"));
 C.push(p("Pure Gated DeltaNet models without attention were trained on recall with 64 possible keys at increasing load."));
 C.push(table(["Mode", "Key dim / head", "8 pairs", "16 pairs", "32 pairs"], [
   ["Standard GDN", "16", "0.426", "0.134", "0.137"],
@@ -414,15 +495,15 @@ C.push(table(["Mode", "Key dim / head", "8 pairs", "16 pairs", "32 pairs"], [
 ], [3560, 1500, 1400, 1450, 1450]));
 C.push(spacer(80));
 C.push(p("Standard Gated DeltaNet runs out of capacity as load passes its key dimension. Successor-bound addresses turn the state into RAM: a counterfactual check, swapping the values shown at study time, confirmed that predictions follow the new values 100% of the time. Dense and DG addresses tie at the ceiling, because with 128-dimensional addresses and distinct keys even dense codes barely interfere; testing pattern separation needs similar keys."));
-C.push(h2("8.3  Continual Learning with Replay"));
+C.push(h2("9.3  Continual Learning with Replay"));
 C.push(p("Three tasks with disjoint, fixed key→value facts were learned in sequence for 600 steps each with Strategy I. Naive sequential training forgot catastrophically (average final accuracy 0.513, backward transfer −0.731). Novelty-prioritized replay with logit distillation and an offline sleep phase removed the forgetting entirely (average 1.000, backward transfer 0.000). The task is easy, and the run does not separate the sleep phase from interleaved replay."));
-C.push(h2("8.4  Design Changes the Experiments Forced"));
+C.push(h2("9.4  Design Changes the Experiments Forced"));
 C.push(bullet(" A purely autoassociative CA3 returns the cue, not its value. Binding hₜ ↦ hₜ₊₁ was needed before any memory model rose above chance.", "CA3 stores sequences."));
 C.push(bullet(" In MAC and MAL the chunk being written was computed from an earlier read of the same memory, so differentiating through it made training apply a different update than inference. The gradient is now taken with respect to a fresh alias of the memory.", "The Titans meta-gradient is a partial derivative."));
 C.push(bullet(" Averaging the squared error over features shrank writes by 1/d; summing, as in the paper, needs a per-sample trust region to stay stable. Sparse DG keys were stable even without it.", "Memory loss scale and a trust region."));
 
-// ═══ 9. PRIOR ART
-C.push(h1("9. Prior Art and Positioning"));
+// ═══ 10. PRIOR ART
+C.push(h1("10. Prior Art and Positioning"));
 C.push(p("Most components of this mapping have prior work; two remain largely open."));
 C.push(table(["Work", "What it models", "Relation to this work"], [
   ["Hippoformer (Li et al., ICLR 2026)", "EC path integration + Titans-style relational memory beside a transformer", "Closest prior work; no DG, CA2 or CA1. Its name prompted renaming this package"],
@@ -438,14 +519,14 @@ C.push(bullet(" HiCL routes whole tasks; routing individual tokens by sparse DG 
 C.push(bullet(" No ML architecture we found models CA2; identity-conditioned memory with activation-steering vectors would be new.", "CA2 as identity-conditioned memory."));
 C.push(bullet(" Combining a JEPA-style predictive comparison with a calibrated, proper-scoring-rule decision readout, and letting it drive memory writes, replay and loop depth.", "CA1 as a calibrated decision stage."));
 
-// ═══ 10. CONTINUAL LEARNING
-C.push(h1("10. Connections to Continual Learning and Catastrophic Forgetting"));
+// ═══ 11. CONTINUAL LEARNING
+C.push(h1("11. Connections to Continual Learning and Catastrophic Forgetting"));
 C.push(p("The hippocampus is evolution’s solution to catastrophic forgetting. The complementary learning systems framework (McClelland, McNaughton and O’Reilly, 1995) holds that the brain uses two learning systems because no single system can both encode new information rapidly and maintain old knowledge stably. The hippocampus learns fast, with sparse representations and single-trial plasticity; the neocortex learns slowly, extracting regularities through interleaved replay (Wilson and McNaughton, 1994)."));
-C.push(p("Both strategies embody this principle. The fast learner (CA3 store, Titans memory or delta-rule memory) absorbs new information at test time, and the slow learner (neocortical layers or Persistent Memory) consolidates replayed patterns at a low learning rate. The replay buffer, prioritized by CA1 novelty, focuses consolidation on the most informative experiences, and the continual-learning result in Section 8.3 shows the mechanism working on a small scale."));
+C.push(p("Both strategies embody this principle. The fast learner (CA3 store, Titans memory or delta-rule memory) absorbs new information at test time, and the slow learner (neocortical layers or Persistent Memory) consolidates replayed patterns at a low learning rate. The replay buffer, prioritized by CA1 novelty, focuses consolidation on the most informative experiences, and the continual-learning result in Section 9.3 shows the mechanism working on a small scale."));
 C.push(p("This connects directly to representation-level approaches. Independent Component Analysis seeks maximally independent latent components, and the dentate gyrus performs an analogous operation: its sparse codes make individual granule-cell activations approximately independent, minimizing interference between stored patterns. limbic-llm includes an ICA-style decorrelation penalty on DG codes, and its replay consolidator exposes an orthogonal gradient-projection hook where ICA-identified functional networks can protect previously consolidated knowledge during sleep updates."));
 
-// ═══ 11. OPEN QUESTIONS
-C.push(h1("11. Open Questions and Future Directions"));
+// ═══ 12. OPEN QUESTIONS
+C.push(h1("12. Open Questions and Future Directions"));
 C.push(lead("Pattern separation under similar inputs.", "The capacity sweep could not separate DG from dense addressing because its keys were distinct tokens. A similar-keys task (shared prefixes or added noise) and a sweep of DG sparsity from one-hot (about 1%) to 25% would show where pattern separation pays off."));
 C.push(lead("Combining hippocampal additions.", "DG writes and CA1 novelty each work alone but slow training together. Warming up the novelty-scaled learning rate, or stopping gradients through novelty, are the next things to try."));
 C.push(lead("A calibrated CA1.", "Train novelty with a proper scoring rule against an observed outcome (Section 5.2), add a JEPA-style predictive target regularized by SIGReg (Section 5.3), and measure calibration directly with reliability diagrams."));
@@ -455,8 +536,8 @@ C.push(lead("Deep versus linear memory.", "The exact delta-rule memory beat the 
 C.push(lead("Neurogenesis and consolidation scheduling.", "Progressive DG expansion during continual learning, and whether replay should follow a fixed, surprise-triggered or adaptive schedule, remain untested."));
 C.push(lead("Scale.", "All results so far use tiny models. The natural next step is to insert HippocampalBlock or GatedDeltaMemory into an existing pretrained model rather than scaling the toy models."));
 
-// ═══ 12. REFERENCES
-C.push(h1("12. References"));
+// ═══ 13. REFERENCES
+C.push(h1("13. References"));
 C.push(p("The same bibliography is maintained in limbic-llm as REFERENCES.md and docs/references.bib."));
 for (const g of REFS) {
   C.push(h3(g.group));
@@ -470,7 +551,7 @@ for (const g of REFS) {
 const doc = new Document({
   creator: "Daniel Byrne",
   title: "Hippocampal Architectures for Machine Learning",
-  description: "Version 2, with results from limbic-llm",
+  description: "Version 3, with the temporal loop and results from limbic-llm",
   numbering,
   styles: {
     default: { document: { run: { font: "Calibri", size: 22 } } },
@@ -484,7 +565,7 @@ const doc = new Document({
   sections: [{
     properties: { page: { size: { width: 12240, height: 15840 }, margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } },
     headers: { default: new Header({ children: [new Paragraph({ alignment: AlignmentType.RIGHT,
-      children: [new TextRun({ text: "Hippocampal Architectures for Machine Learning · v2", font: "Calibri", size: 16, italics: true, color: "999999" })] })] }) },
+      children: [new TextRun({ text: "Hippocampal Architectures for Machine Learning · v3", font: "Calibri", size: 16, italics: true, color: "999999" })] })] }) },
     footers: { default: new Footer({ children: [new Paragraph({ alignment: AlignmentType.CENTER,
       border: { top: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" } }, spacing: { before: 80 },
       children: [new TextRun({ text: "Page ", font: "Calibri", size: 18, color: "999999" }),

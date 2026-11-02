@@ -222,6 +222,64 @@
   ]
  },
  {
+  "group": "Feedback control and timing in the hippocampus",
+  "entries": [
+   {
+    "key": "hasselmo2002proposed",
+    "text": "Hasselmo, M. E., Bodel\\'on, C., & Wyble, B. P. (2002). A Proposed Function for Hippocampal Theta Rhythm: Separate Phases of Encoding and Retrieval Enhance Reversal of Prior Learning. Neural Computation 14(4), 793–817."
+   },
+   {
+    "key": "sik1994inhibitory",
+    "text": "Sik, A., Ylinen, A., Penttonen, M., & Buzsáki, G. (1994). Inhibitory CA1-CA3-Hilar Region Feedback in the Hippocampus. Science 265(5179), 1722–1724."
+   },
+   {
+    "key": "treves1992computational",
+    "text": "Treves, A., & Rolls, E. T. (1992). Computational Constraints Suggest the Need for Two Distinct Input Systems to the Hippocampal CA3 Network. Hippocampus 2(2), 189–199."
+   },
+   {
+    "key": "buzsaki2002theta",
+    "text": "Buzsáki, G. (2002). Theta Oscillations in the Hippocampus. Neuron 33(3), 325–340."
+   },
+   {
+    "key": "macdonald2011hippocampal",
+    "text": "MacDonald, C. J., Lepage, K. Q., Eden, U. T., & Eichenbaum, H. (2011). Hippocampal ``Time Cells'' Bridge the Gap in Memory for Discontiguous Events. Neuron 71(4), 737–749."
+   },
+   {
+    "key": "shankar2012scale",
+    "text": "Shankar, K. H., & Howard, M. W. (2012). A Scale-Invariant Internal Representation of Time. Neural Computation 24(1), 134–193."
+   },
+   {
+    "key": "sapolsky1986neuroendocrinology",
+    "text": "Sapolsky, R. M., Krey, L. C., & McEwen, B. S. (1986). The Neuroendocrinology of Stress and Aging: The Glucocorticoid Cascade Hypothesis. Endocrine Reviews 7(3), 284–301."
+   }
+  ]
+ },
+ {
+  "group": "Dynamic steering and oscillatory sequence models",
+  "entries": [
+   {
+    "key": "rimsky2024steering",
+    "text": "Rimsky, N., Gabrieli, N., Schulz, J., Tong, M., Hubinger, E., & Turner, A. M. (2024). Steering Llama 2 via Contrastive Activation Addition. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics."
+   },
+   {
+    "key": "lee2024programming",
+    "text": "Lee, B. W., Padhi, I., Ramamurthy, K. N., Miehling, E., Dognin, P., Nagireddy, M., & Dhurandhar, A. (2024). Programming Refusal with Conditional Activation Steering. arXiv preprint arXiv:2409.05907. https://arxiv.org/abs/2409.05907"
+   },
+   {
+    "key": "do2025dynamic",
+    "text": "Do, V. D., Tran, Q. H., Venkatesh, S., & Le, H. (2025). Dynamic Steering With Episodic Memory For Large Language Models. In Findings of the Association for Computational Linguistics: ACL 2025. https://aclanthology.org/2025.findings-acl.706/"
+   },
+   {
+    "key": "sun2023retentive",
+    "text": "Sun, Y., Dong, L., Huang, S., Ma, S., Xia, Y., Xue, J., et al. (2023). Retentive Network: A Successor to Transformer for Large Language Models. arXiv preprint arXiv:2307.08621. https://arxiv.org/abs/2307.08621"
+   },
+   {
+    "key": "orvieto2023resurrecting",
+    "text": "Orvieto, A., Smith, S. L., Gu, A., Fernando, A., Gulcehre, C., Pascanu, R., & De, S. (2023). Resurrecting Recurrent Neural Networks for Long Sequences. In International Conference on Machine Learning. https://arxiv.org/abs/2303.06349"
+   }
+  ]
+ },
+ {
   "group": "Continual learning and replay",
   "entries": [
    {

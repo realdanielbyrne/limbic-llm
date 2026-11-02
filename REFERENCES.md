@@ -80,6 +80,28 @@ The bibliography for limbic-llm, grouped by the part of the hippocampal mapping 
 | `zhu2025scaling` | Zhu et al. (2025). *Scaling Latent Reasoning via Looped Language Models* (Ouro). arXiv:2510.25741 | Big-loop recurrence; learned exit gate |
 | `dehghani2019universal` | Dehghani, Gouws, Vinyals, Uszkoreit & Kaiser (2019). *Universal Transformers.* ICLR | Weight-shared recurrence in depth |
 
+## Feedback control and timing in the hippocampus
+
+| Key | Reference | Relevance |
+|---|---|---|
+| `hasselmo2002proposed` | Hasselmo, Bodelón & Wyble (2002). *A Proposed Function for Hippocampal Theta Rhythm: Separate Phases of Encoding and Retrieval.* Neural Computation 14(4) | Theta-phase separation of writes and reads; loop period τ |
+| `sik1994inhibitory` | Sik, Ylinen, Penttonen & Buzsáki (1994). *Inhibitory CA1-CA3-Hilar Region Feedback in the Hippocampus.* Science 265 | CA1 → CA3 inhibitory back-projection; negative-feedback gain control |
+| `treves1992computational` | Treves & Rolls (1992). *Computational Constraints Suggest the Need for Two Distinct Input Systems to the Hippocampal CA3 Network.* Hippocampus 2(2) | DG for storage, direct EC → CA3 path for retrieval cues |
+| `buzsaki2002theta` | Buzsáki (2002). *Theta Oscillations in the Hippocampus.* Neuron 33(3) | Oscillatory timing of the loop |
+| `macdonald2011hippocampal` | MacDonald, Lepage, Eden & Eichenbaum (2011). *Hippocampal "Time Cells" Bridge the Gap in Memory for Discontiguous Events.* Neuron 71(4) | Time cells; the time channel |
+| `shankar2012scale` | Shankar & Howard (2012). *A Scale-Invariant Internal Representation of Time.* Neural Computation 24(1) | Log-spaced leaky integrators encode elapsed time |
+| `sapolsky1986neuroendocrinology` | Sapolsky, Krey & McEwen (1986). *The Neuroendocrinology of Stress and Aging: The Glucocorticoid Cascade Hypothesis.* Endocrine Reviews 7(3) | A loop without negative feedback: the cautionary case |
+
+## Dynamic steering and oscillatory sequence models
+
+| Key | Reference | Relevance |
+|---|---|---|
+| `rimsky2024steering` | Rimsky, Gabrieli, Schulz, Tong, Hubinger & Turner (2024). *Steering Llama 2 via Contrastive Activation Addition.* ACL | Contrast vectors averaged over many pairs |
+| `lee2024programming` | Lee et al. (2024). *Programming Refusal with Conditional Activation Steering.* arXiv:2409.05907 | Steering gated by hidden-state patterns |
+| `do2025dynamic` | Do, Tran, Venkatesh & Le (2025). *Dynamic Steering With Episodic Memory For Large Language Models.* Findings of ACL | Closest prior work: memory-retrieved steering vectors |
+| `sun2023retentive` | Sun et al. (2023). *Retentive Network.* arXiv:2307.08621 | Damped complex decay; recurrent form of the loop kernel |
+| `orvieto2023resurrecting` | Orvieto et al. (2023). *Resurrecting Recurrent Neural Networks for Long Sequences.* ICML | Linear recurrences with complex decays |
+
 ## Continual learning and replay
 
 | Key | Reference | Relevance |

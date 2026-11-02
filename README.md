@@ -17,6 +17,7 @@ It is a research library, not a pretrained LLM: memory modules you can drop into
 * **Strategy II, a Titans hybrid.** The Titans test-time memory ([Behrouz et al., 2024](https://arxiv.org/abs/2501.00663)) with a dentate-gyrus write path, a CA1 comparator and novelty-scaled learning rates.
 * **Gated DeltaNet memory.** The linear special case of the Titans memory ([Yang et al., 2025](https://arxiv.org/abs/2412.06464)), with exact per-token updates, a fast chunkwise kernel and dentate-gyrus addressing.
 * **Replay consolidation.** A novelty-prioritized replay buffer and an offline "sleep" phase that trains only the slow parameters, after the complementary learning systems theory.
+* **A regulated temporal loop.** The model's own lagged activations are written into an associative memory and fed back as clamped, damped sinusoids that weaken on every circuit, as a contrast of episode against prior, under CA1 negative-feedback gain control. A clock of elapsed time, built from scale-invariant time cells, rides alongside. See [the design note](docs/design/temporal-loop.md).
 
 ```mermaid
 flowchart LR
@@ -58,7 +59,7 @@ Small CPU models (0.2–0.4 M parameters, single seed), so these are sanity chec
 git clone https://github.com/realdanielbyrne/limbic-llm
 cd limbic-llm
 pip install -e ".[dev]"      # needs torch >= 2.1
-pytest -q                    # 51 tests
+pytest -q                    # 70 tests
 ```
 
 ## Quick start
@@ -146,7 +147,26 @@ Gated DeltaNet is exactly one gradient step on the Titans loss $\tfrac12\lVert S
 python experiments/assoc_recall.py --steps 3000      # one-shot recall across a long gap
 python experiments/continual.py --steps 600          # sequential learning: naive vs. replay
 python experiments/gdn_capacity.py --pairs 8,16,32   # linear-memory capacity under load
+python experiments/temporal_loop.py --suite all      # what/when recall and closed-loop stability
 ```
+
+The temporal-loop experiment takes flags for each excitatory variant, so a single model can be built from the command line:
+
+```bash
+python experiments/temporal_loop.py --name mine --memory --time \
+    --kernel osc --rho 0.6 --amp 1.0 --tau 16 \
+    --loop closed --no-ca1-control --contrast --dg-keys
+```
+
+| Flag | Effect |
+|---|---|
+| `--kernel osc\|exp\|flat` | Re-entry kernel: clamped damped sinusoid, damped exponential, or undamped |
+| `--rho`, `--amp`, `--tau` | Attenuation per circuit, peak feedback amplitude (clamped to ≤ 1), loop period in tokens |
+| `--loop open\|closed` | Store the stream from before injection (acetylcholine-style) or after it (true feedback) |
+| `--ca1-control` | Negative-feedback gain: error-only injection, energy-normalised gain below 1 |
+| `--contrast` | Inject episode minus prior instead of the raw retrieval |
+| `--dg-keys` | Sparse dentate-gyrus write keys, dense entorhinal read query |
+| `--memory`, `--time` | Turn the loop and the clock on or off |
 
 Logs and JSON results are in [`results/`](results/).
 
@@ -163,6 +183,7 @@ Three design changes came out of debugging, each covered by a test.
 * **CA2 as identity steering.** Per-speaker activation-steering vectors ([Turner et al.](https://arxiv.org/abs/2308.10248)) at the CA2 point, tested on multi-speaker recall.
 * **A calibrated CA1.** Novelty trained with a proper scoring rule, in the spirit of decision models such as [JEV](https://jevai.net) and [LAYA](https://github.com/NandhaKishorM/laya), with a JEPA-style predictive target.
 * **Big-loop recurrence.** A looped HippocampalBlock whose exit gate is driven by CA1 novelty, after [Ouro](https://arxiv.org/abs/2510.25741).
+* **A full Limbic LLM.** The temporal loop and the clock on a frozen pretrained decoder: tap at a third of the depth, inject at half, consolidate into adapters. The blueprint is in the [design note](docs/design/temporal-loop.md#4-a-full-limbic-llm).
 * **Pattern separation under similar keys.** A recall task with overlapping keys and a sweep of DG sparsity.
 * **Pretrained models.** Inserting HippocampalBlock or GatedDeltaMemory into an existing LLM.
 
@@ -171,6 +192,7 @@ Three design changes came out of debugging, each covered by a test.
 | | |
 |---|---|
 | [`docs/hippocampal_ml_architectures.docx`](docs/hippocampal_ml_architectures.docx) | The design document: circuit-to-ML mappings, Titans and Gated DeltaNet, recent inspirations, results |
+| [`docs/design/temporal-loop.md`](docs/design/temporal-loop.md) | The temporal loop: how the idea developed, biological stability, the design, plug-in versus new architecture, a full Limbic LLM |
 | [`docs/architecture.html`](docs/architecture.html) | Package and data-flow diagrams (download and open in a browser) |
 | [`docs/hippocampus_report.docx`](docs/hippocampus_report.docx) | Background on hippocampal structure and function |
 | [`docs/notebooks/`](docs/notebooks/) | Activation Addition notebook (GPT-2-XL) |
@@ -183,9 +205,9 @@ Three design changes came out of debugging, each covered by a test.
 ```
 limbic_llm/         memory modules and models
   dentate_gyrus.py  ca3.py  ca2.py  ca1.py  subiculum.py  hippocampal_block.py
-  neural_memory.py  titans_hybrid.py  gated_delta.py  replay.py  models.py
-experiments/        recall, continual-learning and capacity experiments
-tests/              51 tests
+  neural_memory.py  titans_hybrid.py  gated_delta.py  temporal_loop.py  replay.py  models.py
+experiments/        recall, continual-learning, capacity and temporal-loop experiments
+tests/              70 tests
 results/            experiment logs and JSON
 docs/               design document, diagrams, bibliography, notebook
 ```
