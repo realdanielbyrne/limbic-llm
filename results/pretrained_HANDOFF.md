@@ -39,6 +39,24 @@ See [`results/evolve/NOTEBOOK.md`](evolve/NOTEBOOK.md) and [`results/evolve/roun
 - The Qwen3 windowed+side eval loss, 1.8421, equals 0.8·ln10, the answer-format floor exactly. The side channels learned the leading space and the digit distribution, and carry no information about the value.
 - **Caution:** the bf16 run's all-windowed drop (eval 1.692) was an **anti-causal leak**, not long-range transfer. `torch.arange(512, dtype=bfloat16)` has only 385 distinct values; positions 505–511 become [504, 506, 508, 508, 508, 510, 512]. So the `d >= 0` masks in `loop_kernel` and `decay_kernel` (`limbic_llm/temporal_loop.py:94`, `:109-111`) let some answer positions see their own targets. This session verified it on CPU. The kernels take their dtype from the activations, so any bf16 use of `HippocampalLoop` or `TimeChannel` hits this. The float32 fix (`3c90bde`) avoids it in `pretrained_loop.py`.
 
+## Review of the alignment, CoT and CA1 decision tracks (2 Nov, round 1)
+
+Full report: [`results/evolve/reviews/2026-11-02_alignment_cot_ca1.md`](evolve/reviews/2026-11-02_alignment_cot_ca1.md). It covers commits `73259fc` and `241a13c`. Three track reviewers worked independently, an adversarial verifier checked each finding, and every bug was reproduced on CPU. Items to fix **before running A6, R2 or J1**:
+
+- **A1 (high).** The perplexity check never activates the conditional, graded or graded_self arms. With `score_positions="last"` they inject only at the last position, and those logits are dropped. Perplexity came out bit-identical to the no-hook arm, so the capability metric is vacuous for three of the four hooked arms.
+- **C1 (high).** The gist is dominated by the attention-sink token and the stream mean: the EMAs are zero-initialised and position 0 is included. On Qwen3-1.7B-Base block 14, ‖h₀‖ = 13,587 against a median of 167, and cos(gist, h₀) = 0.998 at t = 5. The fix is to exclude the sink, and to initialise from the first included token or subtract a corpus mean. Bias correction alone does not fix it.
+- **C2 (high).** R2/R4 lack matched-norm random, mean and anti-gist controls, a sampling or seed protocol, and a non-inferiority margin. `/no_think` is not a baseline for R1-Distill.
+- **D1 (high).** J1's hypothesis ("better calibration gives better selectivity at equal AUROC") is ill-posed for a gain of cap·tanh(κE). Compare at a matched operating point instead.
+- **Medium:**
+  - The probe is fit and calibrated only on the last prompt token, yet the controller integrates it over generated tokens (A2/D2).
+  - Degenerate loops count as refusals (A3).
+  - The equivalence test passes for conditional only by its seed (A4).
+  - Graded gist without a probe is silently a no-op (C3).
+  - The STU-PID baseline was withdrawn on 28 Sep 2026 (C4).
+  - ERSS (2606.06188) and STARS (2601.22484) are missing from the prior-art discussion (C5).
+  - J3's premise is misstated (D3).
+- **Data rule (A6, low but important).** An absolute or `../` value of `--name` bypasses `assert_private` and writes raw completions inside the repo. Validate the final resolved path.
+
 ## Review of the 2 Nov additions (genesis §5.6–5.7, NOTEBOOK, REGISTER, references), for the coordinating session
 
 These files belong to the coordinating session, so this session did not edit them. Corrections and gaps:
