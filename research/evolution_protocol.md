@@ -108,7 +108,17 @@ Commit only finished runs: the JSON and its `.log`. Never commit:
 | Shared working tree | Another session's uncommitted edits were in the same files | Check `git status` before committing; name others' work in the message |
 | Command chains | A failed step was hidden by a later one in a pipe | `set -o pipefail`; check `rc=` in `queue.status` |
 
-## 6. Round history
+## 6. Exit criteria for the side-memory track (DEC2, proposed 2 Nov 2026)
+
+The track is **done** when one fixed recipe meets all of these:
+1. **Reliability.** At least 4 of 5 seeds learn content selection within 6,000 steps: digit-1 accuracy ≥ 0.95 at every queried rank, with 3 pairs on the scattered layout.
+2. **Robustness.** Those seeds average ≥ 0.85 exact on held-out natural filler *and* on random filler, at sequence lengths 512–2048 and with 1–5 stored codes (`eval_by_query.py`).
+3. **Must-pass.** Bounded echo and newer-over-older on the CPU suite. WikiText perplexity no worse than the O(T) loop at the same tap, or the trade-off stated explicitly.
+4. **Written up.** Register rows, a RESULTS.md section, and this protocol updated.
+
+**Stop rule.** If two consecutive rounds bring no recipe to criterion 1, close the track with a "capable but not reliably learnable" conclusion and move on to other experiments.
+
+## 7. Round history
 
 | Round | Question | Candidates and runs | Outcome (register) |
 |---|---|---|---|

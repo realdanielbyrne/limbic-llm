@@ -927,3 +927,24 @@ Training text is a 5M-character slice of the WikiText-103 train split; evaluatio
 **Proposed next** (for the checkpoint)
 - A budget that does not bind at initialisation: set B at or above the initial density (≈ 8 per 64) and anneal it down, or start the event bias at about −5.
 - A learnability study, the main open problem. Seeds × {random, natural} with refractory 0.95, and learning rate or warm-up variations, to find a schedule that makes the late drop reliable.
+
+---
+
+## Round 7: is the best recipe reliable? (2 Nov 2026; started)
+
+**Question (Daniel).** "Start next round. What will define done so we can move on to other experiments?" The proposed exit criteria (DEC2, `evolution_protocol.md` §6) need one recipe to reach:
+- **reliability:** ≥ 4 of 5 seeds learn selection in 6000 steps;
+- **robustness:** ≥ 0.85 exact on natural and random filler, at 512–2048 tokens and 1–5 codes;
+- **the must-pass checks;**
+- **the write-up.**
+
+Stop rule: if two rounds bring no recipe to reliability, close the track as "capable but not reliably learnable".
+
+**Recipe under test.** W1i, natural filler (WikiText-103 train), refractory 0.95, 6000 steps, 3 pairs, scattered, tap 21. Seed 0 is P33 (0.94 natural / 0.91 random).
+
+**Arms**
+- Seeds 1–4 (reliability).
+- Seed 1 with lr 2e-3 (does a larger step help the late drop?).
+- Event bias −5, with and without a write budget of 2 per 64 tokens. At bias −5 the detector starts at about 0.43 events per 64, so the budget does not bind at initialisation, unlike P35.
+
+Each trained model is evaluated on held-out natural and random filler with controls. Results follow when the runs land.
