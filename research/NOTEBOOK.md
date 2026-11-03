@@ -1122,3 +1122,41 @@ So it is not a digit detector or a position-after-a-copula detector. It marks th
 - **It also fits the biology better than W1j did.** The hippocampus does not judge relevance from its own prediction error alone. Its input from entorhinal cortex is already the cortex's interpretation of the scene. Encoding is boosted by what that interpretation says matters: semantic "levels of processing" (Craik & Lockhart 1972), and prefrontal and ventral-striatal relevance signals that gate encoding. Here the frozen LLM plays the cortex, and reading its "a value is being asserted" state as the trigger is Daniel's loop from cortex back to hippocampus. It is not the LM's output tokens but its mid-stack interpretation, which is what EC carries. W1j used the wrong comparator: the hippocampus's own untrained store, when the information is in the cortical input.
 - **The rules.** The direction is a constant computed beforehand from the frozen model on other text (2048 floats, within E3's buffer limit). The module still sees only h (E4). It was fit without the task's template, names or filler split (E6). It would still be prior knowledge chosen with this kind of task in mind. Fair use needs an evaluation on fact templates the direction was not fit on, and a statement of where the direction came from.
 
+---
+
+## Design discussion: time, variable-length meaning, retained windows and reinstatement (3 Nov 2026)
+
+Daniel's points, in order, with the GPU session's answers. The panel `meaning-trigger-design` (3 designers and a critic) was relaunched on the meaning framing after the first, novelty-framed panel was stopped. The first panel's two finished designers had both concluded "not fixable as a bootstrap" (P43).
+
+**1. "Filler is always novel by definition, it is unique, but not necessarily meaningful. What is meaningful is the sequence of tokens, the window around the phrase."** This is why P44 works. Within its 64-token window, the frozen LLM's attention folds " The code for NAME is" into the value's first token. So the meaningful window arrives at block 21 as one vector.
+
+**2. Depth and time ("tokens at a later layer are also temporally separated?"; tap the GDN layers; transformers as flattened time series).**
+- **Depth is not delay in one forward pass.** Block 21 at position t has seen exactly the tokens block 1 has seen. With block windows, deeper layers do not even reach further back. The only true delay is the generation loop: the top layer's output at t is the bottom layer's input at t+1.
+- **The brain has a processing lag a transformer lacks.** Higher cortical areas still hold the meaning of word t while sensory areas hold word t+2. Cortex also has a hierarchy of temporal receptive windows (Hasson et al. 2008; Lerner et al. 2011).
+- **Options for CA3 to see delayed tokens:**
+  - a pipeline lag across taps: the value from a low or mid layer at t, the key from a late layer at t − k;
+  - tapped delay lines whose initialisation comes from a meaning direction;
+  - writes at the boundary of a meaningful unit;
+  - the recurrent states of a hybrid's GDN layers. Those are pretrained, but they are not windowed, so the base already remembers. Reading them needs a decision on E4;
+  - phase and time-cell codes;
+  - compressed replay.
+
+**3. Variable-length statements and a cumulative write score ("summed over time, once a threshold is reached a write is triggered and the score is reset").**
+- P45 tested the first part: modifiers make the trigger stronger, and only an interrupting clause weakens it.
+- The proposal is an integrate-and-fire gate: u_t = λ u_{t−1}(1 − s_{t−1}) + salience_t, a write s_t when u_t ≥ θ, then reset. Unlike the soft, never-resetting gates of LSTMs and GDNs, it gives one discrete event per statement of any length. That is the precedent of the HM-LSTM boundary detectors (Chung et al. 2017).
+- What it adds here:
+  - it writes once, at the value's onset, although the meaning signal also fires on digits 2–4;
+  - it carries evidence across window-block boundaries, which the frozen LLM cannot;
+  - it is causal with a fixed state.
+
+**4. "Can we somehow retain the important windows, thus giving the model a better sense of time?"**
+- Every store so far superimposes facts and folds time away. The chain keeps order, but not timing.
+- **Episodic slots** fix that: K fixed slots, each written at a firing event with the window that built up the evidence (projected), a timestamp and positions within the window. The query matches slot keys, and the chosen slot replays its window in order.
+- Slots keep a fixed-size state (E2) and remove interference between facts (P24, the likely cause of the 0.83–0.85 exact ceiling). Their timestamps give an explicit sense of when. The price is a hard capacity with a replacement policy.
+- **Biology:** separated codes, plus sequence structure within an episode (time cells, MacDonald et al. 2011), plus replay that keeps order and compresses duration.
+- **Related work:** EM-LLM (Fountas et al. 2024; events cut by surprise and retrieved into attention) and InfLLM (blocks of context as memory units). P43 says that for facts the boundary must come from meaning, not surprise.
+
+**5. "Our side channel injection could be the CA2 model (additive attention); inject entire recalled phrases, boosting the attention score. Or is this more the CA1 → CA3 loop?"** See the answer of the same date: putting a recalled phrase back where cortex can use it is *reinstatement*, the hippocampal output path (CA1 → subiculum → deep entorhinal cortex → neocortex). Its re-entry into the hippocampus is the big loop (deep EC → superficial EC → DG/CA3). CA2's best role is the context-dependent gain on what is reinstated.
+
+**Decision.** Daniel: "We can go past 10 since we are delving into new territory." Recorded as DEC4.
+

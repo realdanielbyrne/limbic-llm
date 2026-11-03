@@ -120,6 +120,8 @@ The track is **done** when one fixed recipe meets all of these:
 
 **Extension (DEC3, approved by Daniel 3 Nov 2026).** After round 8 closed the track, Daniel extended it by two rounds (9 and 10), because the curriculum had moved reliability from 1 of 5 to 3 of 5. The criteria are unchanged. If neither round meets criterion 1, the closure stands. Any further extension is a new decision.
 
+**New territory (DEC4, approved by Daniel 3 Nov 2026).** DEC3's two-round limit covers iterating the W1i line. New mechanisms (a meaning-based trigger, an integrate-and-fire write gate, episodic slots, reinstatement into attention) are not counted against it. DEC2's criteria remain the bar.
+
 ## 7. Round history
 
 | Round | Question | Candidates and runs | Outcome (register) |
