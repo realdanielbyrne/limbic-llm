@@ -168,3 +168,18 @@ def test_scattered_needle_mixes_natural_and_random_filler():
         body = bytes(i for i in ids[1:] if i < 256).decode("latin-1")
         assert ("the cat sat" in body) == task.last_natural
     assert 10 < sum(kinds) < 30
+
+
+def test_curriculum_trains_with_fewer_pairs_first_and_evaluates_in_full():
+    """--needle-curriculum: inside training the first stages use fewer pairs; outside, the full count."""
+    import random
+    _, tok = evolve_run.pl.build_tiny("gpt2", seed=0)
+    task = evolve_run.ScatterNeedleTask(tok, 512, 3, 1, min_gap=8, block=64, curriculum=[(1, 2), (2, 2)])
+    rng = random.Random(0)
+    facts = lambda ids: bytes(i for i in ids[0].tolist()[1:] if i < 256).decode("latin-1").count(" The code for ") - 1
+    assert facts(task.batch(1, rng)[0]) == 3                        # not training: full count
+    task._active = True
+    counts = [facts(task.batch(1, rng)[0]) for _ in range(6)]
+    assert counts == [1, 1, 2, 2, 3, 3]
+    task._active = False
+    assert facts(task.batch(1, rng)[0]) == 3

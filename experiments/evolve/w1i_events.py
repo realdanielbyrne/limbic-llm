@@ -98,9 +98,14 @@ class EventLoop(StartLoop):
         K = causal_decay(x.shape[1], torch.sigmoid(self.rho_logit), x.device)
         return F.normalize(torch.einsum("hts,bhsk->bhtk", K, b), dim=-1)
 
-    def event_strength(self, x: torch.Tensor) -> torch.Tensor:
-        """ε_t = e_t (1 − r_{t−1}) [· clamp(1 − u_t / B, 0, 1)], (B, H, T)."""
-        e = torch.sigmoid(self.event(x)).transpose(1, 2).float()         # (B, H, T)
+    def event_strength(self, x: torch.Tensor, extra_logit: torch.Tensor | None = None) -> torch.Tensor:
+        """ε_t = e_t (1 − r_{t−1}) [· clamp(1 − u_t / B, 0, 1)], (B, H, T).
+
+        ``extra_logit`` (B, H, T) is added to the detector's logit (W1j's CA1 novelty)."""
+        logit = self.event(x).transpose(1, 2).float()                    # (B, H, T)
+        if extra_logit is not None:
+            logit = logit + extra_logit
+        e = torch.sigmoid(logit)
         eps = e
         if self.refractory:
             lam = torch.full((e.shape[1],), self.refractory, device=x.device)

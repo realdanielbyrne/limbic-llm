@@ -63,9 +63,11 @@ class ScatterNeedleTask(pl.NeedleTask):
     straddle a window-block boundary are resampled, as in the fixed layout, where none do.
     """
 
-    def __init__(self, *a, min_gap: int = 8, tail: int = 256, block: int = 0, mix: float = 1.0, **kw) -> None:
+    def __init__(self, *a, min_gap: int = 8, tail: int = 256, block: int = 0, mix: float = 1.0,
+                 curriculum: list[tuple[int, int]] | None = None, **kw) -> None:
         super().__init__(*a, **kw)
         self.min_gap, self.tail, self.block, self.mix = min_gap, tail, block, mix
+        self.curriculum, self._active, self._calls = curriculum or [], False, 0
         if self.corpus and mix < 1.0 and self.pool is None:              # random filler for the mixed case
             self.pool = self.tok.filler_pool()
 
@@ -103,6 +105,25 @@ class ScatterNeedleTask(pl.NeedleTask):
         self.last_queried, self.last_value_at, self.last_natural = j, value_at, natural   # for eval_by_query.py
         return ids, len(answer), gap
 
+    def batch(self, B: int, rng):
+        """With a curriculum, training batches use fewer pairs early ((pairs, steps) stages, then
+        the full count). Only active inside training (see ``train`` below), so the evaluation
+        batches, built before training, always use the full number of pairs."""
+        if not (self.curriculum and self._active):
+            return super().batch(B, rng)
+        step, self._calls = self._calls, self._calls + 1
+        pairs = self.pairs
+        for p, n in self.curriculum:
+            if step < n:
+                pairs = p
+                break
+            step -= n
+        full, self.pairs = self.pairs, pairs
+        try:
+            return super().batch(B, rng)
+        finally:
+            self.pairs = full
+
     def _straddles(self, pre: list[int], facts: list[list[int]]) -> bool:
         """True if any fact would span two window blocks (positions counted after the sink)."""
         p = 0
@@ -112,6 +133,18 @@ class ScatterNeedleTask(pl.NeedleTask):
                 return True
             p += len(f)
         return False
+
+
+_train = pl.train
+
+
+def train(lm, task, args):
+    """Activate a task curriculum for the duration of training only."""
+    task._active = bool(getattr(task, "curriculum", None))
+    try:
+        return _train(lm, task, args)
+    finally:
+        task._active = False
 
 
 def evaluate(lm, batches, window, side, task):
@@ -128,11 +161,14 @@ def main(argv=None):
     ap.add_argument("--candidate", default=None, help="module:Class replacing SideChannels")
     ap.add_argument("--needle-scatter", type=int, default=0, metavar="MIN_GAP",
                     help="scatter the facts with random filler (at least MIN_GAP tokens apart); 0 = fixed layout")
+    ap.add_argument("--needle-curriculum", default="", metavar="P:STEPS,...",
+                    help="with --needle-scatter: train with P pairs for STEPS steps per stage, then the full count")
     ap.add_argument("--needle-mix", type=float, default=1.0,
                     help="with --text-file and --needle-scatter: share of sequences with natural filler (rest random)")
     own, rest = ap.parse_known_args(argv)
     cand_ns = None
     pl.evaluate = evaluate
+    pl.train = train
     if own.candidate:
         mod_name, cls = own.candidate.split(":")
         mod = importlib.import_module(mod_name)
@@ -143,7 +179,9 @@ def main(argv=None):
         pl.SideChannels = lambda d_model, **_: Cand(d_model, parsed, cand_ns)
     if own.needle_scatter:                                         # after the candidate took its flags
         gap, window, mix = own.needle_scatter, pl.parse_args(rest).window, own.needle_mix
-        pl.NeedleTask = lambda *a, **kw: ScatterNeedleTask(*a, min_gap=gap, block=window, mix=mix, **kw)
+        cur = [tuple(int(x) for x in st.split(":")) for st in own.needle_curriculum.split(",") if st]
+        pl.NeedleTask = lambda *a, **kw: ScatterNeedleTask(*a, min_gap=gap, block=window, mix=mix,
+                                                           curriculum=cur, **kw)
     results = pl.main(rest)
     args = pl.parse_args(rest)
     out = Path(args.out or f"results/pretrained/pretrained_loop_{args.task}.json")
@@ -154,6 +192,7 @@ def main(argv=None):
     if own.needle_scatter:
         rec["needle_scatter"] = own.needle_scatter
         rec["needle_mix"] = own.needle_mix
+        rec["needle_curriculum"] = own.needle_curriculum
     if own.candidate or own.needle_scatter:
         out.write_text(json.dumps(rec, indent=2))
     if _last_lm is not None:
