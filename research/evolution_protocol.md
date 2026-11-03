@@ -108,7 +108,7 @@ Commit only finished runs: the JSON and its `.log`. Never commit:
 | Shared working tree | Another session's uncommitted edits were in the same files | Check `git status` before committing; name others' work in the message |
 | Command chains | A failed step was hidden by a later one in a pipe | `set -o pipefail`; check `rc=` in `queue.status` |
 
-## 6. Exit criteria for the side-memory track (DEC2, proposed 2 Nov 2026)
+## 6. Exit criteria for the side-memory track (DEC2, approved by Daniel 2 Nov 2026)
 
 The track is **done** when one fixed recipe meets all of these:
 1. **Reliability.** At least 4 of 5 seeds learn content selection within 6,000 steps: digit-1 accuracy ≥ 0.95 at every queried rank, with 3 pairs on the scattered layout.
