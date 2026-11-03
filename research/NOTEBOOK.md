@@ -1218,3 +1218,5 @@ The panel `meaning-trigger-design` had 3 independent designers (integration, leg
 
 **Note.** The panel's key finding fits Daniel's framing from the design discussion. A meaningful window must reach the *key*, not only the trigger. The drifting context with τ 2–8 that W1i uses mostly keeps the shared frame, so the facts' keys collide.
 
+**[3 Nov 2026, later] DEC5 rejected.** Daniel: "frozen direction doesn't help, and isn't a good model. A different language, dialect, or something like domain specific phrasing (governmental, medical, police, etc) would break it." So arms A and B of the panel's plan are dropped. P44–P45 remain diagnosis: the gate's target is linearly present in h, so the seed barrier is an optimisation problem. What survives from the panel is general mechanism, not task knowledge: the key collision, short-context (τ ≈ 2) heads, and the max-trace refractory (one write per burst).
+
