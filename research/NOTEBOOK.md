@@ -948,3 +948,26 @@ Stop rule: if two rounds bring no recipe to reliability, close the track as "cap
 - Event bias −5, with and without a write budget of 2 per 64 tokens. At bias −5 the detector starts at about 0.43 events per 64, so the budget does not bind at initialisation, unlike P35.
 
 Each trained model is evaluated on held-out natural and random filler with controls. Results follow when the runs land.
+
+**Round-7 results** (natural / random filler; exact, digit 1; windowed 0.00 and full 1.00 throughout)
+
+| Run | Late drop | Natural | Random |
+|---|---|---|---|
+| Recipe, seed 0 (P33) | yes | 0.94, 0.99 | 0.91, 0.99 |
+| Recipe, seeds 1 / 2 / 3 / 4 | none | 0.31–0.34, 0.41–0.45 | 0.31–0.37, 0.43–0.46 |
+| Seed 1, lr 2e-3 | no | 0.33, 0.43 | 0.30, 0.43 |
+| Seed 0, event bias −5 | no | 0.35, 0.44 | 0.34, 0.44 |
+| Seed 0, bias −5 + budget 2/64 | no | 0.36, 0.46 | 0.31, 0.44 |
+
+**What it shows**
+1. **The recipe is not reliable: 1 of 5 seeds (P36).** DEC2 needs ≥ 4. Every failing seed learns the chain (digits 2–4 high) but stays near chance on choosing the start. It never makes the late drop that the successful runs show.
+2. **Across all W1i runs at 6000 steps the pattern is the same.** Selection was learned in 5 of 13 runs, almost all from seed 0, under several settings: round 4 at 3000 steps, round 5 seed 1, round 6b natural, round 6b with refractory 0.95, and partially round 5 seed 2. Learning selection is an optimisation barrier that most initialisations do not cross in this budget.
+3. **The levers tried did not help.** A larger learning rate did not (P37). A detector that starts sparse gets too little gradient to find the events, even on seed 0, which learns at the default bias (P38). The budget is moot when the events never form.
+
+**DEC2 status.** Round 7 is the first round under DEC2 to miss criterion 1. One more round is allowed before the stop rule closes the track as "capable but not reliably learnable".
+
+**Proposed round 8 (the last attempt under DEC2).** Attack the optimisation barrier directly, with the recipe otherwise fixed:
+- (a) a curriculum (W10): train first with 1 pair and short gaps, then raise to 3 pairs, so the event detector and goal field learn on an easy version before the selection step is needed;
+- (b) 12,000 steps on the failing seeds, to test whether the drop is slow or absent.
+
+Run (a) and (b) on seeds 1–4. If neither reaches ≥ 4 of 5 with seed 0 included, close the track.

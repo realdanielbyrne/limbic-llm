@@ -133,4 +133,6 @@ The track is **done** when one fixed recipe meets all of these:
 
 | 6b | Does training on natural filler fix P32; does a write budget help? | W1i trained on natural, mixed, natural + refractory 0.95, natural + budget, random + budget (6,000 steps); evaluated on random and natural | When selection is learned, natural training gives robustness to both fillers (0.93 / 0.89; with refractory 0.95, 0.94 / 0.91; P33). But only 2 of 4 natural-type runs learned it (P34). The write budget starved the detector from initialisation and killed selection (P35) |
 
+| 7 | Is the best recipe reliable (DEC2 criterion 1)? | Recipe (natural, refractory 0.95, 6,000 steps) seeds 1–4; lr 2e-3; event bias −5 with and without a budget | No: 1 of 5 seeds (P36). lr 2e-3 (P37), a sparse-start detector and a non-binding budget (P38) did not help. First round under DEC2 to miss criterion 1 |
+
 Each round's entry in NOTEBOOK has the full tables. Update this table at each checkpoint.
