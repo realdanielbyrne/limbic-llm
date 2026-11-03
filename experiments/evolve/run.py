@@ -103,6 +103,7 @@ class ScatterNeedleTask(pl.NeedleTask):
         ids += fill(self.seq_len + self.sink - len(ids) - len(query) - len(answer)) + query + answer
         gap = (len(ids) - len(answer)) - value_at[j]
         self.last_queried, self.last_value_at, self.last_natural = j, value_at, natural   # for eval_by_query.py
+        self.last_heads, self.last_query_len = heads, len(query)          # for diag_novelty.py
         return ids, len(answer), gap
 
     def batch(self, B: int, rng):

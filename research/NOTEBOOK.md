@@ -1013,9 +1013,53 @@ So this is an episodic, hippocampal memory task, and arbitrary name–number pai
 
 **What it shows**
 1. **The curriculum is the only lever that moved reliability:** 3 of 5 seeds, against 1 of 5 for the same recipe without it (P36). Learning the event and goal parts on a 1-code version first, before selection is needed, helps them co-adapt. That fits the round-7 diagnosis of the plateau.
-2. **CA1 novelty as built does not help, and hurts with the curriculum** (P39, P41). Even seed 0, which learns without it, failed. The chain store's prediction error is high on random filler and on unpredictable natural text alike, so it does not single out the facts' first digits. Added at a gain of 4 from the start, it dominates the detector's logit and pushes writes toward whatever is unpredictable. A learned or annealed gain starting near 0 would be the next variant, but it is outside the stop rule's budget.
+2. **CA1 novelty as built does not help, and hurts with the curriculum** (P39, P41). Even seed 0, which learns without it, failed. The chain store's prediction error is high on random filler and on unpredictable natural text alike, so it does not single out the facts' first digits. Added at a gain of 4 from the start, it dominates the detector's logit and pushes writes toward whatever is unpredictable. A learned or annealed gain starting near 0 would be the next variant, but it is outside the stop rule's budget. [Correction, 3 Nov 2026: the diagnosis below (P42) shows a different mechanism. The novelty is not merely unselective: at initialisation it is *lower* at the facts' first digits than in the filler, so κ = 4 suppresses the start writes. A gain starting near 0 would not help either, because κ never moved and the signal only becomes informative after selection is learned.]
 3. **The process note is recorded in the evolution protocol:** one extra queue worker on a GPU already 95–97% busy gave no speed-up (7.1 against 7.5 steps/s). It also made the evaluation queue start before the extra worker's last run finished, so two evaluations had to be rerun.
 
 **DEC2 outcome.** Round 7 (best 1 of 5) and round 8 (best 3 of 5) both missed criterion 1 (≥ 4 of 5). By the approved stop rule, **the side-memory track is closed as "capable but not reliably learnable"**. The conclusion is written up in RESULTS.md §4.9:
 - what the memory can do once learned: content-addressed selection among up to 5 stored codes, at gaps of about 2000 tokens, robust to natural filler when trained on it;
 - what blocks it: a seed-dependent optimisation barrier at the start-selection step, which only a curriculum has partly lowered.
+
+---
+
+## Why W1j failed: a diagnosis (3 Nov 2026)
+
+Daniel asked why the explicit CA1 comparator failed. I wrote `experiments/evolve/diag_novelty.py`, which trains nothing: it rebuilds a checkpoint, or a fresh initialisation, and on new 3-pair scattered batches reports the comparator's signals by token class (the facts' first digits, the other digits, the fact head " The code for NAME is", filler, the query). Evidence: `results/evolve/round8/diag_novelty.json` (P42).
+
+**1. At initialisation the novelty points the wrong way.** On natural filler, seeds 0 and 1:
+
+| Token class | Relative error ‖v − S a_{t−1}‖² / ‖v‖² | Novelty n |
+|---|---|---|
+| First digit (where the start must be written) | 0.37–0.39 | −0.15 to −0.16 |
+| Other digits | 0.27–0.32 | −0.20 to −0.22 |
+| Fact head | 0.54–0.57 | +0.03 |
+| Filler | 0.51–0.53 | +0.01 |
+
+- The AUC of n for first digit against filler is 0.24, and 0.15–0.35 in every head. On random filler it is 0.34–0.40.
+- Two things cause it:
+  - To an untrained store, digits are among the *most* predictable tokens. An untrained delta store recalls a blend of recent values, so its error measures how typical a token's representation is, not whether a fact is new.
+  - The baseline subtraction then compares the first digit with the fact head just before it, which has a high error.
+- So "built-in structure" was built in backwards. At κ = 4:
+  - ε at first digits falls from 0.14 to 0.09 (seed 0), and from 0.12 to 0.06 (seed 1);
+  - ε on filler rises from 0.13 to 0.16;
+  - the gate's AUC falls from 0.58 to 0.31 (seed 0), and from 0.37 to 0.19 (seed 1).
+- The detector has to overcome this prior before it can begin co-adapting with the goal key and read weight (the round-7 plateau analysis).
+
+**2. κ is inert.** After 6000 steps κ is 3.72–3.99 in all 10 W1j runs (initially 4). Novelty is baseline-subtracted, so it has mean about 0. Its contributions to κ's gradient cancel across tokens, and the model neither uses the term nor switches it off. This is why a gain that starts near 0 would not rescue it: the gain would stay near 0.
+
+**3. After training, the term is unbounded and specific to each head.** Training the chain store changes its error profile:
+- The relative error reaches 8.2 on filler (seed 0, head 0). There κn is −14 at first digits, so that head can never write a start.
+- In seed 4, head 0 gets κn = +21 at first digits. That makes a selective head, but it still writes on 19% of filler tokens (against 0.5% in passing W1i heads), enough junk to defeat selection.
+
+**4. Novelty becomes informative only after selection is learned.** In the passing W1i curriculum run (seed 0, where novelty is computed but never used), one head's novelty separates first digits from filler at AUC 0.995 (relative error 5.7 at first digits). The trained chain fails exactly at the start digit, because " is" does not predict which code follows. In the failing W1i seeds the same AUC is 0.53–0.60. So this mismatch signal is a *consequence* of a trained CA3, not a trigger that could train one. That matches the biology better than the design did: CA1 mismatch signals novelty relative to CA3's *learned* predictions, and with a naive CA3 there is nothing to mismatch against.
+
+**5. What successful runs have in common.** Each of the 4 runs that learned selection has one head that writes almost only at first digits:
+- curriculum seed 0, head 0: ε 0.99 at first digits, 0.005 on filler;
+- curriculum seed 3, head 0: 0.78 / 0.06;
+- curriculum seed 4, head 3: 0.98 / 0.006;
+- W1j + curriculum seed 4, head 3: 0.93 / 0.03.
+
+The failing W1i seeds have a head that is selective but weak (seed 1: 0.33 / 0.0005), or none (seed 2: at best 0.34 / 0.24). One failing run has the signature anyway (W1j seed 3, head 1: 0.74 / 0.07). So a sharp event head is necessary but not sufficient; the goal key or the read weight can still be missing.
+
+**Consequence for rounds 9–10.** I won't run more variants of this comparator. A signal that fixes the bootstrap would have to be selective at initialisation, and the delta store's own error is not. Daniel extended the track by two rounds; they test the one lever that worked, the curriculum.
+
