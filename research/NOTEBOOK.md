@@ -1302,5 +1302,31 @@ Seven agents each ran a decisive test with no training of the side module: froze
    - Order questions have no full-attention ceiling.
    - The useful form of time is the offset index within an episode (item 1).
 
+[Correction, 3 Nov 2026: an exploration of the scratch result files found this entry overstated several numbers. (1) **Slots:** "0.91–0.98 exact" is retrieval by cosine with an *oracle onset*, scored by selection (the read returns the stored true value), not behavioural accuracy. It holds with 0 false windows; with K = 8 and 4 false windows, 5 codes drop to 0.74–0.79. A causal read without the onset gives 0.78–0.89. The 16-false-window figures (0.44–0.65) mix eviction with selection errors. k-WTA sparse keys in a superposed store reach 0.35–0.64, which was not mentioned. (2) **Reinstatement:** the frozen LLM selects by itself (0.99) only with kv-mode reinstatement from layer 0 and every row seeing the slots. From layer 4 (kv or h mode) self-selection gives 0.24–0.60, so a selector is needed. The layer-14 range is 0.29–0.50. (3) **Hysteresis:** with gate centring (a causal running-mean subtraction), *every* gate type learns in 9–10 of 10 seeds on the short toy, so the window's apparent advantage was the lack of centring. The harder-toy "window 0/10" comes from an unfinished run. (4) **Replay separation:** +0.16 to +0.30 is the reconstruction loss (Rr); the contrastive loss (Rc) gives +0.08 to +0.17. (5) **Time:** for checkpoint s0, time-stamped recency at g = 0.5 gives 0.79–0.87 on the current code, above the delta rule (0.63–0.70), against "never better". It still costs 0.21–0.34 on other facts. Recorded as B18.]
+
 **The overall picture.** The barrier is superposition in two places. Within a fact, digits overwrite each other. Between facts, keys taken at the wrong token, after the name has faded, collide. Slots holding ordered windows remove both. A low-layer pooled window key selects without fitting. A small learned map reads the recalled window out at tap 21, or the frozen LLM itself reads it if reinstated low enough.
+
+---
+
+## Round 10 plan: W1s, one configurable episodic-slot memory (3 Nov 2026)
+
+Daniel approved multiple taps ("a second tap is fine, more if needed"), lexical keys and several key types ("keys are cheap"). He also approved reinstatement as an arm ("worth a test at the very least"), and asked whether a combination beats every idea in isolation. The plan is in the GPU session's plan file; here is a summary.
+
+- **One module, `experiments/evolve/w1s_slots.py`, in which every arm is an ablation of the same code path:**
+  - a gate (point / hysteresis / Schmitt / oracle) with causal centring;
+  - windows around the gate's onsets with a pre-record, opened by non-maximum suppression;
+  - K slots that keep ordered windows, evicting the lowest priority (gate strength plus recency), or a superposed store as the ablation;
+  - keys, lexical (layer-3 pooled, no fitted parameters), learned (layers 3 and 21), or both;
+  - a read: softmax over the slots plus a null slot, with offset alignment inside the chosen slot;
+  - output either additive replay at block 21 through a small learned map in CA1 form, or reinstatement into attention at layers ≥ 4 with a learned bias.
+- **Hooks:** `experiments/evolve/taps.py` (`TapLM`) adds read-only caching hooks for extra taps and the reinstatement mask.
+- **Evaluation:** `eval_by_query.py` gains phrasing jitter, the update task, held-out names and the W1s controls, and fixes B17.
+- **Stages:**
+  - Stage 0: smoke tests on the real model (oracle gate) that must reproduce the merit numbers.
+  - Stage A: the combination C, 9 leave-one-out arms, 3 isolation arms, a W1i-like everything-off arm, reinstatement and its oracle ceiling, all on seeds 1 and 2 (the seeds no recipe has solved).
+  - Stage B: 5 seeds on the pruned winner, the full DEC2 grid, the LM run and the CPU suite.
+- **Pre-registered rules:**
+  - A component is necessary if removing it loses a seed, or ≥ 0.10 mean exact.
+  - The combination beats isolation if C learns 2 of 2 and every isolation arm learns ≤ 1, or, with equal counts, C leads by ≥ 0.10 exact at 2048 tokens with 5 codes. Stage B must confirm it on 5 seeds.
+  - Reinstatement is adopted only if it matches or beats additive output everywhere.
 
