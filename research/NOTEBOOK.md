@@ -1086,3 +1086,39 @@ The failing W1i seeds have a head that is selective but weak (seed 1: 0.33 / 0.0
 
 The baseline is P40 (`1:1500,2:1500`, 3 of 5). No CA1-novelty arm (P42). Each run is evaluated on held-out natural and random filler with windowed and full controls. Pass: digit 1 ≥ 0.95 at every rank on both fillers. DEC2 criterion 1 needs 4 of 5 for one arm.
 
+---
+
+## Is W1j fixable? Novelty is the wrong trigger; the declarative statement is the right one (3 Nov 2026)
+
+**Daniel asked whether W1j is fixable, then:** "Can the simple declarative statement be used as a trigger? The LLM in general knows the meaning of 'The code for NAME is'; that in itself is a trigger that the human brain would fire on." And: "using the declarative statement is akin to taking the output of the LLM and looping it back, again mimicking the biology."
+
+**1. No novelty measure marks the facts (P43).** At initialisation, first digit against filler (`diag_surprise.py`):
+
+| Signal | Natural filler | Random filler |
+|---|---|---|
+| Frozen LM's own surprisal (an oracle: needs token ids) | 2.55 against 3.64 nats, AUC 0.48 | 2.70 against 14.2 nats, AUC 0.00 |
+| Change in h (1 − cos with the previous token) | AUC 0.25 | AUC 0.26 |
+| Untrained delta store on the raw states | AUC 0.29 | AUC 0.39 |
+
+A random code digit is about ln 10 nats to the LM: average for natural text, and far below random tokens. The part of a fact that is surprising is its frame (" The code for NAME is", 6.5 nats). So the problem is not how W1j's comparator was built: in this task the facts are not where the input is novel. W1j is not fixable as a novelty gate.
+
+**2. The meaning of the statement is a near-perfect trigger (P44).** `diag_declarative.py` fits one fixed direction at block 21: first value token against all other tokens, in generic declarative bindings embedded in WikiText train text:
+- e.g. "Marisol's phone number is 5550193.", "The password to the vault is falcon.";
+- 12 templates, none containing "code for", names disjoint from the task's, values mixing digits, words and alphanumerics.
+
+It generalises across templates: AUC 0.985 on 4 held-out ones. On the task's own template, with WikiText test or random filler, first digits against:
+
+| Comparison | AUC |
+|---|---|
+| All filler | 1.00 on both fillers |
+| Digits that occur in natural filler (4,121: years, counts) | 0.999 |
+| Filler tokens right after is/was/are/were (1,039) | 1.00 |
+| The other code digits | 0.98–0.99 |
+
+So it is not a digit detector or a position-after-a-copula detector. It marks the onset of an asserted value. At a threshold that fires on 1% of filler it catches every first digit; it also catches 85–99% of the other code digits, which score lower (mean projection 11.2 at first digits, 5.8 at the others, −5.5 on natural filler).
+
+**What this means.**
+- **The event part is not missing from h; it is not found.** The event detector is linear in the same normalised h (σ(w_e·x + b)), so it *can* represent this trigger exactly. The seed-dependent barrier (round-7 analysis, P42) is an optimisation problem, not a representational one. A run has to discover w_e from one weak answer-token gradient while the key and the read weight co-adapt.
+- **It also fits the biology better than W1j did.** The hippocampus does not judge relevance from its own prediction error alone. Its input from entorhinal cortex is already the cortex's interpretation of the scene. Encoding is boosted by what that interpretation says matters: semantic "levels of processing" (Craik & Lockhart 1972), and prefrontal and ventral-striatal relevance signals that gate encoding. Here the frozen LLM plays the cortex, and reading its "a value is being asserted" state as the trigger is Daniel's loop from cortex back to hippocampus. It is not the LM's output tokens but its mid-stack interpretation, which is what EC carries. W1j used the wrong comparator: the hippocampus's own untrained store, when the information is in the cortical input.
+- **The rules.** The direction is a constant computed beforehand from the frozen model on other text (2048 floats, within E3's buffer limit). The module still sees only h (E4). It was fit without the task's template, names or filler split (E6). It would still be prior knowledge chosen with this kind of task in mind. Fair use needs an evaluation on fact templates the direction was not fit on, and a statement of where the direction came from.
+
