@@ -244,3 +244,21 @@ Without side channels every run scores exact 0.00 (loss 3.07 on Qwen3 with one p
 * **On frozen 2B models, successor-bound addressing turns one recalled digit into exact recall** (§4.8). Choosing among several stored pairs still fails: the addresses need to carry context.
 
 **Caveats.** Mostly single seeds and 0.1 M-parameter models on synthetic tasks; a difference of a few points is noise. The trained recency task was not learned by any model. The pretrained results are one seed each.
+
+
+### 4.9 Rounds 2–8 of the evolution search: content-addressed side memory, and why the track closed
+
+All on frozen Qwen3-1.7B-Base with every layer windowed (block window 64), side channels at block 21, needle task with 3 stored name → 4-digit codes unless noted. One-pair results are passkey retrieval, so selection is measured with 2–5 pairs on a *scattered* layout (facts at random positions, which removes position shortcuts) and read by queried rank. Register P13–P41; procedure in `research/evolution_protocol.md`.
+
+| Step | Finding | Register |
+|---|---|---|
+| Context in the write address (W1b) | Does not select the queried code: digit-1 loss ≈ ln(pairs) | P13–P16 |
+| Is the cue present? | The name is linearly decodable at the query's space token (0.95–1.00), but W1's addresses discard it | P17 |
+| DG-keyed start store (W1g) | Its 2-pair "win" was a first/last positional shortcut | P18–P19 |
+| CA3 settling (W1h) | Hurt as built: the cue settles onto the query's own recent tokens | P20 |
+| **Event-gated goal field (W1i, after Samsonovich & Ascoli 2005)** | **Content-addressed selection:** digit 1 0.99 / 0.99 / 1.00 by queried rank (3 codes), 0.93–0.99 with 5 codes | P21, P26 |
+| Generalisation (evaluation only) | Holds to seq 2048 (gaps about 2,000, four times the training maximum) and to 1–5 codes. Fails on natural filler when trained on random filler, because the event detector fires about 4× more | P30–P32 |
+| Training on natural filler | Robust to both: 0.94 natural / 0.91 random (refractory 0.95), when selection is learned | P33 |
+| **Reliability** | Selection is learned in a sudden, seed-dependent late drop. Natural recipe: 1 of 5 seeds; with a pair curriculum: 3 of 5. An explicit CA1 novelty gate: 0 of 5 | P25, P36–P41 |
+
+**Conclusion (DEC2 stop rule, 3 Nov 2026).** A fixed-size, inference-time side memory on a frozen LLM *can* store several facts while reading and retrieve the queried one by content, far beyond its attention window: the missing-key step that Samsonovich & Ascoli's goal field addresses. It does so with event-timed, sparse writes under a context key in which the name is salient. Training does not reliably *find* that solution. The failing runs sit on the plateau where everything but the choice of start is learned (loss ≈ ln 3 / 5). Three parts must co-adapt (events at first digits, a name-salient key, the goal read weight), and only a curriculum has partly lowered the barrier (3 of 5 seeds). The track is closed as "capable but not reliably learnable". Open threads, should it be reopened: curricula with more stages, novelty gates whose gain starts near 0, longer schedules.

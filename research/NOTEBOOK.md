@@ -995,3 +995,27 @@ Run (a) and (b) on seeds 1–4. If neither reaches ≥ 4 of 5 with seed 0 includ
 - Similar items interfere strongly (proactive interference).
 
 So this is an episodic, hippocampal memory task, and arbitrary name–number pairs are hard for people too without rehearsal or mnemonics. It is the right kind of test for a hippocampal module. But the machine's difficulty is not the memory demand: full attention solves it trivially, and the side memory does too once it has learned *how* to remember. What is hard is **discovering the write policy from scratch from a weak gradient**. People do not learn their encoding policy per task: novelty and salience gate hippocampal encoding through built-in neuromodulation (dopamine and acetylcholine; Lisman & Grace 2005, Hasselmo 2006). That points to reducing what must be learned (a built-in trigger for events, or a curriculum) rather than to an easier task.
+
+---
+
+## Round 8: the last attempt under DEC2, and the track closes (3 Nov 2026)
+
+**Arms** (Daniel: "build W1j and run round 8 with all three arms"). 5 seeds each; natural-filler recipe (refractory 0.95, 6000 steps, 3 pairs, scattered, tap 21); evaluated on held-out natural and random filler; windowed 0.00 and full 1.00 throughout.
+- **W1j:** an explicit CA1 comparator. The chain store's own delta-rule prediction error (EC input against CA3 prediction), made scale-free, taken against its recent baseline and detached, is added to W1i's event logit with a learned per-head gain.
+- **Curriculum:** W1i trained on 1 code for 1500 steps, 2 for 1500, then 3 (training only; evaluation always uses 3).
+- **Both.**
+
+| Arm | Seeds that learned selection | Exact when learned (natural / random) |
+|---|---|---|
+| W1j | **0 / 5** | — |
+| Curriculum | **3 / 5** (seeds 0, 3, 4) | 0.83–0.84 / 0.83–0.85 |
+| W1j + curriculum | 1 / 5 (seed 4) | 0.83 / 0.83 |
+
+**What it shows**
+1. **The curriculum is the only lever that moved reliability:** 3 of 5 seeds, against 1 of 5 for the same recipe without it (P36). Learning the event and goal parts on a 1-code version first, before selection is needed, helps them co-adapt. That fits the round-7 diagnosis of the plateau.
+2. **CA1 novelty as built does not help, and hurts with the curriculum** (P39, P41). Even seed 0, which learns without it, failed. The chain store's prediction error is high on random filler and on unpredictable natural text alike, so it does not single out the facts' first digits. Added at a gain of 4 from the start, it dominates the detector's logit and pushes writes toward whatever is unpredictable. A learned or annealed gain starting near 0 would be the next variant, but it is outside the stop rule's budget.
+3. **The process note is recorded in the evolution protocol:** one extra queue worker on a GPU already 95–97% busy gave no speed-up (7.1 against 7.5 steps/s). It also made the evaluation queue start before the extra worker's last run finished, so two evaluations had to be rerun.
+
+**DEC2 outcome.** Round 7 (best 1 of 5) and round 8 (best 3 of 5) both missed criterion 1 (≥ 4 of 5). By the approved stop rule, **the side-memory track is closed as "capable but not reliably learnable"**. The conclusion is written up in RESULTS.md §4.9:
+- what the memory can do once learned: content-addressed selection among up to 5 stored codes, at gaps of about 2000 tokens, robust to natural filler when trained on it;
+- what blocks it: a seed-dependent optimisation barrier at the start-selection step, which only a curriculum has partly lowered.

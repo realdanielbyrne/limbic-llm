@@ -108,7 +108,7 @@ Commit only finished runs: the JSON and its `.log`. Never commit:
 | Shared working tree | Another session's uncommitted edits were in the same files | Check `git status` before committing; name others' work in the message |
 | Command chains | A failed step was hidden by a later one in a pipe | `set -o pipefail`; check `rc=` in `queue.status` |
 
-## 6. Exit criteria for the side-memory track (DEC2, approved by Daniel 2 Nov 2026)
+## 6. Exit criteria for the side-memory track (DEC2, approved by Daniel 2 Nov 2026; stop rule applied 3 Nov 2026)
 
 The track is **done** when one fixed recipe meets all of these:
 1. **Reliability.** At least 4 of 5 seeds learn content selection within 6,000 steps: digit-1 accuracy ≥ 0.95 at every queried rank, with 3 pairs on the scattered layout.
@@ -134,5 +134,7 @@ The track is **done** when one fixed recipe meets all of these:
 | 6b | Does training on natural filler fix P32; does a write budget help? | W1i trained on natural, mixed, natural + refractory 0.95, natural + budget, random + budget (6,000 steps); evaluated on random and natural | When selection is learned, natural training gives robustness to both fillers (0.93 / 0.89; with refractory 0.95, 0.94 / 0.91; P33). But only 2 of 4 natural-type runs learned it (P34). The write budget starved the detector from initialisation and killed selection (P35) |
 
 | 7 | Is the best recipe reliable (DEC2 criterion 1)? | Recipe (natural, refractory 0.95, 6,000 steps) seeds 1–4; lr 2e-3; event bias −5 with and without a budget | No: 1 of 5 seeds (P36). lr 2e-3 (P37), a sparse-start detector and a non-binding budget (P38) did not help. First round under DEC2 to miss criterion 1 |
+
+| 8 | Can the barrier be crossed: explicit CA1 novelty, a curriculum, or both? | W1j (CA1 comparator drives the event gate), curriculum (1 → 2 → 3 codes), both; 5 seeds each, natural recipe | Curriculum 3 of 5 (P40), W1j 0 of 5 (P39), both 1 of 5 (P41). Second round under DEC2 to miss criterion 1: **the track is closed by the stop rule** |
 
 Each round's entry in NOTEBOOK has the full tables. Update this table at each checkpoint.
