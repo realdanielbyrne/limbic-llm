@@ -1063,3 +1063,26 @@ The failing W1i seeds have a head that is selective but weak (seed 1: 0.33 / 0.0
 
 **Consequence for rounds 9–10.** I won't run more variants of this comparator. A signal that fixes the bootstrap would have to be selective at initialisation, and the delta store's own error is not. Daniel extended the track by two rounds; they test the one lever that worked, the curriculum.
 
+---
+
+## Round 9: the track reopens for two rounds (DEC3), curriculum schedules (3 Nov 2026)
+
+**Decision.** Daniel: "I say go 2 more rounds before giving up if you think we are close". I think we are: the curriculum took reliability from 1 of 5 (P36) to 3 of 5 (P40), one seed short of DEC2's bar. Passing seeds reach digit 1 ≥ 0.96 at every rank, with exact 0.83–0.85 against 0.85. Recorded as DEC3; the criteria are unchanged, including the 6000-step limit.
+
+**What the round-8 curriculum curves show** (training loss, single batches of 8; stages 1 code → 2 codes at step 1500 → 3 at step 3000):
+- The 1-code stage is solved by step 1200 in every seed (loss ≤ 0.005). It is passkey retrieval and needs no selection.
+- At each switch to 2 codes the loss jumps (0.21–0.69 at step 1800).
+- The two seeds that solve the 2-code stage within it (0 and 4: 0.016 and 0.009 at step 3000) pass. Seed 3 does not solve it, but drops after the switch to 3 codes (0.075 at step 4200) and passes.
+- Seeds 1 and 2 never leave the 2-code plateau (0.17–0.34; ln 2 / 5 = 0.14) and fail.
+- So the 2-code stage is where selection is learned, and 1500 steps there is too short for some seeds. P42's signature (one head that writes only at first digits) is what forms.
+
+**Arms** (W12; W1i natural recipe, refractory 0.95, 6000 steps, 3 pairs at evaluation, tap 21; seeds 0–4 each):
+
+| Arm | Curriculum | Steps at 1 / 2 / 3 codes | Question |
+|---|---|---|---|
+| `long2` | `1:1500,2:3000` | 1500 / 3000 / 1500 | Does more time on 2 codes let more seeds solve it? |
+| `no1` | `2:3000` | 0 / 3000 / 3000 | Is the 1-code stage needed, or does its passkey solution have to be unlearned? |
+| `short1` | `1:1000,2:2000` | 1000 / 2000 / 3000 | A shorter 1-code stage, more 2-code time, the full 3-code time |
+
+The baseline is P40 (`1:1500,2:1500`, 3 of 5). No CA1-novelty arm (P42). Each run is evaluated on held-out natural and random filler with windowed and full controls. Pass: digit 1 ≥ 0.95 at every rank on both fillers. DEC2 criterion 1 needs 4 of 5 for one arm.
+

@@ -108,7 +108,7 @@ Commit only finished runs: the JSON and its `.log`. Never commit:
 | Shared working tree | Another session's uncommitted edits were in the same files | Check `git status` before committing; name others' work in the message |
 | Command chains | A failed step was hidden by a later one in a pipe | `set -o pipefail`; check `rc=` in `queue.status` |
 
-## 6. Exit criteria for the side-memory track (DEC2, approved by Daniel 2 Nov 2026; stop rule applied 3 Nov 2026)
+## 6. Exit criteria for the side-memory track (DEC2, approved by Daniel 2 Nov 2026; stop rule applied 3 Nov 2026; reopened for rounds 9–10 by DEC3)
 
 The track is **done** when one fixed recipe meets all of these:
 1. **Reliability.** At least 4 of 5 seeds learn content selection within 6,000 steps: digit-1 accuracy ≥ 0.95 at every queried rank, with 3 pairs on the scattered layout.
@@ -117,6 +117,8 @@ The track is **done** when one fixed recipe meets all of these:
 4. **Written up.** Register rows, a RESULTS.md section, and this protocol updated.
 
 **Stop rule.** If two consecutive rounds bring no recipe to criterion 1, close the track with a "capable but not reliably learnable" conclusion and move on to other experiments.
+
+**Extension (DEC3, approved by Daniel 3 Nov 2026).** After round 8 closed the track, Daniel extended it by two rounds (9 and 10), because the curriculum had moved reliability from 1 of 5 to 3 of 5. The criteria are unchanged. If neither round meets criterion 1, the closure stands. Any further extension is a new decision.
 
 ## 7. Round history
 
@@ -136,5 +138,7 @@ The track is **done** when one fixed recipe meets all of these:
 | 7 | Is the best recipe reliable (DEC2 criterion 1)? | Recipe (natural, refractory 0.95, 6,000 steps) seeds 1–4; lr 2e-3; event bias −5 with and without a budget | No: 1 of 5 seeds (P36). lr 2e-3 (P37), a sparse-start detector and a non-binding budget (P38) did not help. First round under DEC2 to miss criterion 1 |
 
 | 8 | Can the barrier be crossed: explicit CA1 novelty, a curriculum, or both? | W1j (CA1 comparator drives the event gate), curriculum (1 → 2 → 3 codes), both; 5 seeds each, natural recipe | Curriculum 3 of 5 (P40), W1j 0 of 5 (P39), both 1 of 5 (P41). Second round under DEC2 to miss criterion 1: **the track is closed by the stop rule** |
+
+| 9 | Does a different curriculum schedule reach 4 of 5? (DEC3) | W1i natural recipe with `1:1500,2:3000`, `2:3000` and `1:1000,2:2000`; 5 seeds each. Before it: why W1j failed (P42) | Running |
 
 Each round's entry in NOTEBOOK has the full tables. Update this table at each checkpoint.
