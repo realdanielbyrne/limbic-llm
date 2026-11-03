@@ -971,3 +971,27 @@ Each trained model is evaluated on held-out natural and random filler with contr
 - (b) 12,000 steps on the failing seeds, to test whether the drop is slow or absent.
 
 Run (a) and (b) on seeds 1–4. If neither reaches ≥ 4 of 5 with seed 0 included, close the track.
+
+**Why the failing seeds do not learn (analysis of the saved checkpoints, 3 Nov 2026)**
+
+| | Final training loss | Goal read weight σ(g) | Events at first digits / overall |
+|---|---|---|---|
+| Runs that learned selection (4) | 0.005–0.072 | 0.48–0.64 | 1.6–5.8× |
+| Runs that did not (6) | 0.21–0.30 (one 0.64) | 0.46–0.49 (≈ init 0.5) | 0.7–2.1× |
+
+1. **The failing runs sit exactly on the "everything but which code" plateau.** If the format and digits 2–4 are known and digit 1 is a 1-in-3 guess, the loss averaged over the 5 answer tokens is ln 3 / 5 = 0.22. The failing runs end at 0.21–0.30. They have learned the chain and the format, and only the choice of start is missing. Only one of the five answer tokens carries the signal that would train the goal field.
+2. **Selection needs three parts to change together, and each is useless alone:**
+   - events concentrated at the facts' first digits;
+   - a context key in which the name is salient (W_c);
+   - a goal read weight that departs from its initial value.
+
+   That makes it a multiplicative, saddle-like problem: no part gets a clear gradient until the others exist. In the failing runs the goal read weight never left its initialisation, and the events stayed unconcentrated. The event bias did not move in any run (−1.95 to −1.98), so any selectivity had to come from the input weights.
+3. **Escape is stochastic and sudden.** It is a late drop whose occurrence depends on the seed, like the formation of induction heads (Olsson et al. 2022). Seed 0 escaped under several settings, most other seeds under none.
+4. **It is not a capacity limit.** Once learned, the same memory selects among 5 codes and at gaps of 2000 tokens (P26, P30).
+
+**Is the task too hard? (Daniel's question)** Each fact is a 4-digit code bound to a name. Three of them are followed by 270–500 tokens of filler, about a paragraph or two of reading, and one is asked for. For a person that exceeds short-term memory:
+- Forward digit span is about 7 when recalled at once (Miller 1956).
+- Under distraction, short-term recall collapses within seconds: three consonants drop to about 10% after 18 s of counting backwards (Peterson & Peterson 1959).
+- Similar items interfere strongly (proactive interference).
+
+So this is an episodic, hippocampal memory task, and arbitrary name–number pairs are hard for people too without rehearsal or mnemonics. It is the right kind of test for a hippocampal module. But the machine's difficulty is not the memory demand: full attention solves it trivially, and the side memory does too once it has learned *how* to remember. What is hard is **discovering the write policy from scratch from a weak gradient**. People do not learn their encoding policy per task: novelty and salience gate hippocampal encoding through built-in neuromodulation (dopamine and acetylcholine; Lisman & Grace 2005, Hasselmo 2006). That points to reducing what must be learned (a built-in trigger for events, or a curriculum) rather than to an easier task.
