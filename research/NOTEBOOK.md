@@ -1255,3 +1255,52 @@ Design notes (GPU session):
 - **Exact recall when learned is 0.83–0.88.** Three passing runs reach ≥ 0.85 on both fillers at 512 tokens with 3 codes.
 - **This is the first round under DEC3 to miss criterion 1.** Under DEC4, round 10 moves to new mechanisms. Merit tests are running for multi-tap keys, the hysteresis window, time-indexed episodes, reinstatement, time, additive replay and replay-driven key separation.
 
+---
+
+## Round-10 merit tests: which new ideas have merit (3 Nov 2026)
+
+Daniel: "begin planning round 10 around new ideas like multi-tap architectures, saving entire windows around on/off events triggered by a leaky integrator style switch, incorporating time. We need to decide which of these ideas have merit." Then: "what about the ideas on side channel replays?"
+
+Seven agents each ran a decisive test with no training of the side module: frozen-Qwen forward passes, oracles, CPU toys. Their scripts and outputs are in the GPU session's scratchpad (`r10_merit/`). **These are unreproduced panel checks; each becomes a register row only when reproduced in the repo.** The hysteresis toy was stopped after 3 hours of single-threaded CPU runs. Its interim numbers are below, and its automated judge did not run; the synthesis is the GPU session's.
+
+**Ranking**
+
+1. **Episodes that keep the window, indexed by offset (slots): strong.** Exact 4-digit recall with oracle windows:
+   - A W1i-like drifting-context store fails *within a single fact*: 0.00–0.03 exact even with only the queried fact written, because consecutive digit contexts overwrite each other.
+   - Indexing each value by its offset since onset fixes that: 1.00 with an oracle key.
+   - With a fit-free key, slots recall 0.91–0.98 exact with 3–5 facts, natural or random filler. The key is the mean of the *layer-3* states over the window, centred at read time.
+   - The same key in a *superposed* time-indexed store gives 0.17–0.34: near-collinear keys let the last write win. So the fix is separate slots, not time codes in superposition.
+   - Risk: eviction. With FIFO and 16 false windows the fact is evicted in 35–54% of sequences, so a better replacement policy is needed.
+2. **Reinstatement into attention: strong as an oracle, but not at our tap.**
+   - With perfect selection, reinstating the statement window works at layers ≥ 0 (1.00) and ≥ 4 (0.96–0.99), but falls to 0.31–0.50 at ≥ 14 and 0.00 at ≥ 21. The copy circuit sits in layers about 4–20, below block 21.
+   - If every position sees the slots from layer 0, the frozen LLM selects for itself (0.99–1.00), and false recalls barely matter (8 false windows cost 0.00–0.03).
+   - A pre-record of 4–8 tokens is needed so the window holds the name.
+   - It is a new interface (writing into most layers' attention), so it needs a decision.
+3. **Additive replay at tap 21 with a small learned map: the readout is solved.**
+   - Raw replay of stored states fails: they encode the current digit (probe 1.00) and not the next (probe 0.10).
+   - A rank-10 map of 41k parameters, trained through the frozen upper blocks in about 150 steps, gives held-out exact 1.00 on both fillers with oracle recall. Its output follows the replayed fact, and the LM loss changes by +0.01 to 0.04. One seed.
+   - The additive delta (full − windowed) at block 21 gives 1.00, so tap 21 has the capacity.
+   - For a tap-21 memory, this beats reinstatement.
+4. **Multi-tap keys: moderate, reframed.**
+   - Name identity lives at the name token's own state and is not carried forward to " is" or the space. At the space, every layer and pooling choice tops out at 0.63. That is why W1i's keys, taken there, collide (cosine 0.87–0.94 at init; retrieval 0.32–0.52).
+   - The name token's state works as a key (1.00) at layers 7–21. But a fixed lag is a template prior and falls to 0.51 under phrasing jitter.
+   - Combining layers adds nothing beyond the right position.
+   - What carries over is a *lower-layer* (layer 3–7, lexical) key pooled over a stored window, as in the slot test.
+5. **Hysteresis write window: unproven as a learning aid; useful as a segmenter.**
+   - CPU toy, 10 seeds per arm:
+     - short toy: window 7–8/10, point trigger 4–7/10, max-trace 5/10;
+     - harder toy: window 0/10, point 1–2/10;
+     - oracle 10/10, dense writes 10/10 (so the toy lacks the real barrier);
+     - window with time-since-onset keys 0/10;
+     - integrate-and-fire with reset 0/10.
+   - The reinstatement and slot tests show what a window trigger has to deliver: high recall (false windows are cheap) and a window that starts 4–8 tokens before the value.
+6. **Replay for pattern separation: weak.** With no answer signal it takes fact keys from cosine 0.88–0.93 to about 0.0 and retrieval from 0.39 to 0.81–0.86. It never reaches 0.95 alone, adds nothing to a clean answer signal, and gives +0.16 to +0.30 only when labels are scarce. Replaying filler teaches nothing.
+7. **Time stamps: weak.**
+   - The trained W1i checkpoints already return the *updated* code when a fact is restated (digit 1 NEW 0.70–0.93), better than full attention (0.37–0.57, which often returns the old code). That comes from delta-rule overwrite.
+   - Time-stamped recency is never better, and costs 0.09–0.23 on other facts.
+   - The TimeChannel is a saturated absolute-position code.
+   - Order questions have no full-attention ceiling.
+   - The useful form of time is the offset index within an episode (item 1).
+
+**The overall picture.** The barrier is superposition in two places. Within a fact, digits overwrite each other. Between facts, keys taken at the wrong token, after the name has faded, collide. Slots holding ordered windows remove both. A low-layer pooled window key selects without fitting. A small learned map reads the recalled window out at tap 21, or the frozen LLM itself reads it if reinstated low enough.
+
