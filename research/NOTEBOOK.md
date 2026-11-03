@@ -1160,3 +1160,61 @@ Daniel's points, in order, with the GPU session's answers. The panel `meaning-tr
 
 **Decision.** Daniel: "We can go past 10 since we are delving into new territory." Recorded as DEC4.
 
+---
+
+## Design panel on the meaning trigger, and the round-10 proposal (3 Nov 2026)
+
+The panel `meaning-trigger-design` had 3 independent designers (integration, legitimacy, biology and generality) and an adversarial critic. They read the code and records and ran CPU-only checks with the frozen model; nothing was trained. Their scripts and outputs are in the GPU session's scratchpad, not the repo. **The numbers below are unreproduced panel checks**: each becomes a register row only when reproduced as a pre-GPU test in the repo.
+
+**Findings that change the picture**
+- **The goal key, not the trigger, is the remaining barrier.**
+  - With perfect (oracle) first-digit events at W1i's initialisation, selection is still at chance (0.31–0.34): the context keys of different facts are nearly identical.
+  - In trained runs, the fact keys of passing heads have cosine 0.03–0.07 with each other, and retrieval with oracle events is 0.88–1.00. In failing heads the cosine is 0.84–0.99, and retrieval returns only the most recent fact.
+  - Passing heads weight the name 1.6–4.1× the filler, and the shared frame tokens 0.35–0.6×.
+- **The goal read weight is not a barrier:** σ(goal_logit) ends at 0.44–0.50 in all five round-8 curriculum seeds (0.50 at init), passing or failing. This revises the round-7 three-part analysis to two parts: events and key.
+- **Every head that learned selection had a learned τ ≈ 2** (4 of 4 runs; about 0.03 by chance). Head index and τ are confounded, because the default cycle 2, 4, 8 puts τ 2 on heads 0 and 3.
+- **The current refractory is too weak.** W1i's leaky trace puts 0.05 on one event, so after a sharp first-digit event it still passes 0.36–0.57 at digits 2–4. Those writes overwrite G under near-identical contexts. A max-trace refractory passes 0.02–0.05, and its parallel form matches the recurrence to 1e-5 and is prefix-bitwise causal. This is Daniel's "fire once, then reset", in effect.
+- **Passing runs did not learn the P44 direction:** their detectors have cosine 0.14–0.23 with it. They found other selective features.
+- **The trigger is about meaning in the ordered window (Daniel's point), with known limits:**
+  - held-out paraphrases score 12.0–12.1 and a question frame 10.0;
+  - the *same frame tokens scrambled* score 5.9, the bare-number level;
+  - a non-binding count scores 1.9;
+  - a credential-free refit (no "code", "PIN", "password", ...) keeps AUC 0.999 / 1.000, with cosine 0.89 to P44;
+  - controls fail as they should: a shuffled-label direction 0.48 / 0.79, a random direction 0.23 / 0.095, both with 0% recall;
+  - held-out fact templates are graded: PIN-like bindings about 12, "extension" or "was given the number" about 6;
+  - it needs 5–7 frame tokens inside the visible block, fails when the value comes first ("4821 is the code for NAME", 4.9), and fires on negated statements;
+  - false writes in WikiText fall at identifier onsets ("NY 93", "imported 6"): 0.18 per 1000 tokens above a projection of 8 and 2.1 above 6. That is 15–300× sparser than the filler writes of passing learned heads.
+- **Label-free discovery failed in its crude form.** A "needed later" direction, fit from what the full-attention model reaches back for, is orthogonal to P44 (cos 0.001) and points the wrong way on the task.
+- **A key start fit on generic name contrasts failed:** fact-key cosine stayed at 0.56–0.99. So a meaning-based key needs more than a fixed subspace.
+- **A reporting bug:** B17.
+
+**The critic's round-10 plan** (to run only after Daniel rules on DEC5):
+- **A, W1k:** the frozen meaning prior OR'd into W1i's learned events with an onset gate, P40 curriculum, seeds 0–4.
+  - The prior's threshold is set by rules on the contrast set only: θ is the 99.9th percentile of its negatives, about 8.2.
+  - It is not replaced, because a surrogate suggests W1i's dense background writes help random-filler generalisation.
+- **B:** the same with a matched random direction, at the same false-write rate on generic text, the content control.
+- **C:** A with all five heads at τ = 2.
+- **Pre-registered readings:**
+  - A ≥ 4/5 with B < A: criterion 1 met under DEC5;
+  - A and B both ≥ 4/5: not attributable to meaning;
+  - A ≤ 3/5 but C ≥ 4/5: C is the recipe;
+  - A and C ≤ 3/5: the key is the bottleneck.
+- **Pre-GPU gates:**
+  - bitwise identity with the prior off (so P40 is the baseline);
+  - E1 with the prior firing;
+  - E3 and provenance (sha256; maximum |cos| with any base weight 0.26);
+  - the init ε profile through the real code path;
+  - the B17 fix;
+  - the meaning battery at the operating threshold, plus the bf16 shift;
+  - a held-out-template harness (NEAR: PIN, passcode, "code:"; FAR: extension, "given the number", locker, jersey), with full attention ≥ 0.9 per family;
+  - optionally, the gradient signal-to-noise of W_c at W1i init, W1k init and with oracle events.
+- **DEC5 (proposed; needs Daniel):**
+  - admissibility conditions for a pre-fit prior;
+  - the attribution rule (B must learn fewer seeds);
+  - held-out-template reporting;
+  - the wording "reliably learnable given a cortical relevance prior";
+  - oracles never count;
+  - Daniel's ruling on whether a label-fit frozen direction is admissible at all.
+
+**Note.** The panel's key finding fits Daniel's framing from the design discussion. A meaningful window must reach the *key*, not only the trigger. The drifting context with τ 2–8 that W1i uses mostly keeps the shared frame, so the facts' keys collide.
+
