@@ -1229,3 +1229,29 @@ Design notes (GPU session):
 - **A window "around" the trigger, causally.** A short ring buffer of the last k states (k is a fixed state) lets the window include the k tokens before onset, as a camera's pre-record does. That captures the name and frame as well as the value.
 - **Why it may also ease learning.** A window that roughly covers the value is enough, so the gate has a wide target, instead of a single token it must hit. The answer loss still has to teach when to open (no priors, DEC5), but its landscape should be smoother.
 
+---
+
+## Round 9 checkpoint: curriculum schedules (3 Nov 2026)
+
+**Trimmed at Daniel's request.** After 10 of 15 runs, no arm could reach 4 of 5: each already had two seeds stuck on the plateau, judged from training loss. Daniel: "trim". The two seed-4 runs in flight were stopped (rc 143; their partial logs are not committed), and the third never started. The 12 finished runs were evaluated on held-out natural and random filler; windowed 0.00 and full 1.00 in every evaluation.
+
+| Seed | `long2` (1:1500, 2:3000) | `no1` (2:3000) | `short1` (1:1000, 2:2000) | Round 8 `1:1500,2:1500` (P40) |
+|---|---|---|---|---|
+| 0 | ✓ exact 0.83 / 0.84 | ✗ | ✓ 0.86 / 0.88 | ✓ |
+| 1 | ✗ | ✗ | ✗ | ✗ |
+| 2 | ✗ | ✓ 0.85 / 0.88 | ✗ | ✗ |
+| 3 | partial: digit 1 0.95–0.97 natural, 0.90–0.92 random | ✓ 0.86 / 0.84 | ✗ | ✓ |
+| 4 | not run | not run | not run | ✓ |
+
+(Pass: digit 1 ≥ 0.95 at every queried rank on both fillers. Exact is natural / random.)
+
+**What it shows**
+- **No schedule reaches DEC2's 4 of 5** (P46–P48). The best, `no1`, learned 2 of 4. Per seed, the four schedules give 6 passes in 16 runs on seeds 0–3.
+- **Schedules reshuffle which seeds learn rather than how many.**
+  - Seed 0 learned under every schedule except `no1`.
+  - Seed 2 learned only under `no1`.
+  - Seed 1 has never learned under any recipe since round 7.
+  - Outcome depends on the initialisation interacting with the data order. That fits the panel's diagnosis: the barrier is the key collision at initialisation, which the schedule does not address.
+- **Exact recall when learned is 0.83–0.88.** Three passing runs reach ≥ 0.85 on both fillers at 512 tokens with 3 codes.
+- **This is the first round under DEC3 to miss criterion 1.** Under DEC4, round 10 moves to new mechanisms. Merit tests are running for multi-tap keys, the hysteresis window, time-indexed episodes, reinstatement, time, additive replay and replay-driven key separation.
+

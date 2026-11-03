@@ -141,6 +141,6 @@ The track is **done** when one fixed recipe meets all of these:
 
 | 8 | Can the barrier be crossed: explicit CA1 novelty, a curriculum, or both? | W1j (CA1 comparator drives the event gate), curriculum (1 → 2 → 3 codes), both; 5 seeds each, natural recipe | Curriculum 3 of 5 (P40), W1j 0 of 5 (P39), both 1 of 5 (P41). Second round under DEC2 to miss criterion 1: **the track is closed by the stop rule** |
 
-| 9 | Does a different curriculum schedule reach 4 of 5? (DEC3) | W1i natural recipe with `1:1500,2:3000`, `2:3000` and `1:1000,2:2000`; 5 seeds each. Before it: why W1j failed (P42) | Running |
+| 9 | Does a different curriculum schedule reach 4 of 5? (DEC3) | W1i natural recipe with `1:1500,2:3000`, `2:3000` and `1:1000,2:2000`; seeds 0–3 (seed 4 cut once no arm could reach 4 of 5). Before it: why W1j failed (P42); after it, the meaning-trigger diagnoses (P43–P45) | No: 1, 2 and 1 of 4 seeds (P46–P48). Schedules reshuffle which seeds learn. First round under DEC3 to miss criterion 1; DEC4 opens new mechanisms for round 10 |
 
 Each round's entry in NOTEBOOK has the full tables. Update this table at each checkpoint.
