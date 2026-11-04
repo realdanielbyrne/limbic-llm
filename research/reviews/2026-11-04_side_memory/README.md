@@ -195,7 +195,7 @@ Still open from RV2: the S&A goal-field pathfinding over a successor memory (L6)
 
 **R7. Evaluate on public benchmarks.** RULER multi-key, multi-value and multi-query with paraphrased questions, and PI-LLM, before any production claim.
 
-**R8. W16 baselines at equal bytes (about 31 KV tokens fp32, 15.5 in bf16):**
+**R8. W16 baselines at equal bytes (the W1s state stored in fp32 equals about 31 tokens of the bf16 KV cache; stored in bf16, about 15.5):**
 1. windowed base plus an H2O, SnapKV or learned-admission cache (LKV, KV Admission) of the same bytes, reinstated into the windowed layers;
 2. a HOLA-style surprise-admitted exact cache with W1s's read: the N2 test;
 3. AHN-GDN on the same frozen Qwen3 at equal state;
