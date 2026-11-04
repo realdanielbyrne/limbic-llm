@@ -1,0 +1,2 @@
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 13881.01it/s]
+{"pairs": 1, "seq_len": 2048, "exact": 0.8229166666666666, "digit1": 0.8463541666666666, "digit1_acc_by_queried_rank": [0.8463541666666666], "controls_exact": {"windowed": 0.0, "full": 1.0}, "w1s": {"fact_coverage": 0.823, "slot_hit": 0.812, "align_hit": 0.812, "align_within1": 0.812, "null_weight_at_query": 0.247, "onset_density": 0.05, "onset_in_fact": 0.992, "p_mean_digit1": 0.082, "p_mean_filler": 0.014, "gate_auc_digit1_vs_filler": 0.971}}

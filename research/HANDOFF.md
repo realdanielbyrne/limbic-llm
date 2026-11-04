@@ -53,7 +53,7 @@ The scripts now default to this layout: the CPU scripts write to `results/synthe
   - Narrative: NOTEBOOK "Round 10 Stage A".
   - Decisions: DEC4–DEC7 (DEC5: no pre-fit directions).
   - Plan: the round-10 plan entry in the NOTEBOOK.
-- **Running now: Stage B.** I1, A2 (the combination minus centring), I1K (I1 + lexical keys from tap 3) and RI (reinstatement with I1's gate), seeds 0–4. Each is evaluated on the full DEC2 grid plus jitter, held-out names and the update task. Its outputs go to `results/evolve/round10/` and `results/evolve/round10/stageB/`; files there are incomplete until the Stage-B commit lands.
+- **Stage B done (P54–P58):** I1 learns 3 of 5 seeds (seed 1 at 0.94) with grid means 0.93–0.96 on the learned seeds, fails on held-out names (0.58–0.74), and A2, I1K and RI do not beat it. Round 11 (runbook revision 2) follows.
 - **New tools:**
   - `experiments/evolve/taps.py` (`TapLM`: extra taps, reinstatement);
   - `eval_by_query.py` flags `--jitter`, `--update`, `--heldout-names` and `--w1s-ctrl`;

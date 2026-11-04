@@ -1413,3 +1413,31 @@ Stage 0 has no-training gates on Stage B's checkpoints first. The decision rules
 - A CPU-toy gate (G0.8) checks first that this does not repeat the merit failure of time codes concatenated into keys.
 - The plan and runbook are updated (`research/plans/round11_plan.md`, `round11_runbook.md`).
 
+---
+
+## Round 10 Stage B: I1 nearly meets DEC2; two new weaknesses (4 Nov 2026)
+
+Seeds 0–4 (I1 and A2 reuse Stage A's seeds 1–2), 420 evaluations: the 18-cell DEC2 grid, plus jitter, held-out names and the update task. Windowed 0.00 in every evaluation.
+
+| Arm | Learned (digit 1 ≥ 0.95 every rank) | Grid mean exact by seed (0–4) | Held-out names | Jitter |
+|---|---|---|---|---|
+| **I1** | **3 of 5** (seed 1 0.94, seed 4 0.87) | 0.93 / 0.93 / 0.95 / 0.96 / 0.83 | 0.58–0.74 | 0.88–0.99 |
+| A2 (combination minus centring) | 0 of 5 | 0.85 / 0.96 / 0.90 / 0.66 / 0.86 | 0.46–0.63 | 0.57–0.84 |
+| I1K (I1 + lexical keys from tap 3) | 1 of 5 | 0.22 / 0.12 / 0.26 / **0.98** / 0.89 | 0.20–0.88 | 0.16–0.87 |
+| RI (reinstatement with I1's gate) | 0 of 5 | 0.63 / 0.20 / 0.23 / 0.16 / 0.21 | 0.21–0.67 | 0.14–0.41 |
+
+**What it shows**
+1. **I1 is the recipe, one seed short of DEC2** (P54).
+   - Criterion 2 (≥ 0.85 exact across 512–2048 tokens, 1–5 codes, both fillers) holds for every learned seed: 17–18 of 18 cells.
+   - Criterion 1 needs 4 of 5. Seed 1 is at 0.94, and seed 4 fails at long range: random 2048 × 5 gives 0.35 / 0.46 / 0.57 for the three oldest ranks.
+2. **Held-out names fail** (P55). The fact is retained but the learned key picks the wrong slot: it has memorised the 20 training names. The one lexical-key run that learned (I1K seed 3) generalises (0.88), but lexical keys are unstable in 3 of 5 seeds.
+3. **The update task is ill-posed** (P56). Full attention itself prefers the old code, so "new" has no ceiling in this form.
+4. **The planners' recency explanation does not predict which seeds fail** (P58). Alignment sharpness does: the failing seeds have a lower log β_align.
+5. **Reinstatement with a learned gate is not viable** (RI 0 of 5). A2 confirms the extras do not help (P57).
+
+**Round 11 revised accordingly** (revision 2 in `research/plans/round11_plan.md` and the runbook):
+- held-out names become a deciding cell, with name-generalisation arms;
+- the update task needs a form with a full-attention ceiling;
+- gate G0.1 is reframed around alignment;
+- reinstatement stays deferred.
+
