@@ -1,0 +1,26 @@
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 16000.72it/s]
+Qwen/Qwen3-1.7B-Base: 28 blocks (0 linear-attention), d_model 2048, tap block 21, 28 windowed, block window 64, reach 63
+window check: ok (block 0: far 0.0e+00 vs near 1.2e+01)
+trainable side-channel parameters 319,499 (base 1,720,574,976, frozen)
+needle gap 267–502 tokens
+step   100 loss 0.453 token_acc 0.975 inj 0.000 (23s)
+step   200 loss 0.535 token_acc 0.975 inj 0.000 (46s)
+step   300 loss 0.432 token_acc 1.000 inj 0.000 (68s)
+step   400 loss 0.522 token_acc 1.000 inj 0.000 (91s)
+step   500 loss 0.591 token_acc 0.950 inj 0.000 (114s)
+step   600 loss 0.453 token_acc 0.975 inj 0.000 (136s)
+step   700 loss 0.391 token_acc 1.000 inj 0.000 (159s)
+step   800 loss 0.377 token_acc 0.975 inj 0.000 (182s)
+step   900 loss 0.410 token_acc 1.000 inj 0.000 (205s)
+step  1000 loss 0.550 token_acc 1.000 inj 0.000 (227s)
+
+condition       window side    exact  tok_acc    loss    inj
+windowed            64  off    0.000    0.188   2.725      -
+windowed+side       64   on    0.945    0.988   0.476  0.000
+full                 0  off    1.000    1.000   0.128      -
+saved results/evolve/round10/stage0/s0c3_rein_t0.json
+saved results/evolve/round10/stage0/s0c3_rein_t0.pt
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 14220.00it/s]
+{"pairs": 3, "seq_len": 512, "exact": 0.9192708333333334, "digit1": 0.9427083333333334, "digit1_acc_by_queried_rank": [0.9851851851851852, 0.8760330578512396, 0.9609375], "controls_exact": {"windowed": 0.0, "full": 0.992}, "w1s": {"fact_coverage": 1.0, "slot_hit": 0.961, "align_hit": 0.0, "align_within1": 0.0, "null_weight_at_query": 0.075, "onset_density": 0.006, "onset_in_fact": 1.0, "p_mean_digit1": 1.0, "p_mean_filler": 0.0, "gate_auc_digit1_vs_filler": 1.0}}
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 14533.77it/s]
+{"pairs": 3, "seq_len": 512, "exact": 0.8697916666666666, "digit1": 0.8776041666666666, "digit1_acc_by_queried_rank": [0.9854014598540146, 0.7338709677419355, 0.9024390243902439], "controls_exact": {"windowed": 0.0, "full": 0.997}, "w1s": {"fact_coverage": 1.0, "slot_hit": 0.924, "align_hit": 0.0, "align_within1": 0.0, "null_weight_at_query": 0.12, "onset_density": 0.006, "onset_in_fact": 1.0, "p_mean_digit1": 1.0, "p_mean_filler": 0.0, "gate_auc_digit1_vs_filler": 1.0}}
