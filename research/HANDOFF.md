@@ -9,6 +9,8 @@ This note coordinates the Claude sessions working on this repository: branches, 
 
 At Daniel's request, PR #2 (`feat/temporal-loop` → `main`) was merged. Since then the GPU session works on **`feat/round1-side-memory`**, branched from `main` after the merge. It pushes round results, code under `experiments/evolve/`, and updates to this note there. PR #3 (`feat/qwen3-actadd-notebook`, the Qwen3 activation-additions notebook) was merged into this branch (`82b8fca`). `feat/temporal-loop` is kept, not deleted. Pull `feat/round1-side-memory` to see round-1 results.
 
+**PR #5 (4 Nov 2026, round-11 GPU session):** the rounds 1–10 checkpoint (`4d1c271`) proposed into `main` from the snapshot branch `snapshot/rounds-1-10`, so that round-11 pushes do not join it. Daniel reviews and merges. Work continues on `feat/round1-side-memory`.
+
 ## File ownership
 
 | Session | Files |
