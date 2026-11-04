@@ -73,6 +73,18 @@ Daniel approved the round-11 plan (DEC9) and asked for it to be executed by anot
 
 The design and its evidence are in [`plans/round11_plan.md`](plans/round11_plan.md).
 
+## Side-memory review RV4 (4 Nov 2026)
+
+A Claude Science session reviewed rounds 1–10 of the side-memory track against the literature, at Daniel's request: [`reviews/2026-11-04_side_memory/README.md`](reviews/2026-11-04_side_memory/README.md); open findings RV4.E1–E12 in the register. **Before running round 11, read §6 of the review.** It recommends:
+- closing the Stage-B gaps first: E8 and the CPU suite for I1, I1-superposed and I1-no-align, and eval-only paraphrase and repeated-digit cells;
+- 10 seeds for finalists;
+- putting the name-generalisation and training-signal arms (A10, A11, new A13–A15) ahead of compression and time;
+- scoring updates against ground truth;
+- a 128-token and a partially windowed hybrid configuration in Stage C;
+- W16 on an equal-byte axis (the W1s state equals about 31 KV tokens).
+
+It added 25 bibliography entries (16 new, 9 promoted from RV2's `new_refs.bib`) to `docs/references.bib` and REFERENCES.md.
+
 ## How to run a round
 
 Follow [`evolution_protocol.md`](evolution_protocol.md): the round loop, controls, the candidate interface, `experiments/evolve/queue.sh` (GPU job queue) and `experiments/evolve/sync.sh` (rebase-safe push), and the pitfalls met in rounds 0–5.

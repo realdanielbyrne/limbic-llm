@@ -270,6 +270,25 @@ Report: [`reviews/2026-11-02_literature/`](reviews/2026-11-02_literature/README.
 | RV2.D1 | DG as MoE gate runs backwards for coarse load-balanced routers (they cluster similar inputs); under GDN's linear readout DG sparsity cannot raise the d_k bound | Med | Framing of the DG track; O9, W4 | Measure router-code separation (L11); test above d_k (O9) | Open |
 | RV2.F1 | P11 and P13 are the missing-key problem of Samsonovich & Ascoli (2005): successor chains work, but no read cue or goal field selects the start | High | W1b follow-ups | L6 | Open |
 
+### Open review findings (RV4, side-memory review, 4 Nov 2026)
+
+Report: [`reviews/2026-11-04_side_memory/`](reviews/2026-11-04_side_memory/README.md). A review of rounds 1–10 (W1 → W1s) against the literature; no GPU runs. Its plan changes are RV4.P1–P7 in the report (§6).
+
+| ID | Finding | Severity | Blocks | Smallest fix (from the review) | Status |
+|---|---|---|---|---|---|
+| RV4.E1 | "Slots remove superposition" is not isolated in I1: the only superposed arm (A4) ran inside C with the harmful centring; I1 also changed retention, read alignment and the gate | High | Write-up of W13; N3 | I1 with `--w1s-store superposed` and with `--w1s-align none`, 2 seeds each | Open |
+| RV4.E2 | The held-out-name failure (P55) follows from the design: the learned key is trained on 20 names, so it acts as a 20-way classifier | High | Any generalisation claim | Held-out names as a pass criterion; name pool (A10); native keys (A13, RV4.R3) | Open |
+| RV4.E3 | Every query restates the fact's prefix ("The code for NAME is"), so the read is verbatim-prefix copying; paraphrased queries are untested | High | Production claims | Eval-only paraphrase cell, admitted where full attention ≥ 0.8 | Open |
+| RV4.E4 | The 4-of-5-seed bar cannot separate recipes (3/5 CI 0.15–0.95; p = 0.8 fails it 26% of the time) | Med | DEC2 readings of P36–P58 | ≥ 8 of 10 seeds for finalists, with intervals and steps-to-selection (needs a DEC) | Open |
+| RV4.E5 | The memory comparison is against the full KV cache; the W1s state (3.56 MB) equals about 31 tokens of Qwen3-1.7B's bf16 KV, so the baseline is a ~31-token learned-admission cache | High | Summary's production section; W16 | W16 on an equal-byte axis with the RV4.R8 arms | Open |
+| RV4.E6 | No E8 LM run or CPU suite for I1 in round 10, although Stage B listed both | Med | DEC2 Stage-B pass; round-11 Stage B | Run both on the learned I1 seeds | Open |
+| RV4.E7 | P56 matches published proactive interference (Wang & Sun 2025); requiring a full-attention ceiling discards the case where memory beats full attention | Med | Round-11 update rules | Score updates against ground truth, with full attention as a reference; PI-LLM-style streams | Open |
+| RV4.E8 | P42–P43's novelty result must keep its scope (templated declarative facts) and be set against HOLA and EM-LLM, which write by surprise | Low | Write-up | Cite and scope; HOLA-style arm in W16 | Open |
+| RV4.E9 | DEC5's domain-shift objection applies equally to the learned gate (P32, P50) | Low | DEC5 | Revisit: P44 contrast as a trainable initialisation of `w_g`, tested on held-out templates | Open (needs Daniel) |
+| RV4.E10 | The window note omits gpt-oss's 128-token windows; production hybrids window a subset of layers, but every W1s run windows all layers | Med | W15 | Add 128 and a partially windowed hybrid configuration to Stage C | Open |
+| RV4.E11 | Compression findings are measured on a 13-bit value | Med | A5–A8 interpretation | Repeat with multi-token open values before any compression claim | Open |
+| RV4.E12 | 49.6% of codes repeat a digit; offset alignment may be ambiguous there | Low | P58 diagnosis | Eval-only split of exact by repeated digit | Open |
+
 ## 4. Experiment backlog
 
 Every table has the same columns. "Script" names the entry point, or says "not built". The round-1 mutation directions of `round0_plan.md` §4 map to: 1 → W1, 2 → W8, 3 → W9, 4 → W5, 5 (address-shift keys) → realised by W1's successor binding, 6 → W10.
