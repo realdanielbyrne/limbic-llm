@@ -1,6 +1,6 @@
 # Side-memory track: where it stands, in plain language
 
-*Written 4 Nov 2026, after round 10. The evidence is in [`REGISTER.md`](REGISTER.md) (P-rows cited below); the dated detail is in [`NOTEBOOK.md`](NOTEBOOK.md). Update this summary when a round changes the picture.*
+*Written 4 Nov 2026, after round 10; updated after round 11's no-training checks (Stage 0). The evidence is in [`REGISTER.md`](REGISTER.md) (P-rows cited below); the dated detail is in [`NOTEBOOK.md`](NOTEBOOK.md). Update this summary when a round changes the picture.*
 
 ## The setup
 
@@ -34,8 +34,8 @@ Training could sometimes find a way around this, but only by luck, in 1–3 runs
 ## What doesn't work yet
 
 - **New names** (P55). With names it never saw in training, accuracy drops to 58–74%. The facts are still stored, but the learned labels memorised the 20 training names. A variant using the raw word tokens as labels did generalise (88%), but it is unstable: it collapsed in 3 of 5 runs.
-- **Long documents with many facts** (P54, P58). The weaker run loses the oldest facts at 2048 tokens. Its replay alignment is blunter than in the runs that succeed.
-- **Corrected facts** ("Emma's code is now 5678") (P56). We can't score this yet: even the model with its full view returns the old code more often than the new one, so the test needs clearer wording.
+- **Long documents with many facts** (P54, P59). The weaker run loses the oldest facts at 2048 tokens. Round-11 checks without retraining point to the cause: a learned "prefer recent memories" penalty that grows with distance. Switching it off brings every run's oldest facts back (0.95–0.99, the weak run from 0.24 to 0.78). But the same penalty is what makes the memory prefer a corrected fact over the old one, so it can't simply be removed. Sharpening the replay alignment, the earlier suspect, does not help.
+- **Corrected facts** ("Emma's code is now 5678") (P56, P61). Even with its full view, the model returns the old code more often than the new one. Clearer wording ("Emma's code has changed from 4821 to 5678") makes it worse: it returns the old code 83% of the time, which matches published "proactive interference" in LLMs. So corrections have to be scored against the true answer, not against the full-view model.
 - **Putting the memory back into the model's attention**, rather than adding it to the model's internal signal (P53, P57). It works with a perfect trigger (84–94%) but fails with a learned one.
 
 ## Why a 64-token window, and was it swept?

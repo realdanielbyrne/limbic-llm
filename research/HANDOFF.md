@@ -56,6 +56,7 @@ The scripts now default to this layout: the CPU scripts write to `results/synthe
   - Decisions: DEC4–DEC7 (DEC5: no pre-fit directions).
   - Plan: the round-10 plan entry in the NOTEBOOK.
 - **Stage B done (P54–P58):** I1 learns 3 of 5 seeds (seed 1 at 0.94) with grid means 0.93–0.96 on the learned seeds, fails on held-out names (0.58–0.74), and A2, I1K and RI do not beat it. Round 11 (runbook revision 2) follows.
+- **Round 11 Stage 0 done (P59–P67; NOTEBOOK "Round 11 Stage 0"):** evaluation-time gates on the round-10 checkpoints, outputs in `results/evolve/round11/stage0/`. At evaluation time the age penalty, not alignment, limits long-range recall. No update or order task has a full-attention ceiling. supw is dropped. Value-norm keep and a 64-d code are free. Ordinal time generalises in the CPU toy. The round-11 code (`8a0319a`) adds `eval_by_query.py --w1s-set/--w1s-param/--w1s-load-extra/--ctrl-conds/--keep-oracle`, update forms `changed`/`nowold`, `--update-k`, `--decoys`, `--order`, and `run.py --needle-names pool --needle-tail`. **Stage A waits for Daniel**, who also has RV4 §6's proposed reordering.
 - **New tools:**
   - `experiments/evolve/taps.py` (`TapLM`: extra taps, reinstatement);
   - `eval_by_query.py` flags `--jitter`, `--update`, `--heldout-names` and `--w1s-ctrl`;

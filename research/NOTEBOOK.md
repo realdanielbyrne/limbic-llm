@@ -1441,3 +1441,53 @@ Seeds 0–4 (I1 and A2 reuse Stage A's seeds 1–2), 420 evaluations: the 18-cel
 - gate G0.1 is reframed around alignment;
 - reinstatement stays deferred.
 
+
+---
+
+## Round 11 Stage 0: the age penalty, not alignment, limits long range; no task has a full-attention ceiling (4 Nov 2026)
+
+**Setup.**
+- Runbook revision 3, §3–§4, run on geof by the round-11 GPU session.
+- Code: round-11 flags in `w1s_slots.py`, `eval_by_query.py` and `run.py`, plus the diagnostic scripts `fit_code.py`, `toy_time.py` and `toy_keep.py` (`8a0319a`).
+- Code review: adversarial, three lenses with two refuters per finding. 16 findings, 14 confirmed and fixed, none a causality leak (`research/reviews/2026-11-04_round11_code.md`).
+- Defaults are bitwise identical to round 10.
+- Round-10 I1 checkpoints re-evaluated on four committed Stage-B cells reproduce them sequence for sequence (`compat_*`).
+- Every Stage-0 evaluation carries the windowed, empty-store and shuffle controls in the same pass (`--ctrl-conds`). Of 247 jobs (257 evaluations), none is void: windowed and empty 0.00 everywhere; shuffle 0.00, which is chance for a 4-digit code.
+- These are evaluation-time diagnostics on trained checkpoints (rule E6), not trained results: P59–P67.
+
+| Gate | Pre-registered rule | Outcome |
+|---|---|---|
+| G0.1 (P59) | Seed 4's ranks 0–2 at random 2048 × 5 ≥ 0.75 under an alignment or recency override | **Neither passes as worded.** Removing the age penalty: seed 4 0.24 → 0.78 / 0.67 / 0.74; seeds 0–3 oldest rank 0.64–0.72 → 0.95–0.99. Sharper alignment (+0.3, +0.6): no change. I1K's collapse is untouched |
+| G0.2 (P60) | supr or supw: 4096 × 8 ≥ 0.80 on both seeds with stale ≤ 0.10 | **Not met** (seed 4: 0.58 supr, 0.62 supw). none and log fix length (seed 1 at 4096 × 8: 0.64 → 0.88–0.89) but lose updates. ord wins updates (new 0.79–0.81, stale 0.07–0.10) but loses length |
+| G0.3 (P62) | supw false matches ≤ 2% | **Fails** (held-out names 3.1–4.1%): A3 dropped |
+| G0.4 (P63) | Value-norm keep within 0.03 of the ceiling | Value-norm top 8 matches the full window (−0.04 at worst) and exceeds the 4-transition "ceiling", which is not a ceiling for this readout. A6 starts from value norm. Random and attention keep: ≈ 0 |
+| G0.5 (P64) | Learned 64-d code ≥ 2048-d − 0.02 | On average yes (+0.000), with 19× less state. One cell misses by 0.001 (2 sequences of 96) |
+| G0.6 (P65) | K = 16 coverage ≤ 0.8 and K = 64 ≥ 0.95 | **Met**: K = 64 stays in A8. Exact beyond K is then limited by slot hit |
+| G0.7 (P61) | Full ≥ 0.80 and windowed ≤ 0.10 | **No task admitted.** Full attention 0.07–0.44 on every update and order phrasing; it returns the OLD code 83% of the time after "has changed from OLD to NEW" |
+| G0.8 (P66) | rope or ordinal learn ≥ 8/10, beat linear on order; drop if plain < 0.9 | Literal reading (training length): rope, ordinal and the concatenated reference all pass. Strict (every length): **ordinal only** (0.99 at 2× and 4×; rope 0.63 / 0.42) |
+| Keep toy (P67) | Learned scorer finds the digits within 300 steps | 7/10 seeds with a strong shared digit direction, 2/10 with a weaker one |
+
+**What it shows**
+1. **Long-range failure is the age penalty, at least at evaluation time** (P59, P60).
+   - Without it, every I1 seed's oldest facts at 2048 tokens rise to 0.95–0.99, and seed 4's to 0.78. That restores the planners' original diagnosis (round-11 planning entry, point 1).
+   - Sharpening the alignment does nothing, so P58's "alignment is the weak link" is not supported. That reading was a correlation across seeds of a trained parameter; an eval-time β shift is not training with a sharper start, so A12 is not ruled out, only unsupported.
+2. **Every penalty form trades length against updates.** No fixed form wins both. ordinal time in the CPU toy does win both at every length (P66). That makes A1b (query-chosen ordinal rank) the time arm with the best case.
+3. **Full attention is not a ceiling for updates or order on this model** (P61), as RV4.E7 predicted from proactive interference. Read as written, the runbook's update rules cannot apply. RV4.P4 proposes scoring against ground truth with full attention as a reference.
+4. **Compression is free at evaluation time** for the 13-bit code. Value-norm top-8 halves the state; the 64-d code cuts it 19×. RV4.E11 cautions that this is measured on a near-zero-entropy value.
+5. **Two caveats on the diagnostics themselves.**
+   - Keeping only the read's 4 transitions is worse than keeping all 24: the readout was trained with distractor mass, while the alignment is identical (checked: 44/48 sequences align space→d1→d2→d3 in both).
+   - The G0.8 gate, read at the training length, cannot separate arms. Every arm, including concatenated time, learns at 1×.
+
+**Decisions for Daniel before Stage A**
+1. **G0.8's reading.** Literal: rope, ordinal and concat pass. Strict: ordinal only. Adopting the strict reading is a rule change (DEC).
+2. **G0.1 did not pass as worded.** Recency is the lever, alignment is not. Should A12 still run (RV4.P3 promotes it to core, from P58)?
+3. **Updates.** Should update rules be scored against ground truth (RV4.P4) now that no form has a ceiling (P61)? The runbook line "the better of log/ord on updates becomes A1" predates revision 1; on updates ord wins clearly (P60).
+4. **G0.5** per cell or on average: dc = 64 is recommended.
+5. **RV4 §6** asks to close Stage-B gaps first: E8 and the CPU suite for I1; I1-superposed and I1-no-align, 2 seeds each; eval-only paraphrase and repeated-digit cells. It also asks to reorder the arms (generalisation and training signal first, new A13–A15) and for a 10-seed reliability bar.
+
+**Stage A as the rules currently stand:**
+- runs: A1b, A2 (supr), A4, A5 (dc 64), A6 (value-norm start), A7, A8 (supr or the best time arm, dc 64, n = 12, K = 64), A10 and A11;
+- needs the readings above: A1 and A12;
+- dropped: A3 (G0.3) and A9 (G0.7).
+
+Nothing in Stage A starts without Daniel's go-ahead.

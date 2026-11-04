@@ -1,0 +1,79 @@
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 13956.25it/s]
+step 0: kl 0.5373, log beta 2.388
+step 100: kl 0.1053, log beta 2.333
+step 200: kl 0.0987, log beta 2.308
+step 300: kl 0.1015, log beta 2.281
+step 400: kl 0.0958, log beta 2.254
+step 500: kl 0.0985, log beta 2.225
+step 600: kl 0.0897, log beta 2.195
+step 700: kl 0.0849, log beta 2.165
+step 800: kl 0.0958, log beta 2.136
+step 900: kl 0.0884, log beta 2.107
+step 1000: kl 0.0915, log beta 2.080
+step 1100: kl 0.0898, log beta 2.055
+step 1200: kl 0.0912, log beta 2.035
+step 1300: kl 0.0907, log beta 2.011
+step 1400: kl 0.0927, log beta 1.995
+step 1500: kl 0.0870, log beta 1.983
+step 1600: kl 0.0884, log beta 1.970
+step 1700: kl 0.0892, log beta 1.965
+step 1800: kl 0.0875, log beta 1.958
+step 1900: kl 0.0862, log beta 1.954
+step 2000: kl 0.0866, log beta 1.953
+step 2100: kl 0.0850, log beta 1.950
+step 2200: kl 0.0838, log beta 1.952
+step 2300: kl 0.0851, log beta 1.948
+step 2400: kl 0.0769, log beta 1.946
+step 2500: kl 0.0882, log beta 1.941
+step 2600: kl 0.0887, log beta 1.944
+step 2700: kl 0.0875, log beta 1.947
+step 2800: kl 0.0887, log beta 1.939
+step 2900: kl 0.0809, log beta 1.949
+step 2999: kl 0.0799, log beta 1.941
+{"dc": 64, "fit_loss_init": 0.5259424657288166, "fit_loss": 0.08587570056989939, "heldout_kl_init": 0.5157265872610324, "heldout_kl": 0.11462654192626322, "heldout_agree_answer": 0.98828125, "heldout_agree_digit1": 1.0}
+saved /tmp/claude-1000/-home-realdanielbyrne-limbic-llm/4145cb2e-e3ec-40a3-8ee3-9766827d2fb6/scratchpad/r11/g05/I1_s4_wz.dc64.pt
+step 0: kl 0.3088, log beta 2.388
+step 100: kl 0.0675, log beta 2.320
+step 200: kl 0.0599, log beta 2.282
+step 300: kl 0.0610, log beta 2.249
+step 400: kl 0.0581, log beta 2.223
+step 500: kl 0.0608, log beta 2.198
+step 600: kl 0.0522, log beta 2.180
+step 700: kl 0.0511, log beta 2.166
+step 800: kl 0.0580, log beta 2.157
+step 900: kl 0.0526, log beta 2.147
+step 1000: kl 0.0532, log beta 2.139
+step 1100: kl 0.0531, log beta 2.138
+step 1200: kl 0.0534, log beta 2.140
+step 1300: kl 0.0528, log beta 2.135
+step 1400: kl 0.0548, log beta 2.134
+step 1500: kl 0.0515, log beta 2.133
+step 1600: kl 0.0518, log beta 2.129
+step 1700: kl 0.0527, log beta 2.128
+step 1800: kl 0.0518, log beta 2.128
+step 1900: kl 0.0509, log beta 2.128
+step 2000: kl 0.0504, log beta 2.130
+step 2100: kl 0.0502, log beta 2.128
+step 2200: kl 0.0488, log beta 2.130
+step 2300: kl 0.0499, log beta 2.128
+step 2400: kl 0.0436, log beta 2.128
+step 2500: kl 0.0514, log beta 2.121
+step 2600: kl 0.0530, log beta 2.127
+step 2700: kl 0.0506, log beta 2.131
+step 2800: kl 0.0521, log beta 2.124
+step 2900: kl 0.0457, log beta 2.134
+step 2999: kl 0.0468, log beta 2.125
+{"dc": 128, "fit_loss_init": 0.29446687738311433, "fit_loss": 0.05010362095130513, "heldout_kl_init": 0.2935317165167757, "heldout_kl": 0.07887763089911883, "heldout_agree_answer": 0.98828125, "heldout_agree_digit1": 1.0}
+saved /tmp/claude-1000/-home-realdanielbyrne-limbic-llm/4145cb2e-e3ec-40a3-8ee3-9766827d2fb6/scratchpad/r11/g05/I1_s4_wz.dc128.pt
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 12483.41it/s]
+{"pairs": 3, "seq_len": 512, "exact": 0.8229166666666666, "digit1": 0.8645833333333334, "digit1_acc_by_queried_rank": [0.9375, 0.8125, 0.84375], "controls_exact": {"windowed": 0.0, "full": 0.979, "side_empty": 0.0, "side_shuffle": 0.0}, "w1s": {"fact_coverage": 1.0, "slot_hit": 0.854, "align_hit": 0.833, "align_within1": 0.833, "null_weight_at_query": 0.01, "onset_density": 0.056, "onset_in_fact": 0.99, "p_mean_digit1": 0.328, "p_mean_filler": 0.113, "gate_auc_digit1_vs_filler": 0.937, "retained_within_256_at_query": 6.229, "fire_false_rate": 0.014, "fire_false_pairs": 288, "fire_filler_rate": 0.0, "fire_filler_pairs": 3744}}
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 15987.93it/s]
+{"pairs": 3, "seq_len": 512, "exact": 0.78125, "digit1": 0.8229166666666666, "digit1_acc_by_queried_rank": [0.7222222222222222, 0.8484848484848485, 0.9259259259259259], "controls_exact": {"windowed": 0.0, "full": 1.0, "side_empty": 0.0, "side_shuffle": 0.0}, "w1s": {"fact_coverage": 1.0, "slot_hit": 0.812, "align_hit": 0.812, "align_within1": 0.812, "null_weight_at_query": 0.001, "onset_density": 0.055, "onset_in_fact": 0.997, "p_mean_digit1": 0.44, "p_mean_filler": 0.224, "gate_auc_digit1_vs_filler": 0.882, "retained_within_256_at_query": 7.146, "fire_false_rate": 0.038, "fire_false_pairs": 288, "fire_filler_rate": 0.0, "fire_filler_pairs": 3744}}
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 19735.80it/s]
+{"pairs": 5, "seq_len": 2048, "exact": 0.5416666666666666, "digit1": 0.6145833333333334, "digit1_acc_by_queried_rank": [0.3333333333333333, 0.55, 0.6190476190476191, 0.7916666666666666, 0.9], "controls_exact": {"windowed": 0.0, "full": 0.979, "side_empty": 0.0, "side_shuffle": 0.0}, "w1s": {"fact_coverage": 1.0, "slot_hit": 0.49, "align_hit": 0.49, "align_within1": 0.49, "null_weight_at_query": 0.002, "onset_density": 0.056, "onset_in_fact": 1.0, "p_mean_digit1": 0.661, "p_mean_filler": 0.27, "gate_auc_digit1_vs_filler": 0.935, "retained_within_256_at_query": 1.104, "fire_false_rate": 0.043, "fire_false_pairs": 960, "fire_filler_rate": 0.0, "fire_filler_pairs": 5280}}
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 15101.97it/s]
+{"pairs": 3, "seq_len": 512, "exact": 0.7916666666666666, "digit1": 0.8541666666666666, "digit1_acc_by_queried_rank": [0.90625, 0.8125, 0.84375], "controls_exact": {"windowed": 0.0, "full": 0.979, "side_empty": 0.0, "side_shuffle": 0.0}, "w1s": {"fact_coverage": 1.0, "slot_hit": 0.854, "align_hit": 0.844, "align_within1": 0.844, "null_weight_at_query": 0.01, "onset_density": 0.056, "onset_in_fact": 0.99, "p_mean_digit1": 0.328, "p_mean_filler": 0.113, "gate_auc_digit1_vs_filler": 0.937, "retained_within_256_at_query": 6.229, "fire_false_rate": 0.014, "fire_false_pairs": 288, "fire_filler_rate": 0.0, "fire_filler_pairs": 3744}}
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 19542.70it/s]
+{"pairs": 3, "seq_len": 512, "exact": 0.7604166666666666, "digit1": 0.8020833333333334, "digit1_acc_by_queried_rank": [0.75, 0.7878787878787878, 0.8888888888888888], "controls_exact": {"windowed": 0.0, "full": 1.0, "side_empty": 0.0, "side_shuffle": 0.0}, "w1s": {"fact_coverage": 1.0, "slot_hit": 0.812, "align_hit": 0.812, "align_within1": 0.812, "null_weight_at_query": 0.001, "onset_density": 0.055, "onset_in_fact": 0.997, "p_mean_digit1": 0.44, "p_mean_filler": 0.224, "gate_auc_digit1_vs_filler": 0.882, "retained_within_256_at_query": 7.146, "fire_false_rate": 0.038, "fire_false_pairs": 288, "fire_filler_rate": 0.0, "fire_filler_pairs": 3744}}
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 13905.95it/s]
+{"pairs": 5, "seq_len": 2048, "exact": 0.5208333333333334, "digit1": 0.59375, "digit1_acc_by_queried_rank": [0.2857142857142857, 0.55, 0.6190476190476191, 0.75, 0.9], "controls_exact": {"windowed": 0.0, "full": 0.979, "side_empty": 0.0, "side_shuffle": 0.0}, "w1s": {"fact_coverage": 1.0, "slot_hit": 0.49, "align_hit": 0.49, "align_within1": 0.49, "null_weight_at_query": 0.002, "onset_density": 0.056, "onset_in_fact": 1.0, "p_mean_digit1": 0.661, "p_mean_filler": 0.27, "gate_auc_digit1_vs_filler": 0.935, "retained_within_256_at_query": 1.104, "fire_false_rate": 0.043, "fire_false_pairs": 960, "fire_filler_rate": 0.0, "fire_filler_pairs": 5280}}
