@@ -69,7 +69,8 @@ The I1 reference is the existing s1/s2 checkpoints (no new runs).
 
 | Arm | Single change | Runs |
 |---|---|---|
-| A1 T-scale | log or ord recency (G0.2) | 2 |
+| A1 T-rope | rotary slot time in the learned-key score, no age penalty (revision 1) | 2 |
+| A1b T-ordinal | query-chosen ordinal rank feature, no age penalty (revision 1) | 2 |
 | A2 T-supr | content-gated read supersession, no age term | 2 |
 | A3 T-supw | write-time supersession tag, no age term | 2 |
 | A4 T0 | `--no-time`. Eval-time evidence conflicts: ML -0.11/-0.02 slot hit, design ≈ 0. | 2 |
@@ -132,3 +133,17 @@ Total: 16 runs (18 with A9).
 4. **New cells:** add codes > K and 4096/8192 as robustness cells, leaving the DEC2 bar unchanged.
 5. **Order-task bar:** needs a DEC, for example ≥ 0.8 of the full-attention ceiling.
 6. **Recipe changes:** removing the TimeChannel or the age penalty needs a DEC if adopted.
+
+## Revision 1 (4 Nov 2026): time as data, not as a penalty
+
+Daniel: "time as a penalty might not be the most appropriate use of time. LLMs went away from distance-based position encoding to RoPE … time as a data point, ordinal encoding, position relative to other tokens I think still matters."
+
+- **The diagnosis agrees.** The failure is a fixed penalty (ω·age subtracted whatever the query), which over-penalises at lengths unseen in training. That is the ALiBi pattern.
+- **The fix is time that interacts with content and that the query selects**, as RoPE puts relative position into q·k. (RoPE itself needs rescaling, such as NTK or YaRN, for long contexts. The lesson is "multiplicative, relative, query-selected", not that RoPE extrapolates for free.)
+- **Arms.** A1 (log/ord penalty) is replaced by:
+  - **A1 T-rope:** partial rotary time in the slot key and query, with log-spaced periods from 64 to 65,536 tokens;
+  - **A1b T-ordinal:** a learned rank embedding with a query-dependent preference vector. Its range is bounded by K, so it is the same at any length.
+- **What stays.** Supersession (A2, A3) stays, because it is already ordinal and content-gated.
+- **Gate first.** G0.8, a CPU toy, checks that time as data does not repeat the merit-test failure of time codes concatenated into keys. That failure was 0/10; rotation preserves the norm and the content dims, but the claim is checked before GPU time.
+- **Also worth testing.** If an order task has a full-attention ceiling (G0.7), the time-data arms are also the ones that can answer "which came first"; a penalty cannot.
+

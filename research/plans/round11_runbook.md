@@ -4,6 +4,12 @@
 **Design and rationale:** [`round11_plan.md`](round11_plan.md). Read it first; this runbook says how to execute it.
 **Approved:** Daniel, 4 Nov 2026 ("Looks good. Write up the plan for another session to execute once the current round completes"). The defaults for the plan's open decisions are in §2; they are recorded as DEC9 in the register.
 
+**Revision 1 (Daniel, 4 Nov 2026): time as data, not as a penalty.** "Time as a penalty might not be the most appropriate use of time. LLMs went away from distance-based position encoding to RoPE … time as a data point, ordinal encoding, position relative to other tokens I think still matters."
+- The log/ordinal *penalty* arm is replaced by two **time-as-data** arms: rotary slot time (`rope`) and a query-chosen ordinal rank (`ordinal`).
+- Supersession (supr/supw) stays: it is already ordinal and content-gated.
+- The linear penalty remains only as the I1 reference.
+- A new CPU-toy gate (G0.8) checks first that time as data does not repeat the merit failure of time codes concatenated into keys (0/10).
+
 Read before starting, in this order:
 1. `CLAUDE.md`;
 2. `research/HANDOFF.md`;
@@ -79,6 +85,7 @@ Edit `experiments/evolve/w1s_slots.py`. Every new flag defaults to today's behav
 | Flag | Where | What |
 |---|---|---|
 | `--w1s-recency-form {linear,none,log,ord,supr,supw}` | `SlotLoop._select` (the `log_omega` block) and the `stream()` read | `log`: penalty on log(1+age). `ord`: count of newer retained slots. `supr`: subtract w_s × the read mass that newer, query-matching slots carry (two-pass softmax, no age term). `supw`: at a window's close, add σ(γ(cos(K_i,K_j) − θ)) to every older slot i's supersession tag; the read subtracts ω_s·sup_i. All scalars are learned. |
+| `--w1s-time-feat {none,rope,ordinal}` with `--w1s-rope-dims 32`, `--w1s-rope-periods 64,65536` | `SlotLoop._select` (key and query of the learned-key score) and the `stream()` read | **Time as data, not a penalty (revision 1).** `rope`: rotate the first rope-dims dims of the slot key by ω_f·s (the slot's onset) and of the query by ω_f·t (the read time), at log-spaced periods. The score then depends on content and t − s jointly, and the norm and other dims are untouched (partial rotary). `ordinal`: a learned embedding E[r_k] of the slot's rank among retained slots (0 = newest … K−1), plus a query-dependent vector u_t = W_u·x_t; the score adds u_t·E[r_k], so the query chooses which rank it wants. Its range is bounded by K, so it is the same at any length. Both default to no linear age penalty (`--w1s-recency-form none`) unless combined explicitly. |
 | `--w1s-code {lex,learned} --w1s-dc 64` | `_features`, the ring buffer, `_alignment` | The alignment code becomes W_z·LN(h) (learned, dc dimensions) in place of the 2048-d state |
 | `--w1s-keep M --w1s-keep-by {first,value,learned}` | `_store` (`mem &= keep`) | Keep M of n window entries: the first M; the top M by value norm; or the top M by a learned score from h. Store each as (z_j, v_{j+1}, offset j), so order survives the gaps. Scale the kept values by σ(score) so the scorer gets gradient. |
 | (report) | `_stream_size` | State floats per component, written into the result JSON |
@@ -117,6 +124,7 @@ Run these on the round-10 checkpoints (I1 seeds 0–4 after Stage B) as evaluati
 | G0.4 | Selection oracles: first-12; read offsets only (M = 4, ceiling); value-norm top-8; random-8; attention top-8 (diagnostic) | Value-norm within 0.03 of the ceiling means A6's scorer starts from value norm |
 | G0.5 | A W_z fitted on CPU from train caches, scored on held-out | Learned 64-d ≥ 2048-d − 0.02 gives dc = 64; otherwise dc = 128 |
 | G0.6 | 4096 × {16, 24} and 8192 × 32 codes, K = 16 vs K = 64, under the G0.2 winner | K = 16 coverage ≤ 0.8 and K = 64 ≥ 0.95 keeps K = 64 in A8 |
+| G0.8 | CPU toy (port `$DATA/scratch/r10_merit/b_hysteresis/toy2.py`, ≥ 10 seeds) with an update and an order query: time as an additive/concatenated key code (the merit arm that failed, 0/10) vs `rope` vs `ordinal` vs `supr` vs the linear penalty | `rope` or `ordinal` must learn ≥ 8/10 and beat the linear penalty on the order query. Otherwise drop that arm before GPU time; a time-data form that loses content selection (< 0.9 on the plain query) is dropped too. |
 | G0.7 | Ceilings, full vs windowed at 512: latest-wins update-k; "the code stated just before NAME's"; first/last; next fact | full ≥ 0.80 and windowed ≤ 0.10 admits a task; any admission runs A9 |
 
 **Commit the Stage-0 outputs** (JSON + logs) under `results/evolve/round11/stage0/`, with a short NOTEBOOK entry.
@@ -127,17 +135,18 @@ The reference is the committed round-10 I1 seeds 1–2; do not rerun them. Each 
 
 | Arm | Flags added to `$BASE` |
 |---|---|
-| A1 T-scale | `--w1s-recency-form log` (or `ord`, per G0.2) |
+| A1 T-rope | `--w1s-recency-form none --w1s-time-feat rope` (if G0.8 passes) |
+| A1b T-ordinal | `--w1s-recency-form none --w1s-time-feat ordinal` (if G0.8 passes) |
 | A2 T-supr | `--w1s-recency-form supr` |
 | A3 T-supw | `--w1s-recency-form supw` (dropped if G0.3 fails) |
 | A4 T0 | `--no-time` |
 | A5 C-code | `--w1s-code learned --w1s-dc 64` (or 128, per G0.5) |
 | A6 C-keep | `--w1s-keep 8 --w1s-keep-by learned` |
 | A7 C-n12 | `--w1s-win 12` (fixed truncation, the control for A6) |
-| A8 COMB | best of A2/A3 + A5 + `--w1s-win 12 --w1s-K 64` |
+| A8 COMB | best time arm of A1/A1b/A2/A3 + A5 + `--w1s-win 12 --w1s-K 64` |
 | A9 (only if G0.7 admits a task) | ordinal stamps in the read + 25% order-task training |
 
-That is 16 runs (18 with A9), about 2 hours on 2 GPUs. A8's components depend on G0; run it last in the queue.
+That is 18 runs (20 with A9), about 2.3 hours on 2 GPUs. The penalty-form arm (log/ord penalty) is dropped by revision 1. The log/ord penalty forms stay only as Stage-0 diagnostics (G0.2). A8's components depend on G0; run it last in the queue.
 
 **Evaluations per checkpoint** (`eval_by_query.py`, output `results/evolve/round11/e11_<run>_<cell>.json`):
 - the DEC2 grid: {512, 1024, 2048} × {1, 3, 5} codes × {natural `--text-file $DATA/wikitext103_test.txt`, `--random-filler`};
@@ -155,11 +164,11 @@ Report per arm:
 ## 6. Decision rules (pre-registered; plan §6)
 
 - **Void:** windowed ≠ 0.00, empty-store ≠ 0, shuffle not near chance, or any E1 failure.
-- **T arms (A1–A3):** win only if all three hold:
+- **T arms (A1, A1b, A2, A3):** win only if all three hold:
   - mean exact on random 2048 × 5 and 4096 × 8 is ≥ +0.05 over I1;
   - no DEC2 cell drops more than 0.02;
   - update new-exact ≥ I1 − 0.02, with stale ≤ I1.
-  The tie-break is the lower stale rate.
+  The tie-break is the lower stale rate. If an admitted order task exists (G0.7), a time-data arm (A1/A1b) must also reach 0.8 of its full-attention ceiling to be adopted for "when" questions.
 - **A4:** drop the TimeChannel if every DEC2 cell and the update task are within −0.02.
 - **A5:** adopt if every cell is within 0.02 and the state falls ≥ 5×.
 - **A6 and A7:** both must be within 0.02 of I1.

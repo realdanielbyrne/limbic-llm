@@ -1405,3 +1405,11 @@ Exact recall: natural 512 (3 codes) / random 512 / natural 2048 (5 codes) / rand
 
 Stage 0 has no-training gates on Stage B's checkpoints first. The decision rules are fixed in the plan.
 
+**[4 Nov 2026, later] Round 11 revision 1: time as data, not as a penalty.** Daniel: "time as a penalty might not be the most appropriate use of time … LLMs went away from distance-based position encoding to RoPE … time as a data point, ordinal encoding, position relative to other tokens I think still matters."
+- The log/ordinal penalty arm is replaced by two time-as-data arms:
+  - rotary slot time (partial rotary on the key and query, log-spaced periods);
+  - a query-chosen ordinal rank feature.
+- Supersession stays, since it is ordinal and content-gated.
+- A CPU-toy gate (G0.8) checks first that this does not repeat the merit failure of time codes concatenated into keys.
+- The plan and runbook are updated (`research/plans/round11_plan.md`, `round11_runbook.md`).
+
