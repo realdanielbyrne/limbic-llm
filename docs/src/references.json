@@ -727,5 +727,110 @@
     "text": "Widloski, J., & Foster, D. J. (2022). Flexible rerouting of hippocampal replay sequences around changing barriers in the absence of global place field remapping. Neuron 110(9), 1547–1558.e8."
    }
   ]
+ },
+ {
+  "group": "Side-memory review RV4 (4 Nov 2026): episodic slots, KV memory and production attention",
+  "entries": [
+   {
+    "key": "fang2025artificial",
+    "text": "Fang, Y., Yu, W., Zhong, S., Ye, Q., Xiong, X., & Wei, L. (2025). Artificial Hippocampus Networks for Efficient Long-Context Modeling. https://arxiv.org/abs/2510.07318."
+   },
+   {
+    "key": "cui2026hippocampus",
+    "text": "Cui, W. (2026). A Hippocampus for Linear Attention: An Exact Memory for What the Recurrent State Forgets. https://arxiv.org/abs/2607.02303."
+   },
+   {
+    "key": "xiao2024infllm",
+    "text": "Xiao, C., Zhang, P., Han, X., Xiao, G., Lin, Y., Zhang, Z., et al. (2024). InfLLM: Training-Free Long-Context Extrapolation for LLMs with an Efficient Context Memory. https://arxiv.org/abs/2402.04617."
+   },
+   {
+    "key": "mohtashami2023landmark",
+    "text": "Mohtashami, A., & Jaggi, M. (2023). Landmark Attention: Random-Access Infinite Context Length for Transformers. https://arxiv.org/abs/2305.16300."
+   },
+   {
+    "key": "wu2022",
+    "text": "Yuhuai Wu, Markus N. Rabe, DeLesley Hutchins, & Christian Szegedy (2022). Memorizing Transformers. https://arxiv.org/abs/2203.08913."
+   },
+   {
+    "key": "yuan2025native",
+    "text": "Yuan, J., Gao, H., Dai, D., Luo, J., Zhao, L., Zhang, Z., et al. (2025). Native Sparse Attention: Hardware-Aligned and Natively Trainable Sparse Attention. https://arxiv.org/abs/2502.11089."
+   },
+   {
+    "key": "deepseek2025v32",
+    "text": "DeepSeek-AI (2025). DeepSeek-V3.2: Pushing the Frontier of Open Large Language Models. https://arxiv.org/abs/2512.02556."
+   },
+   {
+    "key": "huang2025kv",
+    "text": "Huang, Y. C., Hsiu, P. C., Fang, R., & Chen, M. S. (2025). KV Admission: Learning What to Write for Efficient Long-Context LLM Inference. https://arxiv.org/abs/2512.17452."
+   },
+   {
+    "key": "zhou2026lkv",
+    "text": "Zhou, E., Hao, Y., Wang, C., Zhang, R., Huang, D., Guo, J., et al. (2026). LKV: End-to-End Learning of Head-wise Budgets and Token Selection for LLM KV Cache Eviction. https://arxiv.org/abs/2605.06676."
+   },
+   {
+    "key": "moschella2026learning",
+    "text": "Moschella, L., Manduchi, L., & Sener, O. (2026). Learning to Evict from Key-Value Cache. https://arxiv.org/abs/2602.10238."
+   },
+   {
+    "key": "zhang2023h",
+    "text": "Zhang, Z., Sheng, Y., Zhou, T., Chen, T., Zheng, L., Cai, R., et al. (2023). H$_2$O: Heavy-Hitter Oracle for Efficient Generative Inference of Large Language Models. https://arxiv.org/abs/2306.14048."
+   },
+   {
+    "key": "xiao2023efficient",
+    "text": "Xiao, G., Tian, Y., Chen, B., Han, S., & Lewis, M. (2023). Efficient Streaming Language Models with Attention Sinks. https://arxiv.org/abs/2309.17453."
+   },
+   {
+    "key": "he2025alleviating",
+    "text": "He, M., & Garner, P. N. (2025). Alleviating Forgetfulness of Linear Attention by Hybrid Sparse Attention and Contextualized Learnable Token Eviction. https://arxiv.org/abs/2510.20787."
+   },
+   {
+    "key": "kimi2025kimi",
+    "text": "Kimi Team, Zhang, Y., Lin, Z., Yao, X., Hu, J., Meng, F., et al. (2025). Kimi Linear: An Expressive, Efficient Attention Architecture. https://arxiv.org/abs/2510.26692."
+   },
+   {
+    "key": "openai2025gptoss",
+    "text": "OpenAI (2025). gpt-oss-120b & gpt-oss-20b Model Card. https://arxiv.org/abs/2508.10925."
+   },
+   {
+    "key": "gemma2025gemma3",
+    "text": "Gemma Team (2025). Gemma 3 Technical Report. https://arxiv.org/abs/2503.19786."
+   },
+   {
+    "key": "wang2025unable",
+    "text": "Wang, C., & Sun, J. V. (2025). Unable to Forget: Proactive Interference Reveals Working Memory Limits in LLMs Beyond Context Length. https://arxiv.org/abs/2506.08184."
+   },
+   {
+    "key": "xie2026learning",
+    "text": "Xie, Y. (2026). Learning to Forget: Sleep-Inspired Memory Consolidation for Resolving Proactive Interference in Large Language Models. https://arxiv.org/abs/2603.14517."
+   },
+   {
+    "key": "pink2026temporal",
+    "text": "Pink, M., Vo, V. A., Wu, Q., Mu, J., Turek, J., Hasson, U., et al. (2026). Temporal Context Reinstatement Drives Episodic-Like Order Memory in Long-Context Language Models. https://arxiv.org/abs/2607.22575."
+   },
+   {
+    "key": "fallahpour2026memorilla",
+    "text": "Fallahpour, A., Idehpour, P., Kothapalli, V., Mounier, N., Wu, S., Pardis, S., & Leskovec, J. (2026). Memorilla: Latent Semantic Memory for LLMs. https://arxiv.org/abs/2610.21375."
+   },
+   {
+    "key": "chettih2024barcoding",
+    "text": "Chettih, S. N., Mackevicius, E. L., Hale, S., & Aronov, D. (2024). Barcoding of episodic memories in the hippocampus of a food-caching bird. Cell 187, 1922–1935."
+   },
+   {
+    "key": "fang2024barcode",
+    "text": "Fang, C., Lindsey, J., Abbott, L., Aronov, D., & Chettih, S. (2024). Barcode activity in a recurrent network model of the hippocampus enables efficient memory binding. bioRxiv; eLife reviewed preprint."
+   },
+   {
+    "key": "teyler2007hippocampal",
+    "text": "Teyler, T. J., & Rudy, J. W. (2007). The hippocampal indexing theory and episodic memory: Updating the index. Hippocampus 17(12), 1158–1169."
+   },
+   {
+    "key": "yang2024selection",
+    "text": "Yang, W., Sun, C., Huszár, R., Hainmueller, T., Kiselev, K., & Buzsáki, G. (2024). Selection of experience for memory by hippocampal sharp wave ripples. Science 383(6690), 1478–1483."
+   },
+   {
+    "key": "bittner2017behavioral",
+    "text": "Bittner, K. C., Milstein, A. D., Grienberger, C., Romani, S., & Magee, J. C. (2017). Behavioral time scale synaptic plasticity underlies CA1 place fields. Science 357(6355), 1033–1036."
+   }
+  ]
  }
 ]
