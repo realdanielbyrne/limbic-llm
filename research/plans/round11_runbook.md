@@ -10,6 +10,14 @@
 - The linear penalty remains only as the I1 reference.
 - A new CPU-toy gate (G0.8) checks first that time as data does not repeat the merit failure of time codes concatenated into keys (0/10).
 
+**Revision 2 (after round 10 Stage B, P54–P58; Daniel: "modify round 11 if results from 10 dictate a change").**
+- **The base recipe is I1.** It learns 3 of 5 seeds (seed 1 at 0.94, seed 4 at 0.87), with grid means 0.93–0.96 on the learned seeds. A2, I1K and RI do not beat it.
+- **Stage-A seeds are now 1 and 4,** the borderline and the failing I1 seed, which are more informative than 1 and 2. The references are the committed I1 seeds 1 and 4.
+- **Held-out names are a deciding cell** (I1 gets 0.58–0.74 on names never seen in training, P55). New arms A10 (a large training name pool) and A11 (lexical keys behind a gate that starts near zero; I1K seed 3 generalised at 0.88, but lexical keys collapsed 3 of 5 seeds).
+- **The update task is ill-posed as it stands:** full attention prefers the old code (P56). G0.7 must find an update form with a ceiling, and update rules apply only to such a form.
+- **G0.1 is reframed.** Its recency premise was refuted (P58): the failing seeds have blunter alignment (log β_align 2.39 against 2.65–2.77). New arm A12 (sharper alignment), conditional on G0.1.
+- **Reinstatement stays deferred** (RI 0 of 5).
+
 Read before starting, in this order:
 1. `CLAUDE.md`;
 2. `research/HANDOFF.md`;
@@ -30,7 +38,7 @@ Read before starting, in this order:
    - Training JSONs are `results/evolve/round10/r10_{I1,A2,I1K,RI}_s{0..4}.json`. Logs are in `results/evolve/round10/stageB/`.
    - Evaluations are `results/evolve/round10/stageB/e10b_*.json`, with logs in `stageB/eval/`.
    - Commit the JSONs and logs by name, never the `.pt` files. Add the register rows and a NOTEBOOK entry using the Stage-B rules in `round11_plan.md` §6 and the round-10 plan entry in the NOTEBOOK.
-2. **Pick the base recipe from Stage B.**
+2. **Base recipe: I1 (decided by Stage B, P54–P57).** The rest of this item is kept for reference.
    - If I1 meets DEC2 (≥ 4 of 5 seeds; ≥ 0.85 exact across the full grid), round 11 builds on I1.
    - If another Stage-B arm (A2, I1K or RI) is clearly better on the full grid, build on that instead. Note it in the NOTEBOOK; all I1 flags below then change accordingly.
 3. **Sync:** `git fetch && experiments/evolve/sync.sh`. Other sessions push to `feat/round1-side-memory` too. Stage files by name.
@@ -86,6 +94,8 @@ Edit `experiments/evolve/w1s_slots.py`. Every new flag defaults to today's behav
 |---|---|---|
 | `--w1s-recency-form {linear,none,log,ord,supr,supw}` | `SlotLoop._select` (the `log_omega` block) and the `stream()` read | `log`: penalty on log(1+age). `ord`: count of newer retained slots. `supr`: subtract w_s × the read mass that newer, query-matching slots carry (two-pass softmax, no age term). `supw`: at a window's close, add σ(γ(cos(K_i,K_j) − θ)) to every older slot i's supersession tag; the read subtracts ω_s·sup_i. All scalars are learned. |
 | `--w1s-time-feat {none,rope,ordinal}` with `--w1s-rope-dims 32`, `--w1s-rope-periods 64,65536` | `SlotLoop._select` (key and query of the learned-key score) and the `stream()` read | **Time as data, not a penalty (revision 1).** `rope`: rotate the first rope-dims dims of the slot key by ω_f·s (the slot's onset) and of the query by ω_f·t (the read time), at log-spaced periods. The score then depends on content and t − s jointly, and the norm and other dims are untouched (partial rotary). `ordinal`: a learned embedding E[r_k] of the slot's rank among retained slots (0 = newest … K−1), plus a query-dependent vector u_t = W_u·x_t; the score adds u_t·E[r_k], so the query chooses which rank it wants. Its range is bounded by K, so it is the same at any length. Both default to no linear age penalty (`--w1s-recency-form none`) unless combined explicitly. |
+| `--needle-names pool --needle-name-pool N` (in `run.py`) | `ScatterNeedleTask` name sampling | A seeded synthetic name pool, e.g. 2–3 random syllables, N = 2000. It must be disjoint from `eval_by_query.HELDOUT_NAMES` and from `pl.NAMES`; assert both. Training only. |
+| `--w1s-lex-init` (log β_lex at init, e.g. −2), `--w1s-align-init` (log β_align at init) | `SlotLoop.__init__` | Lets lexical keys start near-off and grow (A11), and alignment start sharper (A12) |
 | `--w1s-code {lex,learned} --w1s-dc 64` | `_features`, the ring buffer, `_alignment` | The alignment code becomes W_z·LN(h) (learned, dc dimensions) in place of the 2048-d state |
 | `--w1s-keep M --w1s-keep-by {first,value,learned}` | `_store` (`mem &= keep`) | Keep M of n window entries: the first M; the top M by value norm; or the top M by a learned score from h. Store each as (z_j, v_{j+1}, offset j), so order survives the gaps. Scale the kept values by σ(score) so the scorer gets gradient. |
 | (report) | `_stream_size` | State floats per component, written into the result JSON |
@@ -118,20 +128,20 @@ Run these on the round-10 checkpoints (I1 seeds 0–4 after Stage B) as evaluati
 
 | Gate | Test | Pass, and what follows |
 |---|---|---|
-| G0.1 | Stage-B I1 seeds: learned ω against random 2048 × 5 exact; overrides `recency-form=none` and `supr` | none or supr helps on ≥ 4 of 5 seeds. Otherwise stop and report to Daniel. |
+| G0.1 | (revised by P58) On I1 seed 4, and on I1K's collapsed seeds 0–2, evaluation-time overrides: recency `none` and `supr`; the alignment temperature sharpened (log β_align + 0.3, + 0.6) | If sharper alignment restores seed 4's oldest ranks (random 2048 × 5 rank 0–2 ≥ 0.75), run A12. If recency overrides do, prioritise A1–A3. If neither does, report to Daniel before Stage A. |
 | G0.2 | Forms {linear, none, log, ord, supr, supw} on random 2048 × 5, 4096 × 8, and update same/now/new at 512 and 2048 | supr or supw: 4096 × 8 ≥ 0.80 with stale ≤ 0.10 on both seeds. The better of log/ord on updates becomes arm A1. |
 | G0.3 | supw false fires (cos > θ between different facts) on held-out names and jitter | ≤ 2%, otherwise drop supw (A3) |
 | G0.4 | Selection oracles: first-12; read offsets only (M = 4, ceiling); value-norm top-8; random-8; attention top-8 (diagnostic) | Value-norm within 0.03 of the ceiling means A6's scorer starts from value norm |
 | G0.5 | A W_z fitted on CPU from train caches, scored on held-out | Learned 64-d ≥ 2048-d − 0.02 gives dc = 64; otherwise dc = 128 |
 | G0.6 | 4096 × {16, 24} and 8192 × 32 codes, K = 16 vs K = 64, under the G0.2 winner | K = 16 coverage ≤ 0.8 and K = 64 ≥ 0.95 keeps K = 64 in A8 |
 | G0.8 | CPU toy (port `$DATA/scratch/r10_merit/b_hysteresis/toy2.py`, ≥ 10 seeds) with an update and an order query: time as an additive/concatenated key code (the merit arm that failed, 0/10) vs `rope` vs `ordinal` vs `supr` vs the linear penalty | `rope` or `ordinal` must learn ≥ 8/10 and beat the linear penalty on the order query. Otherwise drop that arm before GPU time; a time-data form that loses content selection (< 0.9 on the plain query) is dropped too. |
-| G0.7 | Ceilings, full vs windowed at 512: latest-wins update-k; "the code stated just before NAME's"; first/last; next fact | full ≥ 0.80 and windowed ≤ 0.10 admits a task; any admission runs A9 |
+| G0.7 | Ceilings, full vs windowed at 512: latest-wins update-k; "the code stated just before NAME's"; first/last; next fact. **Also update phrasings** (e.g. "NAME's code has changed from OLD to NEW", "… is now NEW (it used to be OLD)"), because the current `--update new` form has full attention preferring the OLD code (P56) | full ≥ 0.80 and windowed ≤ 0.10 admits a task. The update decision rules use only an admitted update form; any admission runs A9. |
 
 **Commit the Stage-0 outputs** (JSON + logs) under `results/evolve/round11/stage0/`, with a short NOTEBOOK entry.
 
-## 5. Stage A: GPU arms (seeds 1–2; plan §4)
+## 5. Stage A: GPU arms (seeds 1 and 4; plan §4, revision 2)
 
-The reference is the committed round-10 I1 seeds 1–2; do not rerun them. Each arm is a single change to the base recipe (§1).
+The reference is the committed round-10 I1 seeds 1 and 4 (`results/evolve/round10/r10_I1_s{1,4}.json`, Stage-B evaluations in `stageB/`); do not rerun them. Each arm is a single change to the base recipe (§1).
 
 | Arm | Flags added to `$BASE` |
 |---|---|
@@ -145,12 +155,15 @@ The reference is the committed round-10 I1 seeds 1–2; do not rerun them. Each 
 | A7 C-n12 | `--w1s-win 12` (fixed truncation, the control for A6) |
 | A8 COMB | best time arm of A1/A1b/A2/A3 + A5 + `--w1s-win 12 --w1s-K 64` |
 | A9 (only if G0.7 admits a task) | ordinal stamps in the read + 25% order-task training |
+| A10 N-pool | `--needle-names pool --needle-name-pool 2000` |
+| A11 K-lexgate | `--w1s-key both --w1s-taps 3 --w1s-lex-init -2` |
+| A12 align-sharp (only if G0.1 points to alignment) | `--w1s-align-init <G0.1's best>` |
 
-That is 18 runs (20 with A9), about 2.3 hours on 2 GPUs. The penalty-form arm (log/ord penalty) is dropped by revision 1. The log/ord penalty forms stay only as Stage-0 diagnostics (G0.2). A8's components depend on G0; run it last in the queue.
+That is 22 runs (24–26 with A9 and A12), about 3–3.5 hours on 2 GPUs. The penalty-form arm (log/ord penalty) is dropped by revision 1. The log/ord penalty forms stay only as Stage-0 diagnostics (G0.2). A8's components depend on G0; run it last in the queue.
 
 **Evaluations per checkpoint** (`eval_by_query.py`, output `results/evolve/round11/e11_<run>_<cell>.json`):
 - the DEC2 grid: {512, 1024, 2048} × {1, 3, 5} codes × {natural `--text-file $DATA/wikitext103_test.txt`, `--random-filler`};
-- `--jitter`, `--heldout-names`;
+- `--jitter`, `--heldout-names` (a deciding cell from revision 2);
 - `--update same|now|new` at 512 and 2048, and `--update-k 2,3`;
 - the robustness cells: 4096 × 8, 4096 × 16/24, 8192 × 32 (batch 1–2), `--decoys 20`;
 - any admitted order task.
@@ -164,6 +177,10 @@ Report per arm:
 ## 6. Decision rules (pre-registered; plan §6)
 
 - **Void:** windowed ≠ 0.00, empty-store ≠ 0, shuffle not near chance, or any E1 failure.
+- **Every arm (revision 2):** it is not adopted if it lowers held-out-name exact by more than 0.02 against I1 on the same seeds.
+- **A10 and A11:** adopt if held-out-name exact rises by ≥ 0.10 over I1 and no DEC2 cell drops by more than 0.02. A11 must also not collapse a seed (grid mean < 0.5 counts as a collapse).
+- **A12:** adopt if seed 4's random 2048 × 5 exact rises by ≥ 0.10 and no other cell drops by more than 0.02.
+- **The update rules** below apply only to an update form admitted by G0.7; otherwise update scores are reported, not used.
 - **T arms (A1, A1b, A2, A3):** win only if all three hold:
   - mean exact on random 2048 × 5 and 4096 × 8 is ≥ +0.05 over I1;
   - no DEC2 cell drops more than 0.02;
@@ -176,7 +193,7 @@ Report per arm:
   - Learned tags are adopted only if A6 beats A7 by ≥ 0.05 on jitter; otherwise use n = 12.
   - Tags settling on frame tokens falsify A6.
 - **A8:** adopt if ≥ I1 − 0.02 on every DEC2 cell and ≥ +0.10 on the codes-greater-than-K cells. If A8 fails, the recipe is the best T arm plus the C arms that passed.
-- **Then Stage B** (5 seeds, 1–2 recipes): ≥ 4 of 5 seeds at ≥ 0.85 exact on the full grid, no update regression, the E8 LM run (`--task lm`) and the CPU suite.
+- **Then Stage B** (5 seeds, 1–2 recipes): ≥ 4 of 5 seeds learned (DEC2 criterion 1, which I1 misses by one seed), ≥ 0.85 exact on the full grid, held-out names reported and ≥ I1, no update regression on an admitted form, the E8 LM run (`--task lm`) and the CPU suite.
 
 ## 7. Records and checkpoints
 

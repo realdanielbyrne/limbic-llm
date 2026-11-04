@@ -147,3 +147,19 @@ Daniel: "time as a penalty might not be the most appropriate use of time. LLMs w
 - **Gate first.** G0.8, a CPU toy, checks that time as data does not repeat the merit-test failure of time codes concatenated into keys. That failure was 0/10; rotation preserves the norm and the content dims, but the claim is checked before GPU time.
 - **Also worth testing.** If an order task has a full-attention ceiling (G0.7), the time-data arms are also the ones that can answer "which came first"; a penalty cannot.
 
+## Revision 2 (4 Nov 2026): what round 10 Stage B changed
+
+Daniel: "modify round 11 if results from 10 dictate a change". Stage B (P54–P58) dictates five changes.
+
+1. **The base is I1, and the Stage-A seeds are 1 and 4.** I1 learned 3 of 5 seeds (seed 1 at 0.94, seed 4 at 0.87), with grid means 0.93–0.96 on the learned seeds. A2, I1K and RI did not beat it. Seeds 1 (borderline) and 4 (failing) discriminate better than seeds 1 and 2.
+2. **Name generalisation becomes a goal.** Held-out names give 0.58–0.74: the learned key memorised the 20 training names, although facts are still retained. Two new arms:
+   - **A10:** a large seeded synthetic name pool for training, disjoint from the held-out names;
+   - **A11:** lexical keys behind a gate that starts near zero. I1K seed 3 generalised at 0.88, but lexical keys at full strength collapsed 3 of 5 seeds.
+
+   Held-out names are a deciding cell for every arm.
+3. **Updates need a task with a ceiling.** In the current form, full attention prefers the old code (new 0.39, old 0.57), so it cannot score updates. G0.7 now searches for phrasings with an explicit change ("has changed from OLD to NEW"), and the update rules apply only to an admitted form.
+4. **G0.1 is reframed.** The planners' premise (a larger learned recency penalty means long-range failure) is refuted: the failing seed has a mid-range ω, and the best seeds the largest. What separates the failures is blunter alignment (log β_align 2.39 against 2.65–2.77 in I1; 1.55–1.72 against 2.58 in I1K). G0.1 now also tests sharper alignment at evaluation, and arm A12 (alignment starting sharper) runs if it helps. A5, the learned alignment code, may help the same way.
+5. **Reinstatement stays deferred** (RI 0 of 5, grid means 0.16–0.63).
+
+Arms are now A1/A1b (time as data), A2/A3 (supersession), A4 (no TimeChannel), A5–A8 (compression), A9 (order, optional), A10–A11 (names) and A12 (alignment, conditional): 22–26 runs.
+
