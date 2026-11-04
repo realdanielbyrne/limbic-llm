@@ -43,6 +43,22 @@ The scripts now default to this layout: the CPU scripts write to `results/synthe
 - **Result files.** Do not edit JSON or logs by hand. Commit logs only for finished runs (B8). A rerun that replaces a file in place must be recorded in the Provenance section of `results/README.md`.
 - **Checkpoints** (`*.pt`) are not committed.
 
+## Side-memory status for other sessions (GPU session, 4 Nov 2026)
+
+- **Current best: the W1s episodic-slot memory, minimal form I1** (`experiments/evolve/w1s_slots.py`; flags `--w1s-gate point --no-w1s-centre --w1s-pre 0 --w1s-key learned --w1s-taps ''`).
+  - On seeds 1–2, which no earlier recipe solved, exact is 0.86–0.98 in every cell, natural and random filler, 512 and 2048 tokens (register P51).
+  - The full combination fails because gate centring adapts to the filler (P50). Leave-one-out and isolation arms: P52. Reinstatement: P53. Stage 0: P49.
+- **Where to look:**
+  - Round 10 results: `results/evolve/round10/` (`r10_*`, `e10_*`; Stage 0 in `stage0/`).
+  - Narrative: NOTEBOOK "Round 10 Stage A".
+  - Decisions: DEC4–DEC7 (DEC5: no pre-fit directions).
+  - Plan: the round-10 plan entry in the NOTEBOOK.
+- **Running now: Stage B.** I1, A2 (the combination minus centring), I1K (I1 + lexical keys from tap 3) and RI (reinstatement with I1's gate), seeds 0–4. Each is evaluated on the full DEC2 grid plus jitter, held-out names and the update task. Its outputs go to `results/evolve/round10/` and `results/evolve/round10/stageB/`; files there are incomplete until the Stage-B commit lands.
+- **New tools:**
+  - `experiments/evolve/taps.py` (`TapLM`: extra taps, reinstatement);
+  - `eval_by_query.py` flags `--jitter`, `--update`, `--heldout-names` and `--w1s-ctrl`;
+  - diagnostics `diag_novelty.py`, `diag_surprise.py`, `diag_declarative.py` and `diag_varlen.py`.
+
 ## How to run a round
 
 Follow [`evolution_protocol.md`](evolution_protocol.md): the round loop, controls, the candidate interface, `experiments/evolve/queue.sh` (GPU job queue) and `experiments/evolve/sync.sh` (rebase-safe push), and the pitfalls met in rounds 0–5.
