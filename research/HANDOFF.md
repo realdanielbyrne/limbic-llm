@@ -61,6 +61,8 @@ The scripts now default to this layout: the CPU scripts write to `results/synthe
 
 ## Round 11 is ready for another session (4 Nov 2026)
 
+**Plain-language status of the side-memory track:** [`side_memory_summary.md`](side_memory_summary.md). It covers what works, what doesn't, why the 64-token window, and production relevance. Read it first.
+
 Daniel approved the round-11 plan (DEC9) and asked for it to be executed by another session once round 10 Stage B completes. **Start from [`plans/round11_runbook.md`](plans/round11_runbook.md).** It lists:
 - the preconditions (Stage B committed, the base recipe chosen);
 - the environment (filler text and scratch references in `~/limbic-data` on geof);

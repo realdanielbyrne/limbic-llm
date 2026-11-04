@@ -18,8 +18,10 @@
 - **G0.1 is reframed.** Its recency premise was refuted (P58): the failing seeds have blunter alignment (log β_align 2.39 against 2.65–2.77). New arm A12 (sharper alignment), conditional on G0.1.
 - **Reinstatement stays deferred** (RI 0 of 5).
 
+**Revision 3 (4 Nov 2026).** Adds Stage C, a window-size sweep (§5b): the 64-token window was never swept. Also adds the plain-language summary [`../side_memory_summary.md`](../side_memory_summary.md) to the reading list and to the records kept per stage.
+
 Read before starting, in this order:
-1. `CLAUDE.md`;
+1. `CLAUDE.md`, then [`research/side_memory_summary.md`](../side_memory_summary.md), the plain-language status;
 2. `research/HANDOFF.md`;
 3. `research/evolution_protocol.md` (the round loop, rules E1–E9, pitfalls);
 4. the NOTEBOOK from "Round 10 plan" to the end;
@@ -174,6 +176,23 @@ Report per arm:
 - the stale rate on updates;
 - state floats and parameters.
 
+## 5b. Stage C: window-size sweep (revision 3; after Stage B, with Daniel's approval)
+
+**Why.** The 64-token window was inherited, not swept. Production local-attention windows are 1,000–8,000 tokens. The plain-language summary ([`../side_memory_summary.md`](../side_memory_summary.md)) lists this as the main untested gap for real-model relevance (backlog W15).
+
+**What.** The adopted round-11 recipe (I1 if nothing is adopted), seeds 1 and 4, at windows {256, 1024}. Window 64 is the reference.
+- **Keep the facts out of reach.** Scale the sequence so facts stay several windows away:
+  - window 256: train at seq-len 2048, evaluate at 2048 and 8192;
+  - window 1024: train at 4096–8192, evaluate at 8192 and 16384 (as memory allows).
+- **The last fact must be outside the window.** `ScatterNeedleTask`'s `tail` (the minimum filler between the last fact and the query) defaults to 256 and is not a flag. Add `--needle-tail` to `run.py`, set it to ≥ 2 × window, and assert in the task that tail > window, or the base model can read the last fact itself.
+- **Measure cost first.** W1s's parallel training form builds (B, T, T) matrices. Run a 100-step smoke at each window and seq-len, and record step time and peak memory. If one does not fit in 32 GB:
+  - lower `--batch`, or add gradient accumulation to `run.py`;
+  - record the change.
+
+  The streaming form (`stream()`) is O(T·K) and is the inference path. Report both costs.
+- **Controls at every window:** windowed 0.00, full ≈ 1.00, the empty store 0.00.
+- **Rule (reported, not a DEC2 criterion):** the design "holds at real window sizes" if exact at window 1024 is ≥ 0.85 on the natural and random cells, on both seeds. Report how exact, slot hit and coverage change with the window, and the cost against the KV cache at each length.
+
 ## 6. Decision rules (pre-registered; plan §6)
 
 - **Void:** windowed ≠ 0.00, empty-store ≠ 0, shuffle not near chance, or any E1 failure.
@@ -206,4 +225,5 @@ Report per arm:
 - **RESULTS.md** §4.9: keep it consistent with the register.
 - **Commits:** JSON + `.log` only, by name; never `.pt`, the queue files, or logs of runs still in progress. Sync with `experiments/evolve/sync.sh`. On a conflict: `git rebase --abort` and report.
 - **HANDOFF:** update the "Side-memory status" section when a stage lands.
-- **Checkpoints with Daniel:** after Stage 0, if G0.1 fails, and after Stage A. Do not start Stage B without his approval.
+- **Checkpoints with Daniel:** after Stage 0, if G0.1 fails, after Stage A, and after Stage B. Do not start Stage B or Stage C without his approval.
+- **Summary:** update [`../side_memory_summary.md`](../side_memory_summary.md) when a stage changes the picture. It is the plain-language status that other sessions and readers start from.
