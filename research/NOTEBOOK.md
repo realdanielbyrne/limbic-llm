@@ -1330,3 +1330,43 @@ Daniel approved multiple taps ("a second tap is fine, more if needed"), lexical 
   - The combination beats isolation if C learns 2 of 2 and every isolation arm learns ≤ 1, or, with equal counts, C leads by ≥ 0.10 exact at 2048 tokens with 5 codes. Stage B must confirm it on 5 seeds.
   - Reinstatement is adopted only if it matches or beats additive output everywhere.
 
+---
+
+## Round 10 Stage A: slots are the answer; the combination is not (4 Nov 2026)
+
+32 runs (16 arms × seeds 1–2, the two seeds no recipe has solved since round 7), natural recipe with the `1:1500,2:1500` curriculum, 6000 steps, `--needle-names train`. 128 evaluations. Windowed 0.00 and full 0.99 in every one.
+
+Exact recall: natural 512 (3 codes) / random 512 / natural 2048 (5 codes) / random 2048.
+
+| Arm | Seed 1 | Seed 2 |
+|---|---|---|
+| **I1** slots + offset read only (point gate, no centring, no pre-record, learned key at tap 21) | **0.95 / 0.95 / 0.93 / 0.86** | **0.98 / 0.95 / 0.96 / 0.86** |
+| A2 = C without gate centring | 0.92 / 0.99 / 0.88 / 0.99 | 0.85 / 0.90 / 0.82 / 0.78 |
+| C (full combination) | 0.93 / 0.65 / 0.78 / 0.63 | 0.71 / 0.20 / 0.51 / 0.09 |
+| A9 (C, 8 slots) | 0.89 / 0.67 / 0.82 / 0.69 | 0.90 / 0.72 / 0.75 / 0.65 |
+| A8 (C, no offset alignment) | 0.72 / 0.55 / 0.72 / 0.47 | 0.67 / 0.51 / 0.68 / 0.42 |
+| Ro (reinstatement, oracle gate) | 0.93 / 0.94 / 0.85 / 0.89 | 0.92 / 0.94 / 0.84 / 0.90 |
+| R (reinstatement, learned gate) | 0.57 / 0.66 / 0.20 / 0.35 | 0.54 / 0.61 / 0.22 / 0.30 |
+| A1, A3–A7, I2, I3 | 0.04–0.40 | 0.02–0.46 |
+| B0 (everything off, superposed) | 0.00 | 0.00 |
+
+**Diagnostics.**
+- C's hysteresis gate with causal centring and running-std normalisation adapts to the filler. On random filler the queried fact is retained at the query in only 0–22% of sequences, and the read falls to the null slot (weight 0.35–0.58).
+- Without centring (A2), retention is 97–100% on random filler.
+- I1 retains the fact in 95–100% of sequences everywhere, with null weight 0. Its argmax slot hit is 0.89–0.99 at 512 and 0.65–0.70 at 2048 with 5 codes, yet exact stays at 0.86–0.96: the soft read and the offset alignment recover.
+- R's learned gate places windows badly (slot hit 0.18–0.38). With the oracle gate (Ro) the hit is 0.98–1.00.
+
+**What it means**
+1. **The slot store with an offset-aligned read is the mechanism.**
+   - Every arm without slots fails (A4, I2, I3, B0); without alignment, digits 2–4 fail (A8).
+   - The simplest slot arm, I1, is nearly at DEC2 on the two hardest seeds: exact 0.86–0.98 in every cell.
+   - Its first digit is ≥ 0.95 at every rank on seed 2, and 0.94 at the weakest rank on seed 1.
+   - This answers the barrier diagnosed in rounds 7–9: removing superposition removes the seed lottery.
+2. **The combination does not beat isolation (pre-registered rule).** C learned 0 of 2; I1 learned 1 of 2, with the other 0.01 short.
+   - The extras (lexical keys, tap 3, pre-record, hysteresis) did not add anything on top of slots in any arm that worked.
+   - Causal centring of the gate is harmful: it makes retention depend on the filler's statistics.
+   - The leave-one-out reading is confounded, because every A arm kept centring. The planned "necessary component" test is therefore valid only for slots, alignment and capacity.
+3. **Reinstatement is a gate problem, not a mechanism problem.** With the oracle gate it reaches 0.84–0.94. Its learned gate, driven by tap-0 states, misplaces windows.
+
+**Stage B (pending Daniel's checkpoint):** 5 seeds (0–4) and the full DEC2 grid, with jitter, held-out names, the update task, the LM run and the CPU suite, for I1 (the winner) and A2 (combination minus centring). Possibly also I1 + lexical/tap-3 keys, to test whether keys help once centring is gone.
+
