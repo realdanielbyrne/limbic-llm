@@ -29,7 +29,7 @@ Claude built the package (first named *hippoformer*): `HippocampalBlock`, the Ti
 
 > "https://divagr.com/blog/qwenputer and https://divagr.com/attention-lab/delta describe a way to use architectures that incorporate Gated DeltaNet linear transformers as RAM. Could this be analogous to the LMM and/or the CA3. The decay gate is similar to the weight decay/ associative memory loss function. That is they serve similar functions."
 
-**Daniel** proposed the analogy. **Claude** made it exact: the Gated DeltaNet update is one gradient step on the Titans memory loss, taken at the decayed state.
+**Daniel** proposed the analogy. **Claude** made it exact: the Gated DeltaNet update is one gradient step on the Titans memory loss, taken at the decayed state. *(Later found to be published: the identity is stated in the Gated DeltaNet paper itself, §3, and in DeltaNet and Longhorn; see §9.)*
 
 $$S_t = \alpha_t S_{t-1}(I - \beta_t k_t k_t^\top) + \beta_t v_t k_t^\top$$
 
@@ -129,11 +129,11 @@ Daniel then said "fan out as necessary", and the switches and experiments were b
 - Qwen3, pure attention: does the loop carry memory when nothing else can?
 - Qwen3.5, a 3:1 Gated DeltaNet hybrid: is GDN the CA3, and does the loop add anything on top?
 
-A second Claude session on Daniel's GPU machine (geof) ran these and pushed its results with a handoff note, [`results/pretrained_HANDOFF.md`](../results/pretrained_HANDOFF.md). It then began an evolution-style search over the side channels, with fitness criteria agreed with Daniel (reach on the Qwen3 needle, bounded echo, new tokens dominating) and anti-gaming rules such as strict causality and a fixed-size state. Its notebook is [`results/evolve/NOTEBOOK.md`](../results/evolve/NOTEBOOK.md), and its round-0 diagnosis found two of the corrections below.
+A second Claude session on Daniel's GPU machine (geof) ran these and pushed its results with a handoff note, [`research/HANDOFF.md`](../research/HANDOFF.md). It then began an evolution-style search over the side channels, with fitness criteria agreed with Daniel (reach on the Qwen3 needle, bounded echo, new tokens dominating) and anti-gaming rules such as strict causality and a fixed-size state. Its notebook is [`research/NOTEBOOK.md`](../research/NOTEBOOK.md), and its round-0 diagnosis found two of the corrections below.
 
 ### 5.6 Design review, stability and alignment (Daniel)
 
-The next morning Daniel asked how the Qwen implementation relates to the circuit: whether DG reuses a mixture-of-experts router, how skip paths and feedback are wired, whether the CA2 injection is a single layer, and what plays the neocortex. **Claude's** answers, taken from the code and run settings, are in the lab notebook's design review. In short:
+The next morning Daniel asked how the Qwen implementation relates to the circuit: whether DG reuses a mixture-of-experts router, how skip paths and feedback are wired, whether the CA2 injection is a single layer, and what plays the neocortex. **Claude's** answers, taken from the code and run settings, are in the [lab notebook's design review](../research/NOTEBOOK.md#design-review-how-the-qwen-side-channels-map-onto-the-circuit-2-nov-2026). In short:
 
 - Both Qwen models are dense, and DG keys were off in every Qwen run.
 - The skips and the feedback live inside one hook at one block, with feedback running over time rather than depth.
@@ -146,13 +146,13 @@ Two of Daniel's premises were adjusted: CA3 → CA1 is the main serial path rath
 
 This became three records:
 
-- the register of results and experiments, [`results/evolve/REGISTER.md`](../results/evolve/REGISTER.md);
+- the register of results and experiments, [`research/REGISTER.md`](../research/REGISTER.md);
 - a feedback-stability programme, S1–S8, led by a saturation curve on Qwen;
 - a proposal for CA2 as a norm-steering controller, A1–A5.
 
 **Claude** added two points of context:
 - Biology: CA2 supports social recognition memory and in mice also *promotes* aggression through the lateral septum, so it acts as a context selector rather than an enforcer of norms.
-- Prior art: circuit breakers already reroute harmful representations towards incoherent or refusal states, but by fine-tuning. What is new here is a runtime, graded controller: a leaky integral of a harm score drives a capped steering gain. Plain novelty is not the same as harm, so the score should come from a harm probe, or from "norm novelty", a mismatch against a memory of aligned behaviour.
+- Prior art: circuit breakers already reroute harmful representations towards incoherent or refusal states, but by fine-tuning. What is new here is a runtime, graded controller *(§9: input-adaptive coefficients are AdaSteer's and closed-loop control is PID steering's; only the leaky temporal integral is distinct)*: a leaky integral of a harm score drives a capped steering gain. Plain novelty is not the same as harm, so the score should come from a harm probe, or from "norm novelty", a mismatch against a memory of aligned behaviour.
 
 ### 5.7 Re-aligning an unaligned model (Daniel)
 
@@ -168,6 +168,22 @@ This became three records:
 
 **Claude** built the alignment track (`experiments/alignment/`). On the second question it answered "partly": the loop's injection averages *older* content, excluding the current circuit, and subtracts the long-run mean, while the alignment controller steers along a fixed direction. Claude added a *gist* direction, a fast-minus-slow running average of the stream before injection (momentum, open loop, capped), and flagged it as positive feedback for the stability programme. A literature survey found fixed reasoning-steering vectors already cutting chain-of-thought tokens by 10–70%, plus feedback-controlled and memory-retrieved steering. It found nothing that steers with the model's own running average of its current thought under negative feedback. Recorded as R1–R5, with over-commitment, the loss of useful backtracking, as the main risk.
 
+### 5.9 First steering runs: regulate the CoT gain, strengthen the alignment gain (Daniel)
+
+Daniel asked for a Qwen version of the GPT-2-XL ActAdd notebook that could test both the alignment and the CoT additions from one config switch. Claude built it (`docs/notebooks/activation_additions_qwen3.ipynb`) and spot-checked it on the abliterated Qwen3-1.7B. The results, N1–N5 in the register, were:
+- Prompt-position ActAdd does nothing to a chat model.
+- The abliterated model's own refusal direction does nothing.
+- The aligned sibling's direction makes half the harmful samples refuse at gain 0.3, while benign prompts are still answered.
+- The thinking direction collapses into repetition at that same gain.
+
+> "The Cot experiment points to a need for a feedback regularization to prevent repeats. The alignment tests point to a need for possibly stronger gain, maybe multipliciative or exponential (squared) instead of additive?"
+
+**Claude** agreed on both and narrowed each.
+
+For CoT, the collapse is a cliff between gain 0.2 and 0.3. A repetition signal, integrated like the harm score and fed back negatively onto the gain, is the regulator that is missing. It joins homeostatic gain (S5) and the regulated gist (R3), and is recorded as R6.
+
+For alignment, only the sibling-direction case is limited by gain; the other two failures are of position and direction. The injection is already multiplicative in the stream norm, so the superlinearity belongs in the gain *schedule*, as a function of harm evidence (squared or exponential in $E_t$). Gain on the existing refusal component would amplify nothing, because abliteration leaves $h\cdot\hat d \approx 0$. A superlinear schedule may help selectivity as well as strength, and the refusal direction's own saturation knee has to be measured before stronger gain is trusted. Recorded as A8 and S9.
+
 ## 6. Findings so far
 
 Small models (about 0.1M parameters, CPU), mostly single seeds; final numbers are in [RESULTS.md](../RESULTS.md).
@@ -175,11 +191,12 @@ Small models (about 0.1M parameters, CPU), mostly single seeds; final numbers ar
 | Question | Result |
 |---|---|
 | Does each channel carry its answer? | The memory loop gives *what* 1.00 and *when* 0.85. The clock alone gives *when* 0.88 with *what* at chance. Windowed attention alone is at chance on *what* (0.11) and at the prior on *when* (0.34). |
-| Does the clamped, damped loop with CA1 control stay bounded? | Yes. The echo is 0.27–0.35 of the input across 520 tokens (peak 0.53). Without control it reaches 3× (clamped sinusoid), 1.4× early (damped) and 8.7× rising to 38× (undamped). |
+| Does the clamped, damped loop with CA1 control stay bounded? | Yes. The echo is 0.29–0.35 of the input across 520 tokens on two seeds (peak 0.53). Without control it reaches about 3× (clamped sinusoid), 1.0× early with a peak of 10.6× (damped), and 4× rising to 14× with a peak of 63× (undamped). |
 | Does the full design still learn? | Yes, given 3000 steps. *What* 1.00 on two seeds, *when* 0.98–1.00. "What" is learned in a sudden late jump whose timing varies. |
 | Do new tokens dominate in a closed loop? | Not by damping alone. Probed with an older and a newer event, the undamped loop names the older event 61% of the time and the damped loop 84%. A closed loop re-stores its own echo every circuit, so per-trace damping does not damp rehearsed content (primacy by self-rehearsal). The full design with the contrast drops to 18%, sparse dentate-gyrus write keys flip it (68% newer), and an open loop that does not re-store its echo shows little primacy. |
 | Is the CA1 inverted copy an op-amp? | Yes, for persistent echo. On an untrained loop, subtractive/none = 0.787, 0.647, 0.475, 0.373 against $1/(1+K)$ = 0.788, 0.650, 0.482, 0.383. It rings above $K = 1.68$, as predicted. |
-| Pretrained models | On Qwen3.5-2B with only attention windowed, the side channels restore exact needle recall at about 500 tokens (1.00 vs 0.00), reproduced after the bf16 fix. Moving the tap from block 12 to block 22 drops it to 0.00, so the success depends on the Gated DeltaNet layers after the tap. The loop failed on Qwen3, but its kernel ($\rho = 0.7$, $\tau = 16$) gives a weight of about $10^{-19}$ at a 500-token lag: the needle was out of the loop's reach. With a horizon that covers the gap, the loop alone carries needle information 500 tokens back in both models (digit loss 1.84 → 1.38 and 1.24, below the format floor), though not yet exact recall. |
+| Pretrained models | On Qwen3.5-2B with only attention windowed, the side channels restore exact needle recall at about 500 tokens (1.00 vs 0.00), reproduced after the bf16 fix. Moving the tap from block 12 to block 22 drops it to 0.00, so the success depends on the Gated DeltaNet layers after the tap. The loop failed on Qwen3, but its kernel ($\rho = 0.7$, $\tau = 16$) gives a weight of about $10^{-19}$ at a 500-token lag: the needle was out of the loop's reach. With a horizon that covers the gap, the loop alone carries needle information 500 tokens back in both models (digit loss 1.84 → 1.38 and 1.24, below the format floor), though not exact recall in those runs. |
+| Round 1 on the pretrained models | Exact recall with every layer windowed. On Qwen3, W1, a Gated DeltaNet side memory whose keys bind each value to the previous position's address (the successor rule of §§2–3), recalls all four digits exactly (1.00), with a fixed-size state and fewer parameters than the loop. The horizon loop on Qwen3 had recovered only the first digit. On Qwen3.5 the horizon loop also reaches 1.00 given 6,000 steps. Both results hold for one stored fact: with two, W1 retrieves the digit chain but picks which fact to start from by a coin flip (exact 0.43–0.55). Register P7–P12. |
 
 ## 7. Corrections made along the way
 
@@ -195,10 +212,15 @@ Small models (about 0.1M parameters, CPU), mostly single seeds; final numbers ar
 | The loop's kernels were causal in any precision | In bf16, `arange(512)` has only 385 distinct values, so positions merged and the clock's $d \ge 0$ mask let a position see the next token. Found by the GPU session; index arithmetic now stays in float32 |
 | The loop has an $O(1)$-state recurrent form | Only if relevance factorises as $\varphi(q)^\top\varphi(k)$. The exponential relevance used here does not, so the store grows as $O(T)$; a fixed-state version leads back to linear attention and Gated DeltaNet |
 | The pretrained needle runs tested the loop's memory | With $\rho = 0.7$ and $\tau = 16$, the kernel's e-folding span is $\tau/\ln(1/\rho) \approx 45$ tokens, and its weight is exactly 0 for lags of 501–503 (the clamped half of the cosine). The horizon has to be set for the gap. |
+| The GDN = Titans-step identity was derived in this session | It is stated in the Gated DeltaNet paper (§3), DeltaNet and Longhorn (§9) |
+| The CPU recall task measures key–value binding | A binding-free strategy scores 0.476 at 6 pairs; full attention and Titans sit at it. Only successor-tied memories bind (§9) |
+| Standard GDN's drop with more pairs is a capacity limit | It follows the binding-free curve at loads far below d_k; standard GDN never learned binding (§9) |
+| CA1 pyramidal cells do not project back to CA3; CA2 lacks mossy-fibre input and sits between CA3 and CA1 | Excitatory vCA1 → dCA3 projections exist (Lin et al. 2021); DG → CA2 input and a parallel CA2 → CA1 route exist (Kohara et al. 2014) (§9) |
+| Subtractive feedback is a high-pass filter that cuts echo and passes new content | By Bode's sensitivity integral it must amplify some band: at K = 1, about 2.5× near a 46-token period (§9) |
 
 ## 8. Open questions
 
-The current list, with status and priority, is kept in [`results/evolve/REGISTER.md`](../results/evolve/REGISTER.md). The main threads:
+The current list, with status and priority, is kept in [`research/REGISTER.md`](../research/REGISTER.md). The main threads:
 
 - **How does Qwen3.5 recall the needle?** The late tap shows the success needs Gated DeltaNet layers after the tap. The loop cannot see 500 tokens back with its default kernel, so the needle must reach the tap through the GDN layers before it. The working hypothesis is a chain: GDN layers before the tap carry a weak trace, the loop re-presents it, and GDN layers after the tap integrate it for the attention layers to read.
 - **How long a memory should the loop have?** Damping makes new input dominate but sets a horizon of about $\tau/\ln(1/\rho)$ tokens. Several bands with different $\rho$, as in the blueprint, may be needed to have both.
@@ -206,6 +228,40 @@ The current list, with status and priority, is kept in [`results/evolve/REGISTER
 - Does the direct entorhinal → CA3 read beat a dentate-gyrus read when the cue is noisy (Treves & Rolls)?
 - What is the compensation for the delayed CA1 feedback: theta timing, slow GABA$_\text{B}$ inhibition, or the clamp?
 - Consolidation: replaying high-novelty episodes into adapters on the frozen model.
+
+## 9. Literature review (Daniel, 2 Nov 2026)
+
+A separate session (Claude, in Claude Science) reviewed the project against the literature.
+
+> "https://github.com/realdanielbyrne/limbic-llm describes a research path on modeling various aspects of the human hippocampus into deep learning constructs.  The repository lays out research tracks for CA3-CA1 style skip connections, CA2 style side channel injections for CoT reasoning and alignment, DG-CA3 style MoE, and using GDN modules in Qwen models as a form of soft Rnn style autoregressive memory. In addition I've added a paper I found on a previous modeling attempt to this chat.  Review the bibliography, the genesis document, the proposed experiments and existing code. Help me flesh out the research with a review of existing literature and how it relates to this or how my research extends existing research.  Fan out as necessary."
+
+**Daniel** supplied Samsonovich & Ascoli (2005), a hippocampal model of episodic retrieval as path search. **Claude** split the work into seven parallel tracks: one per research track, one for the paper, a bibliography audit, and a code review. Every citation was verified against Crossref, arXiv or OpenAlex. The output is in [`research/reviews/2026-11-02_literature/`](../research/reviews/2026-11-02_literature/README.md).
+
+The verdict was blunt. Most components are published under other names:
+
+- the GDN–Titans identity (in the GDN paper itself);
+- exact RAM from orthogonal keys (Kohonen 1972);
+- successor binding (Sompolinsky & Kanter 1986; induction heads);
+- the DG-gated MoE (HiCL);
+- the CA1 fusion vector (InferSent);
+- the closed loop (Feedback Transformer);
+- the time channel (Shankar & Howard's Laplace stage).
+
+What looks new is the control-theoretic treatment of re-injection loops, gist momentum steering, the temporal integral in the harm controller, the P2 observation on Qwen3.5, and an opening the paper points to. That opening is goal-directed path search through a successor memory beyond the attention window, which neither this repo nor the LLM-memory literature implements.
+
+The code review found that the CPU recall task can be solved to 0.476 without binding, which restates M1 and M4. Claude reproduced the ceiling independently.
+
+The review landed after the GPU session's round 1. P11 (W1 retrieves the digit chain but cannot choose which stored pair to start from) turned out to be the paper's missing-key problem, so the paper's goal field became backlog item L6.
+
+> "Make a commit to the repo with your findings.  Update the lab notebook, bib, genesis, and other related documents.  Some experiments are ongoing.  Add a handoff comment for other agents so that they can consume your research."
+
+The commit went on a new branch from the tip of `feat/round1-side-memory`, leaving the GPU session's `research/HANDOFF.md` untouched. It:
+
+- replaced `docs/references.bib` with the audited version;
+- added 72 prior-art entries to REFERENCES.md;
+- updated the register (B12–B15, the RV2 findings table, backlog L1–L16, status notes) and the notebook;
+- corrected four docstrings;
+- added a handoff note for agents, [`research/reviews/2026-11-02_literature/HANDOFF.md`](../research/reviews/2026-11-02_literature/HANDOFF.md).
 
 ## Where to find things
 
@@ -216,5 +272,10 @@ The current list, with status and priority, is kept in [`results/evolve/REGISTER
 | [`../RESULTS.md`](../RESULTS.md) | All experimental results |
 | [`../limbic_llm/temporal_loop.py`](../limbic_llm/temporal_loop.py) | `HippocampalLoop`, `TimeChannel` |
 | [`../experiments/`](../experiments/) | `temporal_loop.py` (CLI), `loop_systems.py` (op-amp test), `pretrained_loop.py` (frozen HF models) |
-| [`../results/pretrained_HANDOFF.md`](../results/pretrained_HANDOFF.md) | Notes from the GPU session |
+| [`../research/REGISTER.md`](../research/REGISTER.md) | Every result, correction and planned experiment, with status and evidence |
+| [`../research/NOTEBOOK.md`](../research/NOTEBOOK.md) | The dated lab notebook: rounds, design review, proposals |
+| [`../research/HANDOFF.md`](../research/HANDOFF.md) | Notes from the GPU session |
+| [`../research/plans/`](../research/plans/), [`../research/reviews/`](../research/reviews/) | Round plans (round 0) and dated reviews (RV1) |
+| [`../results/`](../results/) | Raw JSON and logs: `synthetic/` (CPU), `pretrained/` (GPU), `evolve/round1/`, `alignment/` |
 | [`../REFERENCES.md`](../REFERENCES.md) | Bibliography |
+| [`../research/reviews/2026-11-02_literature/`](../research/reviews/2026-11-02_literature/README.md) | Literature review, track reports, handoff for agents |

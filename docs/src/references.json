@@ -4,19 +4,31 @@
   "entries": [
    {
     "key": "behrouz2024titans",
-    "text": "Behrouz, A., Zhong, P., & Mirrokni, V. (2024). Titans: Learning to Memorize at Test Time. arXiv preprint arXiv:2501.00663. https://arxiv.org/abs/2501.00663"
+    "text": "Behrouz, A., Zhong, P., & Mirrokni, V. (2025). Titans: Learning to Memorize at Test Time. In Advances in Neural Information Processing Systems 38 (NeurIPS 2025). https://arxiv.org/abs/2501.00663"
    },
    {
     "key": "yang2025gated",
     "text": "Yang, S., Kautz, J., & Hatamizadeh, A. (2025). Gated Delta Networks: Improving Mamba2 with Delta Rule. In International Conference on Learning Representations. https://arxiv.org/abs/2412.06464"
    },
    {
+    "key": "yang2024parallelizing",
+    "text": "Yang, S., Wang, B., Zhang, Y., Shen, Y., & Kim, Y. (2024). Parallelizing Linear Transformers with the Delta Rule over Sequence Length. In Advances in Neural Information Processing Systems 37 (NeurIPS 2024)."
+   },
+   {
+    "key": "liu2024longhorn",
+    "text": "Liu, B., Wang, R., Wu, L., Feng, Y., Stone, P., & Liu, Q. (2024). Longhorn: State Space Models are Amortized Online Learners. ."
+   },
+   {
+    "key": "behrouz2025miras",
+    "text": "Behrouz, A., Razaviyayn, M., Zhong, P., & Mirrokni, V. (2025). It's All Connected: A Journey Through Test-Time Memorization, Attentional Bias, Retention, and Online Optimization. ."
+   },
+   {
     "key": "ramsauer2021hopfield",
-    "text": "Ramsauer, H., Schäfl, B., Lehner, J., et al. (2021). Hopfield Networks is All You Need. In International Conference on Learning Representations. https://arxiv.org/abs/2008.02217"
+    "text": "Ramsauer, H., Schäfl, B., Lehner, J., Seidl, P., Widrich, M., Adler, T., et al. (2021). Hopfield Networks is All You Need. In International Conference on Learning Representations. https://arxiv.org/abs/2008.02217"
    },
    {
     "key": "krotov2016dense",
-    "text": "Krotov, D., & Hopfield, J. J. (2016). Dense Associative Memory for Pattern Recognition. In Advances in Neural Information Processing Systems."
+    "text": "Krotov, D., & Hopfield, J. J. (2016). Dense Associative Memory for Pattern Recognition. In Advances in Neural Information Processing Systems. https://arxiv.org/abs/1606.01164"
    },
    {
     "key": "schlag2021linear",
@@ -24,7 +36,7 @@
    },
    {
     "key": "vaswani2017attention",
-    "text": "Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., et al. (2017). Attention Is All You Need. In Advances in Neural Information Processing Systems."
+    "text": "Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., et al. (2017). Attention Is All You Need. In Advances in Neural Information Processing Systems. https://arxiv.org/abs/1706.03762"
    },
    {
     "key": "shazeer2017outrageously",
@@ -36,7 +48,7 @@
    },
    {
     "key": "qwenputer2026",
-    "text": "divagr.com (2026). Qwenputer: Gated DeltaNet State as RAM. https://divagr.com/blog/qwenputer."
+    "text": "Agrawal, D. (2026). Qwenputer: A Computer Compiled into the Weights of a Language Model. https://github.com/divagr18/qwenputer."
    },
    {
     "key": "qwen2025qwen3",
@@ -44,7 +56,7 @@
    },
    {
     "key": "qwen2026qwen35",
-    "text": "Qwen Team (2026). Qwen3.5. Model release, February 2026. https://huggingface.co/Qwen/Qwen3.5-397B-A17B"
+    "text": "Qwen Team (2026). Qwen3.5: Towards Native Multimodal Agents. https://qwen.ai/blog?id=qwen3.5. https://huggingface.co/Qwen/Qwen3.5-2B"
    }
   ]
  },
@@ -53,11 +65,11 @@
   "entries": [
    {
     "key": "andersen2007hippocampus",
-    "text": "Andersen, P., Morris, R., Amaral, D., Bliss, T., & O'Keefe, J. (2007). The Hippocampus Book. Oxford University Press."
+    "text": "Andersen, P., Morris, R., Amaral, D., Bliss, T., & O'Keefe, J. (Eds.) (2007). The Hippocampus Book. Oxford University Press."
    },
    {
     "key": "bliss1993synaptic",
-    "text": "Bliss, T. V. P., & Collingridge, G. L. (1993). A Synaptic Model of Memory: Long-Term Potentiation in the Hippocampus. Nature 361, 31–39."
+    "text": "Bliss, T. V. P., & Collingridge, G. L. (1993). A Synaptic Model of Memory: Long-Term Potentiation in the Hippocampus. Nature 361(6407), 31–39."
    },
    {
     "key": "okeefe1978hippocampus",
@@ -73,7 +85,7 @@
    },
    {
     "key": "hafting2005microstructure",
-    "text": "Hafting, T., Fyhn, M., Molden, S., Moser, M. B., & Moser, E. I. (2005). Microstructure of a Spatial Map in the Entorhinal Cortex. Nature 436, 801–806."
+    "text": "Hafting, T., Fyhn, M., Molden, S., Moser, M. B., & Moser, E. I. (2005). Microstructure of a Spatial Map in the Entorhinal Cortex. Nature 436(7052), 801–806."
    },
    {
     "key": "eichenbaum2017integration",
@@ -92,6 +104,10 @@
     "text": "Jensen, O., & Lisman, J. E. (1996). Hippocampal CA3 Region Predicts Memory Sequences: Accounting for the Phase Precession of Place Cells. Learning & Memory 3(2--3), 279–287."
    },
    {
+    "key": "samsonovich2005simple",
+    "text": "Samsonovich, A. V., & Ascoli, G. A. (2005). A Simple Neural Network Model of the Hippocampus Suggesting Its Pathfinding Role in Episodic Memory Retrieval. Learning & Memory 12(2), 193–208."
+   },
+   {
     "key": "hasselmo2006role",
     "text": "Hasselmo, M. E. (2006). The Role of Acetylcholine in Learning and Memory. Current Opinion in Neurobiology 16(6), 710–715."
    },
@@ -101,15 +117,15 @@
    },
    {
     "key": "bein2020mnemonic",
-    "text": "Bein, O., Duncan, K., & Davachi, L. (2020). Mnemonic Prediction Errors Bias Hippocampal States. Nature Communications 11, 3451."
+    "text": "Bein, O., Duncan, K., & Davachi, L. (2020). Mnemonic Prediction Errors Bias Hippocampal States. Nature Communications 11(1), 3451."
    },
    {
     "key": "hitti2014hippocampal",
-    "text": "Hitti, F. L., & Siegelbaum, S. A. (2014). The Hippocampal CA2 Region Is Essential for Social Memory. Nature 508, 88–92."
+    "text": "Hitti, F. L., & Siegelbaum, S. A. (2014). The Hippocampal CA2 Region Is Essential for Social Memory. Nature 508(7494), 88–92."
    },
    {
     "key": "leroy2018circuit",
-    "text": "Leroy, F., Park, J., Asok, A., Brann, D. H., Meira, T., Boyle, L. M., et al. (2018). A circuit from hippocampal CA2 to lateral septum disinhibits social aggression. Nature 564, 213–218. https://pubmed.ncbi.nlm.nih.gov/30518859/"
+    "text": "Leroy, F., Park, J., Asok, A., Brann, D. H., Meira, T., Boyle, L. M., et al. (2018). A circuit from hippocampal CA2 to lateral septum disinhibits social aggression. Nature 564(7735), 213–218."
    },
    {
     "key": "smith2016targeted",
@@ -117,7 +133,7 @@
    },
    {
     "key": "boyle2024tuned",
-    "text": "Boyle, L. M., Posani, L., Irfan, S., Siegelbaum, S. A., & Fusi, S. (2024). Tuned Geometries of Hippocampal Representations Meet the Computational Demands of Social Memory. Neuron 112(8), 1358–1371."
+    "text": "Boyle, L. M., Posani, L., Irfan, S., Siegelbaum, S. A., & Fusi, S. (2024). Tuned Geometries of Hippocampal Representations Meet the Computational Demands of Social Memory. Neuron 112(8), 1358–1371.e9."
    },
    {
     "key": "howard2002distributed",
@@ -129,7 +145,7 @@
    },
    {
     "key": "koster2018bigloop",
-    "text": "Koster, R., Chadwick, M. J., Chen, Y., Berron, D., Banino, A., Düzel, E., et al. (2018). Big-Loop Recurrence within the Hippocampal System Supports Integration of Information across Episodes. Neuron 99(6), 1342–1354."
+    "text": "Koster, R., Chadwick, M. J., Chen, Y., Berron, D., Banino, A., Düzel, E., et al. (2018). Big-Loop Recurrence within the Hippocampal System Supports Integration of Information across Episodes. Neuron 99(6), 1342–1354.e6."
    },
    {
     "key": "mcclelland1995why",
@@ -154,7 +170,7 @@
    },
    {
     "key": "whittington2020tolman",
-    "text": "Whittington, J. C. R., Muller, T. H., Mark, S., Chen, G., Barry, C., Burgess, N., & Behrens, T. E. J. (2020). The Tolman-Eichenbaum Machine: Unifying Space and Relational Memory through Generalization in the Hippocampal Formation. Cell 183(5), 1249–1263."
+    "text": "Whittington, J. C. R., Muller, T. H., Mark, S., Chen, G., Barry, C., Burgess, N., & Behrens, T. E. J. (2020). The Tolman-Eichenbaum Machine: Unifying Space and Relational Memory through Generalization in the Hippocampal Formation. Cell 183(5), 1249–1263.e23."
    },
    {
     "key": "whittington2022relating",
@@ -162,11 +178,11 @@
    },
    {
     "key": "kapoor2025hicl",
-    "text": "Kapoor, K., Mackey, W., Aloimonos, Y., & Lin, X. (2025). HiCL: Hippocampal-Inspired Continual Learning. arXiv preprint arXiv:2508.16651. https://arxiv.org/abs/2508.16651"
+    "text": "Kapoor, K., Mackey, W., Aloimonos, Y., & Lin, X. (2026). HiCL: Hippocampal-Inspired Continual Learning. In Proceedings of the AAAI Conference on Artificial Intelligence. https://arxiv.org/abs/2508.16651"
    },
    {
     "key": "das2024larimar",
-    "text": "Das, P., Chaudhury, S., Nelson, E., Melnyk, I., Swaminathan, S., Dai, S., et al. (2024). Larimar: Large Language Models with Episodic Memory Control. arXiv preprint arXiv:2403.11901. https://arxiv.org/abs/2403.11901"
+    "text": "Das, P., Chaudhury, S., Nelson, E., Melnyk, I., Swaminathan, S., Dai, S., et al. (2024). Larimar: Large Language Models with Episodic Memory Control. In International Conference on Machine Learning (ICML). https://arxiv.org/abs/2403.11901"
    },
    {
     "key": "gutierrez2024hipporag",
@@ -174,7 +190,7 @@
    },
    {
     "key": "fountas2025human",
-    "text": "Fountas, Z., Benfeghoul, M., Oomerjee, A., Christopoulou, F., Lampouras, G., Ammar, H. B., & Wang, J. (2025). Human-Inspired Episodic Memory for Infinite Context LLMs. In International Conference on Learning Representations. https://mlanthology.org/iclr/2025/fountas2025iclr-humaninspired/"
+    "text": "Fountas, Z., Benfeghoul, M. A., Oomerjee, A., Christopoulou, F., Lampouras, G., Bou Ammar, H., & Wang, J. (2025). Human-Inspired Episodic Memory for Infinite Context LLMs. In International Conference on Learning Representations. https://mlanthology.org/iclr/2025/fountas2025iclr-humaninspired/"
    },
    {
     "key": "ahn2025hema",
@@ -182,7 +198,7 @@
    },
    {
     "key": "omidi2025memory",
-    "text": "Omidi, P., Huang, X., Laborieux, A., Nikpour, B., Shi, T., & Eshaghi, A. (2025). Memory-Augmented Transformers: A Systematic Review from Neuroscience Principles to Technical Solutions. arXiv preprint arXiv:2508.10824. https://arxiv.org/abs/2508.10824"
+    "text": "Omidi, P., Huang, X., Laborieux, A., Nikpour, B., Shi, T., & Eshaghi, A. (2025). Memory-Augmented Transformers: A Systematic Review from Neuroscience Principles to Enhanced Model Architectures. arXiv preprint arXiv:2508.10824. https://arxiv.org/abs/2508.10824"
    }
   ]
  },
@@ -191,7 +207,7 @@
   "entries": [
    {
     "key": "turner2023activation",
-    "text": "Turner, A. M., Thiergart, L., Leech, G., Udell, D., Vazquez, J. J., Mini, U., & MacDiarmid, M. (2023). Activation Addition: Steering Language Models Without Optimization. arXiv preprint arXiv:2308.10248. https://arxiv.org/abs/2308.10248"
+    "text": "Turner, A. M., Thiergart, L., Leech, G., Udell, D., Vazquez, J. J., Mini, U., & MacDiarmid, M. (2023). Steering Language Models With Activation Engineering. arXiv preprint arXiv:2308.10248. https://arxiv.org/abs/2308.10248"
    }
   ]
  },
@@ -200,11 +216,11 @@
   "entries": [
    {
     "key": "typesafe2026jev",
-    "text": "TypeSafe AI (2026). Jev: Structured Decisions for Classification, Routing and Scoring. https://jevai.net."
+    "text": "TypeSafe AI (2026). Introducing System One Models & Jev. https://typesafe.ai/blog/introducing-system-one-models-and-jev."
    },
    {
     "key": "nandhakishor2026laya",
-    "text": "NandhaKishorM (2026). LAYA: Multilingual Single-Pass Decision Engine. https://github.com/NandhaKishorM/laya (Apache-2.0)."
+    "text": "Mukkunnoth, N. (2026). Laya: Non-Autoregressive System 1 Decision Engine. https://github.com/NandhaKishorM/laya (Apache-2.0)."
    },
    {
     "key": "huang2026llmjepa",
@@ -261,6 +277,10 @@
     "text": "Shankar, K. H., & Howard, M. W. (2012). A Scale-Invariant Internal Representation of Time. Neural Computation 24(1), 134–193."
    },
    {
+    "key": "kabir2024deep",
+    "text": "Kabir, M. R., Mochizuki-Freeman, J., & Tiganj, Z. (2024). Deep Reinforcement Learning with Time-Scale Invariant Memory. ."
+   },
+   {
     "key": "sapolsky1986neuroendocrinology",
     "text": "Sapolsky, R. M., Krey, L. C., & McEwen, B. S. (1986). The Neuroendocrinology of Stress and Aging: The Glucocorticoid Cascade Hypothesis. Endocrine Reviews 7(3), 284–301."
    }
@@ -275,7 +295,11 @@
    },
    {
     "key": "lee2024programming",
-    "text": "Lee, B. W., Padhi, I., Ramamurthy, K. N., Miehling, E., Dognin, P., Nagireddy, M., & Dhurandhar, A. (2024). Programming Refusal with Conditional Activation Steering. arXiv preprint arXiv:2409.05907. https://arxiv.org/abs/2409.05907"
+    "text": "Lee, B. W., Padhi, I., Ramamurthy, K. N., Miehling, E., Dognin, P., Nagireddy, M., & Dhurandhar, A. (2025). Programming Refusal with Conditional Activation Steering. In International Conference on Learning Representations (ICLR). https://arxiv.org/abs/2409.05907"
+   },
+   {
+    "key": "zhao2025adasteer",
+    "text": "Zhao, W., Guo, J., Hu, Y., Deng, Y., Zhang, A., Sui, X., et al. (2025). AdaSteer: Your Aligned LLM is Inherently an Adaptive Jailbreak Defender. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing."
    },
    {
     "key": "do2025dynamic",
@@ -296,7 +320,7 @@
   "entries": [
    {
     "key": "geva2021transformer",
-    "text": "Geva, M., Schuster, R., Berant, J., & Levy, O. (2021). Transformer Feed-Forward Layers Are Key-Value Memories. In Proceedings of EMNLP. https://arxiv.org/abs/2012.14913"
+    "text": "Geva, M., Schuster, R., Berant, J., & Levy, O. (2021). Transformer Feed-Forward Layers Are Key-Value Memories. In Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing. https://arxiv.org/abs/2012.14913"
    },
    {
     "key": "meng2022locating",
@@ -329,7 +353,7 @@
    },
    {
     "key": "rottger2024xstest",
-    "text": "Röttger, P., Kirk, H. R., Vidgen, B., Attanasio, G., Bianchi, F., & Hovy, D. (2024). XSTest: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models. In Proceedings of NAACL. https://arxiv.org/abs/2308.01263"
+    "text": "Röttger, P., Kirk, H. R., Vidgen, B., Attanasio, G., Bianchi, F., & Hovy, D. (2024). XSTest: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models. In Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics (NAACL). https://arxiv.org/abs/2308.01263"
    }
   ]
  },
@@ -338,43 +362,43 @@
   "entries": [
    {
     "key": "chen2025seal",
-    "text": "Chen, et al. (2025). SEAL: Steerable Reasoning Calibration of Large Language Models for Free. https://arxiv.org/abs/2504.07986."
+    "text": "Chen, R., Zhang, Z., Hong, J., Kundu, S., & Wang, Z. (2025). SEAL: Steerable Reasoning Calibration of Large Language Models for Free. In Conference on Language Modeling (COLM). https://arxiv.org/abs/2504.07986"
    },
    {
     "key": "azizi2025activation",
-    "text": "Azizi, et al. (2025). Activation Steering for Chain-of-Thought Compression. https://arxiv.org/abs/2507.04742."
+    "text": "Azizi, S., Potraghloo, E. B., Kundu, S., & Pedram, M. (2026). Activation Steering for Chain-of-Thought Compression. In Findings of the Association for Computational Linguistics: ACL 2026. https://arxiv.org/abs/2507.04742"
    },
    {
     "key": "huang2025mitigating",
-    "text": "Huang, et al. (2025). Mitigating Overthinking in Large Reasoning Models via Manifold Steering. NeurIPS 2025. https://arxiv.org/abs/2505.22411"
+    "text": "Huang, Y., Chen, H., Ruan, S., Zhang, Y., Wei, X., & Dong, Y. (2025). Mitigating Overthinking in Large Reasoning Models via Manifold Steering. In Advances in Neural Information Processing Systems 38 (NeurIPS 2025). https://arxiv.org/abs/2505.22411"
    },
    {
     "key": "lin2025controlling",
-    "text": "Lin, et al. (2025). Controlling Thinking Speed in Reasoning Models. NeurIPS 2025. https://arxiv.org/abs/2507.03704"
+    "text": "Lin, Z., Fu, Z., Chen, Z., Chen, C., Xie, L., Wang, W., et al. (2025). Controlling Thinking Speed in Reasoning Models. In Advances in Neural Information Processing Systems 38 (NeurIPS 2025). https://arxiv.org/abs/2507.03704"
    },
    {
     "key": "ma2025cotvalve",
-    "text": "Ma, et al. (2025). CoT-Valve: Length-Compressible Chain-of-Thought Tuning. ACL 2025. https://arxiv.org/abs/2502.09601"
+    "text": "Ma, X., Wan, G., Yu, R., Fang, G., & Wang, X. (2025). CoT-Valve: Length-Compressible Chain-of-Thought Tuning. In Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics. https://arxiv.org/abs/2502.09601"
    },
    {
     "key": "sun2025thinkedit",
-    "text": "Sun, et al. (2025). ThinkEdit: Interpretable Weight Editing to Mitigate Overly Short Thinking in Reasoning Models. EMNLP 2025. https://arxiv.org/abs/2503.22048"
+    "text": "Sun, C. E., Yan, G., & Weng, T. W. (2025). ThinkEdit: Interpretable Weight Editing to Mitigate Overly Short Thinking in Reasoning Models. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing. https://arxiv.org/abs/2503.22048"
    },
    {
     "key": "venhoff2025understanding",
-    "text": "Venhoff, et al. (2025). Understanding Reasoning in Thinking Language Models via Steering Vectors. https://arxiv.org/abs/2506.18167."
+    "text": "Venhoff, C., Arcuschin, I., Torr, P., Conmy, A., & Nanda, N. (2025). Understanding Reasoning in Thinking Language Models via Steering Vectors. https://arxiv.org/abs/2506.18167."
    },
    {
     "key": "hao2024training",
-    "text": "Hao, et al. (2024). Training Large Language Models to Reason in a Continuous Latent Space. https://arxiv.org/abs/2412.06769."
+    "text": "Hao, S., Sukhbaatar, S., Su, D., Li, X., Hu, Z., Weston, J., & Tian, Y. (2025). Training Large Language Models to Reason in a Continuous Latent Space. In Conference on Language Modeling (COLM). https://arxiv.org/abs/2412.06769"
    },
    {
     "key": "nguyen2025activation",
-    "text": "Nguyen, et al. (2025). Activation Steering with a Feedback Controller. ICLR 2026. https://arxiv.org/abs/2510.04309"
+    "text": "Nguyen, D. V., Vu, H. M., Pham, N. Y., Zhang, L., & Nguyen, T. M. (2026). Activation Steering with a Feedback Controller. In International Conference on Learning Representations (ICLR). https://arxiv.org/abs/2510.04309"
    },
    {
     "key": "shi2026internalizing",
-    "text": "Shi, et al. (2026). Internalizing LLM Reasoning via Discovery and Replay of Latent Actions. https://arxiv.org/abs/2602.04925."
+    "text": "Shi, Z., Zhu, Y., Shi, J., Zhang, X., Wang, L., & Miao, C. (2026). STIR: Self-Distilled Latent Tools for Dynamic Control of LLM Reasoning. In Proceedings of the 2026 Conference on Empirical Methods in Natural Language Processing. https://arxiv.org/abs/2602.04925"
    }
   ]
  },
@@ -383,7 +407,324 @@
   "entries": [
    {
     "key": "buzzega2020dark",
-    "text": "Buzzega, P., Boschini, M., Porrello, A., Abati, D., & Calderara, S. (2020). Dark Experience for General Continual Learning: A Strong, Simple Baseline. In Advances in Neural Information Processing Systems."
+    "text": "Buzzega, P., Boschini, M., Porrello, A., Abati, D., & Calderara, S. (2020). Dark Experience for General Continual Learning: A Strong, Simple Baseline. In Advances in Neural Information Processing Systems. https://arxiv.org/abs/2004.07211"
+   }
+  ]
+ },
+ {
+  "group": "Literature review (Nov 2026)",
+  "entries": []
+ },
+ {
+  "group": "Prior art identified by the literature review (Nov 2026): memory, recall and hybrids",
+  "entries": [
+   {
+    "key": "kohonen1972correlation",
+    "text": "Kohonen, T. (1972). Correlation Matrix Memories. IEEE Transactions on Computers C-21(4), 353–359."
+   },
+   {
+    "key": "sompolinsky1986temporal",
+    "text": "Sompolinsky, H., & Kanter, I. (1986). Temporal Association in Asymmetric Neural Networks. Physical Review Letters 57(22), 2861–2864."
+   },
+   {
+    "key": "olsson2022context",
+    "text": "Olsson, C., Elhage, N., Nanda, N., Joseph, N., DasSarma, N., Henighan, T., et al. (2022). In-context Learning and Induction Heads. https://arxiv.org/abs/2209.11895."
+   },
+   {
+    "key": "fu2022hungry",
+    "text": "Fu, D. Y., Dao, T., Saab, K. K., Thomas, A. W., Rudra, A., & Ré, C. (2022). Hungry Hungry Hippos: Towards Language Modeling with State Space Models. https://arxiv.org/abs/2212.14052."
+   },
+   {
+    "key": "zhang2024memory",
+    "text": "Zhang, J., Nolte, N., Sadhukhan, R., Chen, B., & Bottou, L. (2024). Memory Mosaics. https://arxiv.org/abs/2405.06394."
+   },
+   {
+    "key": "wang2025test",
+    "text": "Wang, K. A., Shi, J., & Fox, E. B. (2025). Test-time regression: a unifying framework for designing sequence models with associative memory. https://arxiv.org/abs/2501.12352."
+   },
+   {
+    "key": "lei2026mem",
+    "text": "Lei, J., Zhang, D., Li, J., Wang, W., Fan, K., Liu, X., et al. (2026). $\\delta$-mem: Efficient Online Memory for Large Language Models. https://arxiv.org/abs/2605.12357."
+   },
+   {
+    "key": "munkhdalai2024leave",
+    "text": "Munkhdalai, T., Faruqui, M., & Gopal, S. (2024). Leave No Context Behind: Efficient Infinite Context Transformers with Infini-attention. https://arxiv.org/abs/2404.07143."
+   },
+   {
+    "key": "okpekpe2025revisiting",
+    "text": "Okpekpe, D., & Orvieto, A. (2025). Revisiting associative recall in modern recurrent models. https://arxiv.org/abs/2508.19029."
+   },
+   {
+    "key": "arora2023zoology",
+    "text": "Arora, S., Eyuboglu, S., Timalsina, A., Johnson, I., Poli, M., Zou, J., et al. (2023). Zoology: Measuring and Improving Recall in Efficient Language Models. https://arxiv.org/abs/2312.04927."
+   },
+   {
+    "key": "hsieh2024ruler",
+    "text": "Hsieh, C. P., Sun, S., Kriman, S., Acharya, S., Rekesh, D., Jia, F., et al. (2024). RULER: What's the Real Context Size of Your Long-Context Language Models?. https://arxiv.org/abs/2404.06654."
+   },
+   {
+    "key": "chen2026hla",
+    "text": "Chen, Z., Lin, X., Wu, X., He, J., Cai, J., & Zhuang, B. (2026). HLA: Expressive Hybrid Linear Attention via Chunk-Wise Dynamic Mixing. https://arxiv.org/abs/2610.05842."
+   },
+   {
+    "key": "cabannes2025short",
+    "text": "Cabannes, L., Beck, M., Szilvasy, G., Douze, M., Lomeli, M., Copet, J., et al. (2025). Short window attention enables long-term memorization. https://arxiv.org/abs/2509.24552."
+   },
+   {
+    "key": "bick2025understanding",
+    "text": "Bick, A., Xing, E., & Gu, A. (2025). Understanding the Skill Gap in Recurrent Language Models: The Role of the Gather-and-Aggregate Mechanism. https://arxiv.org/abs/2504.18574."
+   },
+   {
+    "key": "kang2025state",
+    "text": "Kang, W., Galim, K., Zeng, Y., Lee, M., Koo, H. I., & Cho, N. I. (2025). State-offset Tuning: State-based Parameter-Efficient Fine-Tuning for State Space Models. https://arxiv.org/abs/2503.03499."
+   },
+   {
+    "key": "lee2026language",
+    "text": "Lee, S., McLeish, S., Goldstein, T., & Fanti, G. (2026). Do Language Models Need Sleep? Offline Recurrence for Improved Online Inference. https://arxiv.org/abs/2605.26099."
+   },
+   {
+    "key": "behrouz2026language",
+    "text": "Behrouz, A., Hashemi, F., Javanmard, A., & Mirrokni, V. (2026). Language Models Need Sleep: Learning to Self-Modify and Consolidate Memories. https://arxiv.org/abs/2606.03979."
+   },
+   {
+    "key": "mcdermott2025lola",
+    "text": "McDermott, L., Heath, R. W., & Parhi, R. (2025). LoLA: Low-Rank Linear Attention With Sparse Caching. https://arxiv.org/abs/2505.23666."
+   },
+   {
+    "key": "allenzhu2025physics",
+    "text": "Allen-Zhu, Z. (2025). Physics of Language Models: Part 4.1, Architecture Design and the Magic of Canon Layers. https://arxiv.org/abs/2512.17351."
+   },
+   {
+    "key": "jelassi2024repeat",
+    "text": "Jelassi, S., Brandfonbrener, D., Kakade, S. M., & Malach, E. (2024). Repeat After Me: Transformers are Better than State Space Models at Copying. https://arxiv.org/abs/2402.01032."
+   },
+   {
+    "key": "fan2020",
+    "text": "Angela Fan, Thibaut Lavril, Edouard Grave, Armand Joulin, & Sainbayar Sukhbaatar (2020). Addressing Some Limitations of Transformers with Feedback Memory. https://arxiv.org/abs/2002.09402."
+   },
+   {
+    "key": "hatamizadeh2026gated",
+    "text": "Hatamizadeh, A., Choi, Y., & Kautz, J. (2026). Gated DeltaNet-2: Decoupling Erase and Write in Linear Attention. https://arxiv.org/abs/2605.22791."
+   },
+   {
+    "key": "grazzi2024unlocking",
+    "text": "Grazzi, R., Siems, J., Zela, A., Franke, J. K. H., Hutter, F., & Pontil, M. (2024). Unlocking State-Tracking in Linear RNNs Through Negative Eigenvalues. https://arxiv.org/abs/2411.12537."
+   }
+  ]
+ },
+ {
+  "group": "Prior art identified by the literature review (Nov 2026): CA3 → CA1 circuit, skips and timing",
+  "entries": [
+   {
+    "key": "conneau2017",
+    "text": "Alexis Conneau, Douwe Kiela, Holger Schwenk, Loic Barrault, & Antoine Bordes (2017). Supervised Learning of Universal Sentence Representations from Natural Language Inference Data. https://arxiv.org/abs/1705.02364."
+   },
+   {
+    "key": "chen2024predictive",
+    "text": "Chen, Y., Zhang, H., Cameron, M., & Sejnowski, T. (2024). Predictive sequence learning in the hippocampal formation. Neuron 112(15), 2645–2658.e4."
+   },
+   {
+    "key": "nakashiba2008transgenic",
+    "text": "Nakashiba, T., Young, J. Z., McHugh, T. J., Buhl, D. L., & Tonegawa, S. (2008). Transgenic Inhibition of Synaptic Transmission Reveals Role of CA3 Output in Hippocampal Learning. Science 319(5867), 1260–1264."
+   },
+   {
+    "key": "lin2021noncanonical",
+    "text": "Lin, X., Amalraj, M., Blanton, C., Avila, B., Holmes, T. C., Nitz, D. A., & Xu, X. (2021). Noncanonical projections to the hippocampal CA3 regulate spatial learning and memory by modulating the feedforward hippocampal trisynaptic pathway. PLOS Biology 19(12), e3001127."
+   },
+   {
+    "key": "zhou2024value",
+    "text": "Zhanchao Zhou, Tianyi Wu, Zhiyun Jiang, Fares Obeid, & Zhenzhong Lan (2024). Value Residual Learning. https://arxiv.org/abs/2410.17897."
+   },
+   {
+    "key": "pagliardini2024",
+    "text": "Matteo Pagliardini, Amirkeivan Mohtashami, Francois Fleuret, & Martin Jaggi (2024). DenseFormer: Enhancing Information Flow in Transformers via Depth Weighted Averaging. https://arxiv.org/abs/2402.02622."
+   },
+   {
+    "key": "zhu2024hyper",
+    "text": "Defa Zhu, Hongzhi Huang, Zihao Huang, Yutao Zeng, Yunyao Mao, Banggu Wu, et al. (2024). Hyper-Connections. https://arxiv.org/abs/2409.19606."
+   },
+   {
+    "key": "golovneva2024",
+    "text": "Olga Golovneva, Tianlu Wang, Jason Weston, & Sainbayar Sukhbaatar (2024). Contextual Position Encoding: Learning to Count What's Important. https://arxiv.org/abs/2405.18719."
+   },
+   {
+    "key": "tsao2018integrating",
+    "text": "Tsao, A., Sugar, J., Lu, L., Wang, C., Knierim, J. J., Moser, M. B., & Moser, E. I. (2018). Integrating time from experience in the lateral entorhinal cortex. Nature 561(7721), 57–62."
+   },
+   {
+    "key": "brunel1999fast",
+    "text": "Brunel, N., & Hakim, V. (1999). Fast Global Oscillations in Networks of Integrate-and-Fire Neurons with Low Firing Rates. Neural Computation 11(7), 1621–1671."
+   },
+   {
+    "key": "schapiro2017complementary",
+    "text": "Schapiro, A. C., Turk-Browne, N. B., Botvinick, M. M., & Norman, K. A. (2017). Complementary learning systems within the hippocampus: a neural network modelling approach to reconciling episodic memory with statistical learning. Philosophical Transactions of the Royal Society B: Biological Sciences 372(1711), 20160049."
+   },
+   {
+    "key": "grienberger2022entorhinal",
+    "text": "Grienberger, C., & Magee, J. C. (2022). Entorhinal cortex directs learning-related changes in CA1 representations. Nature 611(7936), 554–562."
+   }
+  ]
+ },
+ {
+  "group": "Prior art identified by the literature review (Nov 2026): dentate gyrus, sparse codes and MoE",
+  "entries": [
+   {
+    "key": "bricken2023sparse",
+    "text": "Bricken, T., Davies, X., Singh, D., Krotov, D., & Kreiman, G. (2023). Sparse Distributed Memory is a Continual Learner. https://arxiv.org/abs/2303.11934."
+   },
+   {
+    "key": "pan2025scaling",
+    "text": "Pan, Y., An, Y., Li, Z., Chou, Y., Zhu, R., Wang, X., et al. (2025). Scaling Linear Attention with Sparse State Expansion. https://arxiv.org/abs/2507.16577."
+   },
+   {
+    "key": "du2025mom",
+    "text": "Du, J., Sun, W., Lan, D., Hu, J., & Cheng, Y. (2025). MoM: Linear Sequence Modeling with Mixture-of-Memories. https://arxiv.org/abs/2502.13685."
+   },
+   {
+    "key": "he2024mixture",
+    "text": "He, X. O. (2024). Mixture of A Million Experts. https://arxiv.org/abs/2407.04153."
+   },
+   {
+    "key": "lample2019large",
+    "text": "Lample, G., Sablayrolles, A., Ranzato, M., Denoyer, L., & Jégou, H. (2019). Large Memory Layers with Product Keys. https://arxiv.org/abs/1907.05242."
+   },
+   {
+    "key": "chi2022representation",
+    "text": "Chi, Z., Dong, L., Huang, S., Dai, D., Ma, S., Patra, B., et al. (2022). On the Representation Collapse of Sparse Mixture of Experts. https://arxiv.org/abs/2204.09179."
+   },
+   {
+    "key": "qiu2025demons",
+    "text": "Qiu, Z., Huang, Z., Zheng, B., Wen, K., Wang, Z., Men, R., et al. (2025). Demons in the Detail: On Implementing Load Balancing Loss for Training Specialized Mixture-of-Expert Models. https://arxiv.org/abs/2501.11873."
+   },
+   {
+    "key": "wang2024let",
+    "text": "Wang, Z., Chen, D., Dai, D., Xu, R., Li, Z., & Wu, Y. (2024). Let the Expert Stick to His Last: Expert-Specialized Fine-Tuning for Sparse Architectural Large Language Models. https://arxiv.org/abs/2407.01906."
+   },
+   {
+    "key": "lin2025continual",
+    "text": "Lin, J., Zettlemoyer, L., Ghosh, G., Yih, W. T., Markosyan, A., Berges, V. P., & Oğuz, B. (2025). Continual Learning via Sparse Memory Finetuning. https://arxiv.org/abs/2510.15103."
+   },
+   {
+    "key": "dasgupta2017neural",
+    "text": "Dasgupta, S., Stevens, C. F., & Navlakha, S. (2017). A neural algorithm for a fundamental computing problem. Science 358(6364), 793–796."
+   },
+   {
+    "key": "scharfman2016enigmatic",
+    "text": "Scharfman, H. E. (2016). The enigmatic mossy cell of the dentate gyrus. Nature Reviews Neuroscience 17(9), 562–575."
+   },
+   {
+    "key": "ahmad2019how",
+    "text": "Ahmad, S., & Scheinkman, L. (2019). How Can We Be So Dense? The Benefits of Using Highly Sparse Representations. https://arxiv.org/abs/1903.11257."
+   }
+  ]
+ },
+ {
+  "group": "Prior art identified by the literature review (Nov 2026): CA2 and steering",
+  "entries": [
+   {
+    "key": "kohara2014cell",
+    "text": "Kohara, K., Pignatelli, M., Rivest, A. J., Jung, H. Y., Kitamura, T., Suh, J., et al. (2014). Cell type–specific genetic and optogenetic tools reveal hippocampal CA2 circuits. Nature Neuroscience 17(2), 269–279."
+   },
+   {
+    "key": "mankin2015hippocampal",
+    "text": "Mankin, E. A., Diehl, G. W., Sparks, F. T., Leutgeb, S., & Leutgeb, J. K. (2015). Hippocampal CA2 Activity Patterns Change over Time to a Larger Extent than between Spatial Contexts. Neuron 85(1), 190–201."
+   },
+   {
+    "key": "alexander2018ca",
+    "text": "Alexander, G. M., Brown, L. Y., Farris, S., Lustberg, D., Pantazis, C., Gloss, B., et al. (2018). CA2 neuronal activity controls hippocampal low gamma and ripple oscillations. eLife 7."
+   },
+   {
+    "key": "joad2026there",
+    "text": "Faaiz Joad, Majd Hawasly, Sabri Boughorbel, Nadir Durrani, & Husrev Taha Sencar (2026). There Is More to Refusal in Large Language Models than a Single Direction. https://arxiv.org/abs/2602.02132."
+   },
+   {
+    "key": "herbster2026activation",
+    "text": "Niklas Herbster, Martin Zborowski, Alberto Tosato, Gauthier Gidel, & Tommaso Tosato (2026). Activation Steering for Aligned Open-ended Generation without Sacrificing Coherence. https://arxiv.org/abs/2604.08169."
+   },
+   {
+    "key": "scalena2024multiproperty",
+    "text": "Daniel Scalena, Gabriele Sarti, & Malvina Nissim (2024). Multi-property Steering of Large Language Models with Dynamic Activation Composition. https://arxiv.org/abs/2406.17563."
+   },
+   {
+    "key": "jorgensen2023improving",
+    "text": "Ole Jorgensen, Dylan Cope, Nandi Schoots, & Murray Shanahan (2023). Improving Activation Steering in Language Models with Mean-Centring. https://arxiv.org/abs/2312.03813."
+   },
+   {
+    "key": "yu2026break",
+    "text": "Sheldon Yu, Tong Yu, Xunyi Jiang, Rohan Surana, Gagan Mundada, Sungchul Kim, et al. (2026). Can We Break LLMs Out of Self-Loops? Fine-Grained Reasoning Control with Activation Steering. https://arxiv.org/abs/2607.18100."
+   },
+   {
+    "key": "sun2024massive",
+    "text": "Mingjie Sun, Xinlei Chen, J. Zico Kolter, & Zhuang Liu (2024). Massive Activations in Large Language Models. https://arxiv.org/abs/2402.17762."
+   }
+  ]
+ },
+ {
+  "group": "Prior art identified by the literature review (Nov 2026): pathfinding, replay and cognitive maps",
+  "entries": [
+   {
+    "key": "muller1996hippocampus",
+    "text": "Muller, R. U., Stead, M., & Pach, J. (1996). The hippocampus as a cognitive graph. The Journal of general physiology 107(6), 663–694."
+   },
+   {
+    "key": "teyler1986hippocampal",
+    "text": "Teyler, T. J., & DiScenna, P. (1986). The hippocampal memory indexing theory. Behavioral Neuroscience 100(2), 147–154."
+   },
+   {
+    "key": "stachenfeld2017hippocampus",
+    "text": "Stachenfeld, K. L., Botvinick, M. M., & Gershman, S. J. (2017). The hippocampus as a predictive map. Nature Neuroscience 20(11), 1643–1653."
+   },
+   {
+    "key": "pfeiffer2013hippocampal",
+    "text": "Pfeiffer, B. E., & Foster, D. J. (2013). Hippocampal place-cell sequences depict future paths to remembered goals. Nature 497(7447), 74–79."
+   },
+   {
+    "key": "mattar2018prioritized",
+    "text": "Mattar, M. G., & Daw, N. D. (2018). Prioritized memory access explains planning and hippocampal replay. Nature Neuroscience 21(11), 1609–1617."
+   },
+   {
+    "key": "kay2020constant",
+    "text": "Kay, K., Chung, J. E., Sosa, M., Schor, J. S., Karlsson, M. P., Larkin, M. C., et al. (2020). Constant Sub-second Cycling between Representations of Possible Futures in the Hippocampus. Cell 180(3), 552–567.e25."
+   },
+   {
+    "key": "graves2016hybrid",
+    "text": "Graves, A., Wayne, G., Reynolds, M., Harley, T., Danihelka, I., Grabska-Barwińska, A., et al. (2016). Hybrid computing using a neural network with dynamic external memory. Nature 538(7626), 471–476."
+   },
+   {
+    "key": "eysenbach2019search",
+    "text": "Eysenbach, B., Salakhutdinov, R., & Levine, S. (2019). Search on the Replay Buffer: Bridging Planning and Reinforcement Learning. https://arxiv.org/abs/1906.05253."
+   },
+   {
+    "key": "andrychowicz2017hindsight",
+    "text": "Andrychowicz, M., Wolski, F., Ray, A., Schneider, J., Fong, R., Welinder, P., et al. (2017). Hindsight Experience Replay. https://arxiv.org/abs/1707.01495."
+   },
+   {
+    "key": "momennejad2023evaluating",
+    "text": "Momennejad, I., Hasanbeig, H., Vieira, F., Sharma, H., Ness, R. O., Jojic, N., et al. (2023). Evaluating Cognitive Maps and Planning in Large Language Models with CogEval. https://arxiv.org/abs/2309.15129."
+   },
+   {
+    "key": "saparov2025transformers",
+    "text": "Saparov, A., Pawar, S., Pimpalgaonkar, S., Joshi, N., Pang, R. Y., Padmakumar, V., et al. (2025). Transformers Struggle to Learn to Search. In International Conference on Learning Representations (ICLR). https://arxiv.org/abs/2412.04703"
+   },
+   {
+    "key": "balesni2024lessons",
+    "text": "Balesni, M., Korbak, T., & Evans, O. (2024). Lessons from Studying Two-Hop Latent Reasoning. https://arxiv.org/abs/2411.16353."
+   },
+   {
+    "key": "chandra2025episodic",
+    "text": "Chandra, S., Sharma, S., Chaudhuri, R., & Fiete, I. (2025). Episodic and associative memory from spatial scaffolds in the hippocampus. Nature 638(8051), 739–751."
+   },
+   {
+    "key": "george2021clonestructured",
+    "text": "George, D., Rikhye, R. V., Gothoskar, N., Guntupalli, J. S., Dedieu, A., & Lázaro-Gredilla, M. (2021). Clone-structured graph representations enable flexible learning and vicarious evaluation of cognitive maps. Nature Communications 12(1)."
+   },
+   {
+    "key": "duvelle2021hippocampal",
+    "text": "Duvelle, É., Grieves, R. M., Liu, A., Jedidi-Ayoub, S., Holeniewska, J., Harris, A., et al. (2021). Hippocampal place cells encode global location but not connectivity in a complex space. Current Biology 31(6), 1221–1233.e9."
+   },
+   {
+    "key": "widloski2022flexible",
+    "text": "Widloski, J., & Foster, D. J. (2022). Flexible rerouting of hippocampal replay sequences around changing barriers in the absence of global place field remapping. Neuron 110(9), 1547–1558.e8."
    }
   ]
  }

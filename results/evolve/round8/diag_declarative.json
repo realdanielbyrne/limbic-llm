@@ -1,0 +1,43 @@
+{
+  "layer": 21,
+  "contrast_fit_auc": 0.989,
+  "contrast_heldout_auc": 0.985,
+  "natural": {
+    "mean": {
+      "d1": 11.178,
+      "d234": 5.835,
+      "space": 3.963,
+      "head": -3.463,
+      "filler": -5.504,
+      "query": 1.867
+    },
+    "auc_d1_vs_filler": 1.0,
+    "auc_d1_vs_filler_digits": 0.999,
+    "n_filler_digits": 4121,
+    "auc_d1_vs_filler_after_copula": 1.0,
+    "n_filler_after_copula": 1039,
+    "auc_d1_vs_d234": 0.99,
+    "auc_d1_vs_head": 1.0,
+    "d1_recall_at_1pct_filler": 1.0,
+    "d234_rate_at_that_threshold": 0.845
+  },
+  "random": {
+    "mean": {
+      "d1": 10.513,
+      "d234": 6.05,
+      "space": 2.937,
+      "head": -3.275,
+      "filler": -2.208,
+      "query": 1.245
+    },
+    "auc_d1_vs_filler": 1.0,
+    "auc_d1_vs_filler_digits": 1.0,
+    "n_filler_digits": 3,
+    "auc_d1_vs_filler_after_copula": 1.0,
+    "n_filler_after_copula": 3,
+    "auc_d1_vs_d234": 0.981,
+    "auc_d1_vs_head": 1.0,
+    "d1_recall_at_1pct_filler": 1.0,
+    "d234_rate_at_that_threshold": 0.99
+  }
+}

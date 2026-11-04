@@ -94,7 +94,7 @@ def main():
     ap.add_argument("--gap", type=int, default=40)
     ap.add_argument("--eval-every", type=int, default=250)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default="results/gdn_capacity.json")
+    ap.add_argument("--out", default="results/synthetic/gdn_capacity.json")
     args = ap.parse_args()
     modes, loads = args.modes.split(","), [int(p) for p in args.pairs.split(",")]
     out = Path(args.out); out.parent.mkdir(parents=True, exist_ok=True)

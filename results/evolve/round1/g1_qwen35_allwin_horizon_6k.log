@@ -1,0 +1,23 @@
+Loading weights:   0%|          | 0/320 [00:00<?, ?it/s]Loading weights: 100%|██████████| 320/320 [00:00<00:00, 15254.44it/s]
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+Qwen/Qwen3.5-2B-Base: 24 blocks (18 linear-attention), d_model 2048, tap block 12, 24 windowed, block window 64, reach 63
+window check: ok (block 0: far 0.0e+00 vs near 4.4e-01)
+trainable side-channel parameters 4,380,675 (base 1,881,825,088, frozen)
+needle gap 501–502 tokens
+step   600 loss 1.847 token_acc 0.325 inj 0.203 (120s)
+step  1200 loss 1.839 token_acc 0.325 inj 0.204 (239s)
+step  1800 loss 1.849 token_acc 0.300 inj 0.210 (357s)
+step  2400 loss 1.393 token_acc 0.475 inj 0.218 (475s)
+step  3000 loss 0.228 token_acc 0.900 inj 0.234 (593s)
+step  3600 loss 0.006 token_acc 1.000 inj 0.237 (711s)
+step  4200 loss 0.003 token_acc 1.000 inj 0.239 (828s)
+step  4800 loss 0.001 token_acc 1.000 inj 0.240 (946s)
+step  5400 loss 0.001 token_acc 1.000 inj 0.241 (1063s)
+step  6000 loss 0.000 token_acc 1.000 inj 0.240 (1181s)
+
+condition       window side    exact  tok_acc    loss    inj
+windowed            64  off    0.000    0.130   3.039      -
+windowed+side       64   on    1.000    1.000   0.001  0.240
+full                 0  off    1.000    1.000   0.034      -
+saved results/evolve/gen01/g1_qwen35_allwin_horizon_6k.json
+saved results/evolve/gen01/g1_qwen35_allwin_horizon_6k.pt

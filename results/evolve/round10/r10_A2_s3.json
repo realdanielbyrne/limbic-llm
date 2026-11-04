@@ -1,0 +1,240 @@
+{
+  "args": {
+    "model": "Qwen/Qwen3-1.7B-Base",
+    "tiny": false,
+    "tiny_arch": "gpt2",
+    "dtype": "bfloat16",
+    "device": "cuda",
+    "attn_impl": "sdpa",
+    "grad_checkpointing": false,
+    "layer": 21,
+    "window": 64,
+    "window_mode": "block",
+    "window_layers": "all",
+    "sink": true,
+    "memory": true,
+    "time": true,
+    "kernel": "osc",
+    "rho": 0.7,
+    "tau": 16,
+    "amp": 1.0,
+    "loop": "open",
+    "ca1_control": true,
+    "contrast": true,
+    "dg_keys": false,
+    "d_key": 32,
+    "loop_arg": [],
+    "init_gain": null,
+    "task": "needle",
+    "text_file": "/tmp/claude-1000/-home-realdanielbyrne-limbic-llm/2a3f0cc9-4742-44ec-8e00-f9eef9aeba5f/scratchpad/wikitext103_train.txt",
+    "dataset": null,
+    "max_chars": 5000000,
+    "pairs": 3,
+    "seq_len": 512,
+    "steps": 6000,
+    "lr": 0.001,
+    "batch": 8,
+    "eval_n": 128,
+    "log_every": 0,
+    "seed": 3,
+    "out": "results/evolve/round10/r10_A2_s3.json"
+  },
+  "model": {
+    "blocks": 28,
+    "linear_layers": 0,
+    "tap_layer": 21,
+    "windowed_layers": 28,
+    "reach": 63,
+    "window_check": "ok (block 0: far 0.0e+00 vs near 1.3e+01)",
+    "trainable_params": 714764,
+    "base_params": 1720574976,
+    "transformers": "5.22.1",
+    "gap_range": [
+      267,
+      502
+    ]
+  },
+  "curve": [
+    {
+      "step": 600,
+      "loss": 0.4807516038417816,
+      "token_acc": 0.824999988079071,
+      "inj_ratio": 0.2762645483016968
+    },
+    {
+      "step": 1200,
+      "loss": 0.0005375971086323261,
+      "token_acc": 1.0,
+      "inj_ratio": 0.2593006491661072
+    },
+    {
+      "step": 1800,
+      "loss": 1.0794525146484375,
+      "token_acc": 0.699999988079071,
+      "inj_ratio": 0.29994750022888184
+    },
+    {
+      "step": 2400,
+      "loss": 1.1340116262435913,
+      "token_acc": 0.625,
+      "inj_ratio": 0.33237817883491516
+    },
+    {
+      "step": 3000,
+      "loss": 0.8297392129898071,
+      "token_acc": 0.7250000238418579,
+      "inj_ratio": 0.3590381145477295
+    },
+    {
+      "step": 3600,
+      "loss": 0.7909591794013977,
+      "token_acc": 0.7749999761581421,
+      "inj_ratio": 0.3655169606208801
+    },
+    {
+      "step": 4200,
+      "loss": 0.7225714921951294,
+      "token_acc": 0.75,
+      "inj_ratio": 0.374329149723053
+    },
+    {
+      "step": 4800,
+      "loss": 0.2678667902946472,
+      "token_acc": 0.9750000238418579,
+      "inj_ratio": 0.3814435303211212
+    },
+    {
+      "step": 5400,
+      "loss": 0.06355311721563339,
+      "token_acc": 1.0,
+      "inj_ratio": 0.38376936316490173
+    },
+    {
+      "step": 6000,
+      "loss": 0.3814331591129303,
+      "token_acc": 0.8999999761581421,
+      "inj_ratio": 0.3808470070362091
+    }
+  ],
+  "results": {
+    "windowed": {
+      "loss": 2.726739466190338,
+      "token_acc": 0.1953125,
+      "exact": 0.0,
+      "per_pos": [
+        {
+          "loss": 2.7165844440460205,
+          "acc": 0.578125
+        },
+        {
+          "loss": 2.5516626834869385,
+          "acc": 0.09375
+        },
+        {
+          "loss": 2.755669593811035,
+          "acc": 0.0859375
+        },
+        {
+          "loss": 2.754241466522217,
+          "acc": 0.140625
+        },
+        {
+          "loss": 2.855539560317993,
+          "acc": 0.078125
+        }
+      ]
+    },
+    "windowed+side": {
+      "loss": 0.3213984973728657,
+      "token_acc": 0.909375,
+      "exact": 0.734375,
+      "inj_ratio": 0.3691157214343548,
+      "per_pos": [
+        {
+          "loss": 0.0007208604365587234,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.9035815000534058,
+          "acc": 0.7578125
+        },
+        {
+          "loss": 0.33820709586143494,
+          "acc": 0.9140625
+        },
+        {
+          "loss": 0.20615698397159576,
+          "acc": 0.9296875
+        },
+        {
+          "loss": 0.15832602977752686,
+          "acc": 0.9453125
+        }
+      ]
+    },
+    "full": {
+      "loss": 0.11807660572230816,
+      "token_acc": 1.0,
+      "exact": 1.0,
+      "per_pos": [
+        {
+          "loss": 0.00939280353486538,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.34050771594047546,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.12310107797384262,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.05790620669722557,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.05947521701455116,
+          "acc": 1.0
+        }
+      ]
+    },
+    "gain": 0.42968985438346863
+  },
+  "seconds": 892.4008567333221,
+  "candidate": {
+    "class": "evolve.w1s_slots:W1sSide",
+    "args": {
+      "w1s_taps": "3",
+      "w1s_gate": "hyst",
+      "w1s_centre": false,
+      "w1s_density": 0.12,
+      "w1s_lam": 0.8,
+      "w1s_latch": 6.0,
+      "w1s_schmitt": [
+        1.2,
+        0.8
+      ],
+      "w1s_pre": 6,
+      "w1s_win": 24,
+      "w1s_nms": 8,
+      "w1s_store": "slots",
+      "w1s_K": 16,
+      "w1s_delta": 0.0,
+      "w1s_key": "both",
+      "w1s_key_taps": null,
+      "w1s_pool": 8,
+      "w1s_dk": 128,
+      "w1s_dv": 32,
+      "w1s_align": "lex",
+      "w1s_recency": 0.002,
+      "w1s_out": "additive",
+      "w1s_L": 4,
+      "w1s_ctrl": "none"
+    }
+  },
+  "needle_scatter": 8,
+  "needle_mix": 1.0,
+  "needle_curriculum": "1:1500,2:1500",
+  "needle_names": "train"
+}

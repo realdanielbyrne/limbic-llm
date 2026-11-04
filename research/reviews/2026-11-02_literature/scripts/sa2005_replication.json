@@ -1,0 +1,108 @@
+{
+ "replication": [
+  {
+   "N": 10000,
+   "M": 5,
+   "noise": 0.0,
+   "avoid": false,
+   "unreachable_skipped": 1,
+   "lost": 0.0,
+   "ret_mean_found": 6.69,
+   "ret_sd_found": 3.29,
+   "short_mean": 4.24,
+   "short_sd": 0.66,
+   "frac_lt20": 0.9926,
+   "frac_lt60": 0.9998
+  },
+  {
+   "N": 10000,
+   "M": 5,
+   "noise": 0.025,
+   "avoid": false,
+   "unreachable_skipped": 0,
+   "lost": 0.0,
+   "ret_mean_found": 6.89,
+   "ret_sd_found": 3.52,
+   "short_mean": 4.24,
+   "short_sd": 0.67,
+   "frac_lt20": 0.9896,
+   "frac_lt60": 0.9999
+  },
+  {
+   "N": 10000,
+   "M": 5,
+   "noise": 0.0,
+   "avoid": true,
+   "unreachable_skipped": 1,
+   "lost": 0.0,
+   "ret_mean_found": 6.69,
+   "ret_sd_found": 3.29,
+   "short_mean": 4.24,
+   "short_sd": 0.66,
+   "frac_lt20": 0.9926,
+   "frac_lt60": 0.9998
+  },
+  {
+   "N": 10000,
+   "M": 5,
+   "noise": 0.025,
+   "avoid": true,
+   "unreachable_skipped": 0,
+   "lost": 0.0,
+   "ret_mean_found": 6.89,
+   "ret_sd_found": 3.52,
+   "short_mean": 4.24,
+   "short_sd": 0.67,
+   "frac_lt20": 0.9896,
+   "frac_lt60": 0.9999
+  },
+  {
+   "N": 10000,
+   "M": 2,
+   "noise": 0.0,
+   "avoid": false,
+   "unreachable_skipped": 2,
+   "lost": 0.0,
+   "ret_mean_found": 8.75,
+   "ret_sd_found": 6.91,
+   "short_mean": 4.24,
+   "short_sd": 0.67,
+   "frac_lt20": 0.9324,
+   "frac_lt60": 0.9992
+  },
+  {
+   "N": 20000,
+   "M": 5,
+   "noise": 0.0,
+   "avoid": false,
+   "unreachable_skipped": 1,
+   "lost": 0.0,
+   "ret_mean_found": 9.18,
+   "ret_sd_found": 6.02,
+   "short_mean": 4.54,
+   "short_sd": 0.64,
+   "frac_lt20": 0.947,
+   "frac_lt60": 0.9995
+  }
+ ],
+ "ablations": [
+  {
+   "N": 10000,
+   "mode": "no_lookahead",
+   "sessions": 10000,
+   "reached_within_2000": 1.0,
+   "ret_mean_found": 28.34,
+   "ret_sd_found": 29.81,
+   "short_mean": 4.23
+  },
+  {
+   "N": 10000,
+   "mode": "random",
+   "sessions": 300,
+   "reached_within_2000": 0.20666666666666667,
+   "ret_mean_found": 868.94,
+   "ret_sd_found": 506.62,
+   "short_mean": 4.19
+  }
+ ]
+}

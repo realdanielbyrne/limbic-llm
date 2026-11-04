@@ -1,0 +1,2243 @@
+{
+ "review_date": "2026-11-02",
+ "reviewed_commit": "3799b36",
+ "based_on_branch_tip": "1620784 (feat/round1-side-memory)",
+ "note": "Structured outputs of the seven review tracks. Novelty verdicts and corrections refer to the repo at 3799b36; see README.md section 'Round-1 results read against the review' for updates.",
+ "tracks": {
+  "ca3ca1": {
+   "summary": "Most mechanisms in the CA3->CA1/skip/comparator/temporal-loop track are re-descriptions of published work. CA3 retrieval is modern-Hopfield attention (Ramsauer 2020; Whittington 2021); the successor store is Sompolinsky & Kanter 1986/Chaudhry 2023; the CA1 fusion vector is the InferSent/heuristic-matching feature; CA1-as-prediction-error is Chen et al. 2024 (Neuron); the closed loop of lagged self-states is the Feedback Transformer; the time channel is the Laplace layer of Shankar & Howard (and DeepSITH), with relatives in RetNet decays and CoPE. Genuinely new or unusual: explicit loop-gain analysis of a memory re-injection channel with a confirmed critical gain (K_c=1.680, period 44.1 tokens, reproduced), the delayed rho-periodic rectified re-entry kernel, and sparse-write/dense-read addressing. Main problems: (1) the docs deny a CA1->CA3 pyramidal back-projection that tracing has found (Lin 2021/2023); (2) the 'high-pass' account of subtractive feedback ignores Bode's integral: at K=1 DC echo halves but ~46-token content is amplified 2.5x; (3) the CA1 comparator is mistimed (successor prediction vs current input), and novelty is distilled token loss, not comparator output; (4) the block lacks the EC-II->CA3 path and puts CA2 in series; (5) the theta analogy is lag-locked rather than global-phase; (6) T16 does not test Treves-Rolls. The highest-priority experiments are a time-aligned comparator (E1), a trisynaptic/monosynaptic double dissociation (E2), and a frequency-domain waterbed test of the feedback (E3). Feedback-Transformer and value-residual baselines (E7) are needed before claiming any hippocampal advantage. All repo results cited are small-scale and mostly single-seed.",
+   "closest_prior_work": [
+    {
+     "citation": "Ramsauer et al. 2020, Hopfield Networks is All You Need",
+     "id": "arXiv:2008.02217",
+     "relation": "anticipates",
+     "note": "CA3Autoassociative is modern-Hopfield retrieval = attention; re-implementation."
+    },
+    {
+     "citation": "Whittington et al. 2021, Relating transformers to models of the hippocampal formation",
+     "id": "arXiv:2112.04035",
+     "relation": "anticipates",
+     "note": "Transformer-as-hippocampus (TEM-t); keys from position, values from sensory codes."
+    },
+    {
+     "citation": "Sompolinsky & Kanter 1986, Temporal association in asymmetric neural networks",
+     "id": "10.1103/physrevlett.57.2861",
+     "relation": "anticipates",
+     "note": "Heteroassociative h_t->h_{t+1} successor storage."
+    },
+    {
+     "citation": "Chaudhry et al. 2023, Long Sequence Hopfield Memory",
+     "id": "arXiv:2306.04532",
+     "relation": "anticipates",
+     "note": "Dense-associative sequence memory with high capacity; also variable timing between states."
+    },
+    {
+     "citation": "Mou et al. 2015, NLI by tree-based convolution and heuristic matching",
+     "id": "arXiv:1512.08422",
+     "relation": "anticipates",
+     "note": "Introduced [a;b;a-b;a*b] matching features."
+    },
+    {
+     "citation": "Conneau et al. 2017, InferSent",
+     "id": "arXiv:1705.02364",
+     "relation": "anticipates",
+     "note": "Uses (u,v,|u-v|,u*v): identical to CA1 fusion vector."
+    },
+    {
+     "citation": "Chen et al. 2024, Predictive sequence learning in the hippocampal formation",
+     "id": "10.1016/j.neuron.2024.05.024",
+     "relation": "anticipates",
+     "note": "CA3 predicts next EC input, CA1 computes prediction error; repo comparator is a mistimed version."
+    },
+    {
+     "citation": "Ketz et al. 2013, Theta coordinated error-driven learning in the hippocampus",
+     "id": "10.1371/journal.pcbi.1003067",
+     "relation": "anticipates",
+     "note": "CA1 alternates EC- vs CA3-driven phases, learns from the difference."
+    },
+    {
+     "citation": "Nakashiba et al. 2008, Transgenic inhibition reveals role of CA3 output",
+     "id": "10.1126/science.1151120",
+     "relation": "supports",
+     "note": "CA3 output needed for one-trial learning/pattern completion; TA path suffices for incremental learning; untested dissociation in repo."
+    },
+    {
+     "citation": "Schapiro et al. 2017, Complementary learning systems within the hippocampus",
+     "id": "10.1098/rstb.2016.0049",
+     "relation": "supports",
+     "note": "Monosynaptic path learns statistics, trisynaptic stores episodes."
+    },
+    {
+     "citation": "Grienberger & Magee 2022, Entorhinal cortex directs learning-related changes in CA1",
+     "id": "10.1038/s41586-022-05378-6",
+     "relation": "contradicts",
+     "note": "EC-III acts as instructive/teaching input for CA1 plasticity, not only a summed skip or mismatch source."
+    },
+    {
+     "citation": "Lin et al. 2021, Noncanonical projections to hippocampal CA3",
+     "id": "10.1371/journal.pbio.3001127",
+     "relation": "contradicts",
+     "note": "Excitatory vCA1->dCA3 back-projection exists; design doc says CA1 pyramidal cells do not project to CA3."
+    },
+    {
+     "citation": "Sik et al. 1994, Inhibitory CA1-CA3-hilar region feedback",
+     "id": "10.1126/science.8085161",
+     "relation": "supports",
+     "note": "Anatomical basis of the inhibitory back-projection used for the op-amp analogy."
+    },
+    {
+     "citation": "Hasselmo et al. 2002, Separate phases of encoding and retrieval",
+     "id": "10.1162/089976602317318965",
+     "relation": "contradicts",
+     "note": "Global theta phase gating; repo kernel is lag-locked, not phase-separated."
+    },
+    {
+     "citation": "Foster & Wilson 2007, Hippocampal theta sequences",
+     "id": "10.1002/hipo.20345",
+     "relation": "contradicts",
+     "note": "Theta sequences are forward compressed sweeps, not decaying periodic re-expression of past content."
+    },
+    {
+     "citation": "Brunel & Hakim 1999, Fast global oscillations with delayed inhibition",
+     "id": "10.1162/089976699300016179",
+     "relation": "anticipates",
+     "note": "Delayed inhibitory feedback produces oscillations: same mechanism as ringing above K~1.68."
+    },
+    {
+     "citation": "Black 1934, Stabilized feedback amplifiers",
+     "id": "10.1002/j.1538-7305.1934.tb00652.x",
+     "relation": "background",
+     "note": "Closed-loop gain law y=A D/(1+A beta)."
+    },
+    {
+     "citation": "Fan et al. 2020, Feedback Transformer",
+     "id": "arXiv:2002.09402",
+     "relation": "anticipates",
+     "note": "Writes higher-layer states of past steps into memory read by later steps: closed loop of lagged self-states."
+    },
+    {
+     "citation": "Zhou et al. 2024, Value Residual Learning",
+     "id": "arXiv:2410.17897",
+     "relation": "overlaps",
+     "note": "Re-injects first-layer values deep: closest ML analogue of EC-III->CA1 skip; required baseline."
+    },
+    {
+     "citation": "Pagliardini et al. 2024, DenseFormer",
+     "id": "arXiv:2402.02622",
+     "relation": "overlaps",
+     "note": "Depth-weighted averaging of earlier block outputs; long-skip baseline."
+    },
+    {
+     "citation": "Zhu et al. 2024, Hyper-Connections",
+     "id": "arXiv:2409.19606",
+     "relation": "overlaps",
+     "note": "Learned cross-depth connection strengths."
+    },
+    {
+     "citation": "Shankar & Howard 2012, Scale-invariant internal representation of time",
+     "id": "10.1162/neco_a_00212",
+     "relation": "anticipates",
+     "note": "Log-spaced leaky integrators = TimeChannel; repo implements only the Laplace stage."
+    },
+    {
+     "citation": "Jacques et al. 2021, DeepSITH",
+     "id": "arXiv:2104.04646",
+     "relation": "anticipates",
+     "note": "Scale-invariant temporal history layers already used in deep nets."
+    },
+    {
+     "citation": "Golovneva et al. 2024, Contextual Position Encoding",
+     "id": "arXiv:2405.18719",
+     "relation": "overlaps",
+     "note": "Learned sigmoid-gated counting of salient tokens; TimeChannel salience is a leaky version."
+    },
+    {
+     "citation": "Tsao et al. 2018, Integrating time from experience in LEC",
+     "id": "10.1038/s41586-018-0459-6",
+     "relation": "supports",
+     "note": "TimeChannel features match LEC temporal-context cells rather than hippocampal time cells."
+    },
+    {
+     "citation": "Sun et al. 2023, RetNet",
+     "id": "arXiv:2307.08621",
+     "relation": "overlaps",
+     "note": "Multi-scale (geometric) damped complex decays; relative of the osc kernel and time channel."
+    },
+    {
+     "citation": "Nguyen et al. 2025, Activation steering with a feedback controller",
+     "id": "arXiv:2510.04309",
+     "relation": "overlaps",
+     "note": "PID control of steering; nearest LLM precedent for feedback-regulated injection."
+    },
+    {
+     "citation": "Treves & Rolls 1992, Two input systems to CA3",
+     "id": "10.1002/hipo.450020209",
+     "relation": "extended_by_limbic",
+     "note": "Sparse-write/dense-read addressing in the loop; but T16 does not test the claim."
+    },
+    {
+     "citation": "Chadney et al. 2026 (preprint), Novel CA1 map requires direct entorhinal input",
+     "id": "10.64898/2026.07.02.736055",
+     "relation": "supports",
+     "note": "Silencing TA input blocks remapping in novel environments: TA path in novelty-driven plasticity."
+    }
+   ],
+   "novelty": [
+    {
+     "idea": "CA3 as modern-Hopfield/attention retrieval with novelty-gated slot store",
+     "verdict": "anticipated",
+     "rationale": "Ramsauer 2020; Whittington 2021; slot replacement as in Santoro 2016 LRUA; surprise gating as Titans/EM-LLM."
+    },
+    {
+     "idea": "Successor (h_t->h_{t+1}) heteroassociative CA3 store",
+     "verdict": "anticipated",
+     "rationale": "Sompolinsky & Kanter 1986; Levy 1996; Jensen & Lisman 1996; Chaudhry 2023."
+    },
+    {
+     "idea": "CA1 comparator [a;r;a*r;|a-r|] with novelty head",
+     "verdict": "anticipated",
+     "rationale": "Feature is Mou 2015/Conneau 2017 heuristic matching; CA1-as-prediction-error is Chen 2024, Ketz 2013, Lisman & Otmakhova 2001; novelty is distilled from token loss, i.e. Titans-style surprise."
+    },
+    {
+     "idea": "EC-III->CA1 temporoammonic skip",
+     "verdict": "anticipated",
+     "rationale": "A long skip; value residuals, DenseFormer, hyper-connections are direct analogues; no baseline comparison yet."
+    },
+    {
+     "idea": "EC-II->CA3 direct dense read with sparse DG write keys",
+     "verdict": "partially_novel",
+     "rationale": "Biological idea is Treves & Rolls 1992; sparse-key/dense-query asymmetry in one store is unusual in ML; T16 confounded (tied vs untied projection)."
+    },
+    {
+     "idea": "Loop-gain (op-amp) analysis of memory re-injection, critical gain K_c=1.68",
+     "verdict": "partially_novel",
+     "rationale": "Gain law and delay instability are textbook (Black 1934, Nyquist 1932; Brunel & Hakim 1999); applying it to an LLM memory side channel with confirmed prediction (T6,T7) not found in prior work. K_c=1.680, period 44.1 tokens reproduced."
+    },
+    {
+     "idea": "Clamped, delayed, per-circuit-damped rectified-cosine re-entry kernel",
+     "verdict": "partially_novel",
+     "rationale": "Damped oscillatory kernels exist (RetNet, LRU, S4); rectified delay-onset rho-periodic comb form not standard; benefit not separated from the clamp; theta justification is weak."
+    },
+    {
+     "idea": "Closed loop writing own post-injection states back into memory",
+     "verdict": "anticipated",
+     "rationale": "Feedback Transformer (Fan 2020), Block-Recurrent Transformer, TransformerFAM."
+    },
+    {
+     "idea": "Self-negative subtractive feedback (inverted copy of own injection)",
+     "verdict": "partially_novel",
+     "rationale": "Operation is predictive-coding subtraction (Srinivasan 1982); framing as steering self-negative is new."
+    },
+    {
+     "idea": "Episode-minus-prior contrast Delta=F-m*mu",
+     "verdict": "partially_novel",
+     "rationale": "Attention over mean-centred values; common-mode cancellation akin to Differential Transformer, DoLa, contrastive decoding."
+    },
+    {
+     "idea": "Time channel: log-spaced leaky integrators + damped oscillators driven by learned salience",
+     "verdict": "anticipated",
+     "rationale": "Shankar & Howard 2012 Laplace layer; DeepSITH/SITHCon; Voelker & Eliasmith 2018; RetNet multi-scale decays; CoPE gated counting. Novel only as an explicit side channel to a frozen LLM."
+    },
+    {
+     "idea": "Error-only (orthogonal) injection and norm-relative clamp",
+     "verdict": "unclear",
+     "rationale": "Scattered engineering precedent in steering; no primary source established."
+    }
+   ],
+   "proposed_experiments": [
+    {
+     "title": "E1 Time-aligned CA1 comparator",
+     "hypothesis": "Comparing CA3's successor prediction from t-1 against EC at t gives a novelty signal that tracks surprisal better and improves novelty-gated writes.",
+     "design": "Arms: current block; shifted comparator r_t=retrieved_{t-1}; comparator removed (novelty from x_t only); plus shifted arm without novelty_alignment_loss. assoc_recall and continual, 3 seeds.",
+     "metric": "Spearman(novelty, held-out surprisal); AUROC top-decile loss; M1 binding recall; write relevance",
+     "extends": "M1, M2, J3",
+     "priority": "H"
+    },
+    {
+     "title": "E2 Trisynaptic vs monosynaptic double dissociation",
+     "hypothesis": "CA3 route needed for one-shot binding; TA route suffices for statistical regularities (Nakashiba 2008; Schapiro 2017).",
+     "design": "Zero Schaffer input (r=0) or TA input (a=0) at train and at eval; tasks: one-shot key-value recall beyond window, and community-structured graph stream.",
+     "metric": "Recall on one-shot task; excess loss over graph entropy on frequent transitions; crossover interaction",
+     "extends": "M1, M7",
+     "priority": "H"
+    },
+    {
+     "title": "E3 Waterbed test of subtractive feedback",
+     "hypothesis": "Bode sensitivity integral forces amplification of some band: for tau=16, rho=0.9, K=1, |S|=0.50 at DC but 2.51 at ~46-token period (~48% of frequencies amplified); may explain T10.",
+     "design": "Drive untrained loop (loop_systems.py) with content periodic at 8-128 tokens; compare gain with theory; train what-when with events at resonant vs random spacing; test S4 lead-lag compensation.",
+     "metric": "Measured vs predicted |S(omega)|; echo ratio and what-accuracy by event spacing",
+     "extends": "T6, T7, T10, S4",
+     "priority": "H"
+    },
+    {
+     "title": "E4 Proper Treves-Rolls test",
+     "hypothesis": "Direct dense read beats DG read only when DG is a high-gain, fixed random expansion and retrieval is recurrent completion under load.",
+     "design": "2x2 tied/untied query x dense/sparse keys, x learned vs fixed-random DG; CA3Autoassociative n_iter in {1,3}; load 8-64 items; cue noise 0.25-2; 3 seeds.",
+     "metric": "Exact recall vs load and noise",
+     "extends": "T16, M7, W4",
+     "priority": "M"
+    },
+    {
+     "title": "E5 Global theta gate vs lag-locked kernel",
+     "hypothesis": "Hasselmo-style global phase gating (write and read on opposite phases) reduces self-rehearsal primacy more than the lag kernel.",
+     "design": "Replace W[t,s] with g_read(t) g_write(s) rho^{(t-s)/tau}; closed-loop what-when and recency probes.",
+     "metric": "Older/newer naming ratio; what/when accuracy; echo ratio",
+     "extends": "T1, T5, T11-T15, S8",
+     "priority": "M"
+    },
+    {
+     "title": "E6 Time-channel baselines",
+     "hypothesis": "Leaky-integrator clock gains little over gated counting or learned-pole SSMs at equal state; an inverse-Laplace (time-cell) readout extrapolates to unseen gaps.",
+     "design": "Arms: TimeChannel; CoPE-style gated count; diagonal LRU with learned poles; TimeChannel + Post inverse. Train gaps 20-140, test 140-400.",
+     "metric": "When-accuracy in and out of range; Weber scaling of error",
+     "extends": "T1, W2",
+     "priority": "M"
+    },
+    {
+     "title": "E7 Feedback-Transformer and value-residual baselines",
+     "hypothesis": "At matched params/windows the regulated loop beats a Feedback-Transformer memory, and CA1 comparator beats value residual a+lambda r.",
+     "design": "Swap loop for feedback memory of upper-layer states at tap; swap CA1 for learned residual mix.",
+     "metric": "What/when accuracy; echo ratio; recall beyond window",
+     "extends": "T1, T3, P4, M1",
+     "priority": "M"
+    },
+    {
+     "title": "E8 Sign-agnostic back-projection",
+     "hypothesis": "With unconstrained learned beta, training selects inhibitory feedback for content memory; mixed-sign anatomy allows otherwise.",
+     "design": "Per-group beta in R, clamp off; feedback into injector vs into relevance suppression of recently injected items.",
+     "metric": "Learned sign distribution; what-accuracy; primacy ratio",
+     "extends": "T9, T15, S5",
+     "priority": "L"
+    }
+   ],
+   "corrections": [
+    "docs/design/temporal-loop.md says 'CA1 pyramidal cells do not project back to CA3': viral tracing shows excitatory ventral CA1 -> dorsal CA3 projections, also reaching CA3 interneurons (Lin et al. 2021, 10.1371/journal.pbio.3001127; Lin et al. 2023, 10.1002/cne.25510). The back-projection is mixed-sign, so the op-amp is an abstraction, not anatomy.",
+    "Design note claims the loop kernel 'is a sum of damped complex exponentials': the rectified cosine [cos]_+ with a hard onset at Delta>=tau is not a finite sum. It is exactly rho-periodic (w(Delta+tau)=rho w(Delta)), so a factorised-relevance loop admits an exact comb-filter recurrence with a tau-length buffer.",
+    "Subtractive feedback is described as a high-pass filter that cuts echo while new content passes. By Bode's sensitivity integral, mean log|S| over frequency = 0 (computed). At K=1 (tau=16, rho=0.9) DC echo is 0.50x, but content at a ~46-token period is amplified 2.51x, and ~48% of frequencies are amplified. T6 tested DC only.",
+    "Theta justification of the osc kernel is inaccurate: Hasselmo et al. 2002 use a global phase for encoding/retrieval, but the kernel's phase depends on lag t-s; theta sequences are forward compressed sweeps, not decaying re-expression of past content.",
+    "TimeChannel is described as Shankar & Howard's 'time cells': it implements only the Laplace (leaky-integrator) stage, which matches LEC temporal-context cells (Tsao 2018; Bright 2020); hippocampal time cells need the inverse-Laplace stage.",
+    "The claim that nothing tells transformers how much time has passed, or 'something LLMs do not currently do', is overstated: RetNet decays, Forgetting Transformer and CoPE supply elapsed-time/salience-count signals.",
+    "HippocampalBlock has no EC-II -> CA3 direct input; CA3 queries come only from the DG code, contrary to the Treves & Rolls argument cited elsewhere in the repo.",
+    "HippocampalBlock places CA2 (FiLM) serially between CA3 and CA1; anatomically the Schaffer path bypasses CA2, which is a parallel EC-II-driven station (Chevaleyre & Siegelbaum 2010).",
+    "CA1 comparator is mistimed: with sequential=True, the query at t retrieves the stored successor (a prediction of t+1) and compares it with x_t. Within-segment values are autoassociative while store values are successors, so one softmax mixes two time indices.",
+    "ca1.py docstring conflates conjunction and mismatch: coincident EC-III+CA3 input drives plateaus and plasticity (a conjunction/instructive signal; Takahashi & Magee 2009; Grienberger & Magee 2022). The 'novelty' output is supervised by novelty_alignment_loss on token loss, so it is a distilled surprise predictor, not an intrinsic comparator readout.",
+    "The CA1 fusion vector [a;r;a*r;|a-r|] is the NLI heuristic-matching feature (Mou et al. 2015; Conneau et al. 2017) and should be credited.",
+    "The 'CA1 -> CA3' subtractive feedback in HippocampalLoop acts at the injection summing junction and never touches CA3 keys, values or relevance; in the default open loop there is no path through CA3 at all.",
+    "T16 ('Not supported') does not test Treves-Rolls: read=direct vs read=dg also switches untied W_q vs tied W_k, uses a feedforward lookup rather than attractor completion, and uses a learned (not random) DG code.",
+    "Genesis/design claim that the closed regulated timed loop is a 'new organisation': the closed loop of lagged self-states is the Feedback Transformer (Fan 2020); novelty is limited to regulation and timing.",
+    "Repo references.bib has no DOI fields in any of its 82 entries; nguyen2025activation lists authors as 'Nguyen and others' (first author Dung V. Nguyen, arXiv:2510.04309); turner2023activation uses the v1 title (current arXiv title: 'Steering Language Models With Activation Engineering'). Sik et al. 1994 is anatomical; 'negative-feedback gain control' (REFERENCES.md) is the repo's interpretation."
+   ],
+   "report": "ca3ca1.md",
+   "declared_limits": [
+    "One candidate source (HippoTune, ICLR 2026) left out: no DOI or arXiv id could be verified",
+    "Yaghoubi et al. 2026 (Nature, 'Predictive coding of reward in the hippocampus', 10.1038/s41586-025-09958-0) was found but not cited because its abstract could not be retrieved",
+    "Venues of arXiv-only ML papers were not verified; the bib lists them as arXiv preprints",
+    "Repo results were taken from REGISTER.md/RESULTS.md as reported, not re-run; only the K_c=1.68 root and the Bode sensitivity curve were recomputed"
+   ]
+  },
+  "ca2": {
+   "summary": "The CA2 track recombines published parts; it is not a new mechanism. Biologically, 'societal norms drive CA2' is indefensible. CA2 supports social identity/novelty memory (Hitti & Siegelbaum 2014; Meira 2018; Donegan 2020), is modulated by vasopressin/oxytocin, promotes aggression via lateral septum (Leroy 2018), drifts over hours–days (Mankin 2015), and gates rather than simply boosts ripples (Oliva 2016 vs Kay 2016, Alexander 2018). ca2.py's 'no mossy-fibre input' claim is outdated (Kohara 2014). In ML, every element of the graded escalating controller is published: probe gates (CAST, SafeSwitch, AdaSteer, StTP/StMP), per-step intensity (DAC), PID framing (Nguyen 2025; across layers), token-level cumulative harm (streaming monitor) and multi-turn risk accumulation (THRD). The exact token-level leaky-integral→tanh-gain→refusal-direction hook has no published twin found, so it is partially novel but incremental. As coded it is a soft switch: at λ=0.9, κ=0.5 the gain reaches 0.875·cap after 3 tokens (0.938 after 4) and has a ~10-token time constant, so the multi-turn escalation (A3/H4) cannot occur. The 'loop' closes only through sampled tokens, so the op-amp stability analysis does not transfer. Gist momentum (fast-minus-slow EMA of the model's own residual stream) is the most original idea found; only cross-layer momentum in vision-language(-action) models (STAR, DAMO) and static mean-centring precede it. However, it is open-loop positive feedback, and 'under negative feedback' is unimplemented. SOPHIA's self-loop finding, manifold-steering plateaus and massive activations are concrete risks. A6 is partly anticipated (Arditi 2024; Herbster 2026). Joad 2026 implies selectivity comes from the gate, so A1/J1 and a matched-norm E2 are the decisive first experiments. The notebook's STU-PID citation is withdrawn and its numbers are stale.",
+   "closest_prior_work": [
+    {
+     "citation": "Hitti & Siegelbaum 2014, CA2 essential for social memory",
+     "id": "10.1038/nature13028",
+     "relation": "contradicts",
+     "note": "CA2 encodes social identity/memory, not norms; undermines \"societal norms drive CA2\"."
+    },
+    {
+     "citation": "Leroy et al. 2018, CA2→lateral septum disinhibits aggression",
+     "id": "10.1038/s41586-018-0772-0",
+     "relation": "contradicts",
+     "note": "CA2 can promote aggression; a context selector, not a norm enforcer."
+    },
+    {
+     "citation": "Mankin et al. 2015, CA2 activity drifts over time",
+     "id": "10.1016/j.neuron.2014.12.001",
+     "relation": "supports",
+     "note": "Supports CA2 as a temporal/episode tag, but on hours–days, not the ~10-token TemporalContext in ca2.py."
+    },
+    {
+     "citation": "Oliva et al. 2016, CA2 triggering sharp-wave ripples",
+     "id": "10.1016/j.neuron.2016.08.008",
+     "relation": "background",
+     "note": "CA2 activity precedes SWRs; contested by Kay 2016 and Alexander 2018."
+    },
+    {
+     "citation": "Alexander et al. 2018, CA2 controls low gamma and ripples",
+     "id": "10.7554/eLife.38052",
+     "relation": "supports",
+     "note": "Raising CA2 activity reduces ripples: CA2 as gate/stabiliser, supporting the stability programme over an amplifier reading."
+    },
+    {
+     "citation": "Kohara et al. 2014, CA2 circuit tools",
+     "id": "10.1038/nn.3614",
+     "relation": "contradicts",
+     "note": "Shows DG→CA2 mossy-fibre input, contradicting ca2.py docstring."
+    },
+    {
+     "citation": "Arditi et al. 2024, refusal mediated by a single direction",
+     "id": "2406.11717",
+     "relation": "anticipates",
+     "note": "Adding r induces refusal: the static A6 arm is near-tautological; probe.diff_of_means is this method."
+    },
+    {
+     "citation": "J. Zhao et al. 2025, harmfulness and refusal encoded separately",
+     "id": "2507.11878",
+     "relation": "supports",
+     "note": "Harmfulness survives jailbreak/fine-tuning: basis for H1 and the probe gate."
+    },
+    {
+     "citation": "Joad et al. 2026, more to refusal than a single direction",
+     "id": "2602.02132",
+     "relation": "supports",
+     "note": "Any refusal direction gives the same refusal–over-refusal curve: selectivity must come from the gate."
+    },
+    {
+     "citation": "Lee et al. 2024, CAST conditional activation steering",
+     "id": "2409.05907",
+     "relation": "anticipates",
+     "note": "Prompt-gated refusal steering; the conditional arm."
+    },
+    {
+     "citation": "W. Zhao et al. 2025, AdaSteer",
+     "id": "2504.09466",
+     "relation": "anticipates",
+     "note": "Logistic map from residual to steering coefficient on rejection and harmfulness directions; closest gain-scheduling precedent."
+    },
+    {
+     "citation": "Herbster et al. 2026, projection-aware steering restores alignment",
+     "id": "2604.08169",
+     "relation": "anticipates",
+     "note": "Aligned-model direction with token-level logistic gate restores alignment in misaligned models; closest to A6."
+    },
+    {
+     "citation": "Scalena et al. 2024, Dynamic Activation Composition",
+     "id": "2406.17563",
+     "relation": "anticipates",
+     "note": "Per-generation-step steering intensity."
+    },
+    {
+     "citation": "Nguyen et al. 2025, PID Steering",
+     "id": "2510.04309",
+     "relation": "overlaps",
+     "note": "Control-theoretic steering; its integral runs across layers, not tokens; required baseline for R3."
+    },
+    {
+     "citation": "Bharadwaj 2025, closed-loop PID steering for reasoning (withdrawn)",
+     "id": "2506.18831",
+     "relation": "overlaps",
+     "note": "Token-chunk PID for CoT; withdrawn by author; numbers in NOTEBOOK are outdated."
+    },
+    {
+     "citation": "Li et al. 2025, streaming content monitor",
+     "id": "2506.09996",
+     "relation": "anticipates",
+     "note": "Token-level harm scores with cumulative delay-k stop: temporal accumulation of harm on the monitoring side."
+    },
+    {
+     "citation": "Ma et al. 2026, THRD multi-turn temporal risk accumulation",
+     "id": "2606.01738",
+     "relation": "anticipates",
+     "note": "Turn-level risk aggregation with attenuation for multi-turn defense (A3)."
+    },
+    {
+     "citation": "Bullwinkel et al. 2025, representation view of multi-turn jailbreaks",
+     "id": "2507.02956",
+     "relation": "contradicts",
+     "note": "Crescendo drives representations benign over turns, threatening H4 (probe-driven escalation)."
+    },
+    {
+     "citation": "Zou et al. 2024, circuit breakers",
+     "id": "2406.04313",
+     "relation": "anticipates",
+     "note": "Reroutes harmful representations to incoherence: the Asimov endpoint, in weights."
+    },
+    {
+     "citation": "Bailey et al. 2024, obfuscated activations",
+     "id": "2412.09565",
+     "relation": "background",
+     "note": "Harm probes are evadable; bears on A5."
+    },
+    {
+     "citation": "You et al. 2026, Spherical Steering",
+     "id": "2602.08169",
+     "relation": "anticipates",
+     "note": "Norm-preserving rotation with confidence gate; anticipates S7."
+    },
+    {
+     "citation": "Jorgensen et al. 2023, mean-centring steering",
+     "id": "2312.03813",
+     "relation": "overlaps",
+     "note": "Static target-minus-global-mean ancestor of the gist fast-minus-slow contrast."
+    },
+    {
+     "citation": "Yu et al. 2026, SOPHIA self-loops",
+     "id": "2607.18100",
+     "relation": "contradicts",
+     "note": "Failed reasoning traces get stuck in self-loops; open-loop gist reinforcement risks exactly this; also anticipates R5 (transition-indexed vector bank)."
+    },
+    {
+     "citation": "Shi et al. 2026, STIR latent action replay",
+     "id": "2602.04925",
+     "relation": "anticipates",
+     "note": "Memory of steering primitives from own rollouts; anticipates R5."
+    },
+    {
+     "citation": "Azizi et al. 2025, activation-steered CoT compression",
+     "id": "2507.04742",
+     "relation": "anticipates",
+     "note": "Fixed concise vector, up to 67% shorter CoT; R1/R2 baselines."
+    },
+    {
+     "citation": "Sun et al. 2025, ThinkEdit",
+     "id": "2503.22048",
+     "relation": "contradicts",
+     "note": "Overly short reasoning hurts; caution for CoT shortening."
+    },
+    {
+     "citation": "Geiping et al. 2025, Huginn recurrent depth",
+     "id": "2502.05171",
+     "relation": "background",
+     "note": "Recurrent block with input re-injection; belongs to big-loop, not CA2."
+    },
+    {
+     "citation": "Sun et al. 2024, massive activations",
+     "id": "2402.17762",
+     "relation": "background",
+     "note": "Predicted confound for EMA-based gist direction."
+    }
+   ],
+   "novelty": [
+    {
+     "idea": "Graded escalating controller: leaky integral of harm-probe score → tanh-capped gain on refusal direction, as runtime hook",
+     "verdict": "partially_novel",
+     "rationale": "Exact pipeline not found; components published (CAST, AdaSteer, DAC, PID Steering, SCM delay-k, THRD). At defaults it behaves as a smoothed CAST switch."
+    },
+    {
+     "idea": "'Asimov' degeneration past the cap as designed endpoint",
+     "verdict": "anticipated",
+     "rationale": "Circuit breakers deliberately reroute harmful representations toward incoherence; over-steering degeneration widely reported."
+    },
+    {
+     "idea": "Gist momentum steering: normalised fast-minus-slow EMA of own residual stream over time, capped, open loop",
+     "verdict": "novel",
+     "rationale": "No temporal self-referential steering direction found; nearest are cross-layer momentum in vision-language(-action) models (STAR, DAMO), mean-centring, SADI, Coconut/Huginn recurrence. Novel as construction, untested, and theoretically risky (positive feedback)."
+    },
+    {
+     "idea": "Gist under negative feedback (agreement-gated, released on backtracking)",
+     "verdict": "unclear",
+     "rationale": "Not implemented; would face PID Steering (Nguyen 2025) and the withdrawn token-chunk PID controller as direct precedents."
+    },
+    {
+     "idea": "Re-aligning abliterated models with runtime hooks using the surviving harmfulness representation as gate, with never-aligned base arm",
+     "verdict": "partially_novel",
+     "rationale": "Adding refusal direction known (Arditi); aligned-direction runtime restoration shown for honesty (Herbster 2026); selective refusal restoration on abliterated vs base not found."
+    },
+    {
+     "idea": "CA2 FiLM modulator with temporal-context EMA",
+     "verdict": "anticipated",
+     "rationale": "FiLM (Perez 2018) on a diagonal linear recurrence; Howard–Kahana TCM; no CA2-specific computation."
+    },
+    {
+     "idea": "Fixed contrastive vectors for CoT compression (R1/R2 baselines)",
+     "verdict": "anticipated",
+     "rationale": "SEAL, ASC, manifold steering, thinking-speed vectors, CoT-Valve."
+    },
+    {
+     "idea": "Memory-retrieved gist vectors (R5)",
+     "verdict": "anticipated",
+     "rationale": "STIR, DSEM, RISER, and SOPHIA (transition-indexed vector bank)."
+    },
+    {
+     "idea": "Control-theoretic framing of steering",
+     "verdict": "anticipated",
+     "rationale": "PID Steering (ICLR 2026)."
+    }
+   ],
+   "proposed_experiments": [
+    {
+     "title": "E1 Token-level vs prompt-level harm probe",
+     "hypothesis": "Probe trained on last prompt token is miscalibrated on generated tokens; a token-level probe fixes it",
+     "design": "Layer sweep on Qwen3-1.7B, abliterated sibling, Base; train both probes; evaluate per generated position",
+     "metric": "AUROC and ECE by position; agreement with Llama Guard",
+     "extends": "A1, J1",
+     "priority": "H"
+    },
+    {
+     "title": "E2 Matched-norm controller comparison",
+     "hypothesis": "At matched mean injected norm, graded ≈ CAST unless λ≥0.99",
+     "design": "static, CAST, AdaSteer-style, StTP-style, graded λ∈{0.9,0.99,0.998}; match Σg‖h‖",
+     "metric": "HarmBench ASR, XSTest-safe/OR-Bench-Hard over-refusal, MMLU, perplexity Pareto",
+     "extends": "A2, A6, S1",
+     "priority": "H"
+    },
+    {
+     "title": "E3 Turn-level integrator under Crescendo",
+     "hypothesis": "Token-level E cannot stop multi-turn escalation; a turn-level E can and recovers on benign turns",
+     "design": "Scripted Crescendo vs benign multi-turn; turn-level λ∈{0.5,0.8} vs token-level",
+     "metric": "ASR by turn, post-attack false refusals, probe-score drift",
+     "extends": "A3, H4",
+     "priority": "M"
+    },
+    {
+     "title": "E4 Token-channel loop identification",
+     "hypothesis": "High cap·κ makes refusal/compliance ring through the sampled-token loop",
+     "design": "Forced s_t step/impulse responses; cap×κ sweep; random-direction control",
+     "metric": "Alternation rate, autocorrelation of g_t, degeneration",
+     "extends": "A4, S1",
+     "priority": "M"
+    },
+    {
+     "title": "E5 Gist vs matched controls on reasoning",
+     "hypothesis": "Open-loop gist increases self-loops and lowers accuracy at gains that shorten CoT",
+     "design": "R1-Distill-Qwen-1.5B, Qwen3-1.7B; gist, gist with massive dims removed/whitened, slow-only mean-centring, random matched-norm, ASC, SEAL",
+     "metric": "Accuracy vs reasoning tokens (GSM8K, MATH-500, AIME), self-loop rate, wait rate, flips",
+     "extends": "R2, R4",
+     "priority": "H"
+    },
+    {
+     "title": "E6 Negative-feedback gist",
+     "hypothesis": "Agreement-setpoint gain with backtracking release beats open-loop gist and matches PID Steering",
+     "design": "g_t=G·σ(κ(c*−cos(h_t,m_t))) plus backtrack release; c* sweep",
+     "metric": "Same as E5 plus stability margin",
+     "extends": "R3, J4",
+     "priority": "M"
+    },
+    {
+     "title": "E7 Three-model re-alignment",
+     "hypothesis": "Harmfulness stays decodable after abliteration (H1) but runtime hooks restore far less on Base (H3)",
+     "design": "Aligned, abliterated, Base; sibling vs self direction; extended-refusal model as comparison",
+     "metric": "ASR gap to aligned, over-refusal, cos(probe, refusal) by layer",
+     "extends": "A6, A7",
+     "priority": "M"
+    },
+    {
+     "title": "E8 CA2-faithful episode tag",
+     "hypothesis": "Slow-drift CA2 context in CA3 write keys reduces cross-episode interference",
+     "design": "Repeated keys across episodes; ρ∈{0.999,0.9999} or stepwise drift concatenated to CA3 key vs none and ρ=0.9",
+     "metric": "Repeated-key interference error, within-episode recall",
+     "extends": "S8, W1",
+     "priority": "L"
+    }
+   ],
+   "corrections": [
+    "limbic_llm/ca2.py docstring: 'CA2 lacks mossy-fibre input' is outdated; DG granule cells project to CA2 (Kohara et al. 2014, doi:10.1038/nn.3614).",
+    "ca2.py docstring: supramammillary input is not unique to CA2 among hippocampal targets; SuM also targets DG with a contextual-novelty signal (Chen et al. 2020).",
+    "ca2.py presents Howard–Kahana temporal context as a CA2 property; CA2 drift is on hours–days (Mankin 2015) while ρ=0.9 gives ~10-token memory; temporal context is also documented in LEC (Tsao 2018).",
+    "README: serial 'EC → DG → CA3 → CA2 → CA1' misdescribes CA2, which is a parallel route with strong direct EC II input to CA2 and CA2→CA1 output (Chevaleyre & Siegelbaum 2010).",
+    "NOTEBOOK alignment proposal: 'social context and norms shape CA2' is unsupported; CA2 encodes social identity/novelty and can promote aggression.",
+    "NOTEBOOK/A6: formula h ← h − G·tanh(κE)‖h‖d̂ with d̂ = refusal direction has the wrong sign (would ablate refusal); steering.py correctly adds +g‖h‖d̂.",
+    "NOTEBOOK cites 'STU-PID' (arXiv 2506.18831) with GSM8K 81→87%, −32% tokens; the paper is withdrawn by its author in favour of arXiv 2510.04309, and the current version reports 85.7→89.6% and 1026→790 tokens.",
+    "NOTEBOOK describes PID Steering as steering strength regulated over generation; its integral term accumulates across layers, not tokens.",
+    "steering.py defaults (λ=0.9, κ=0.5): gain reaches 0.46/0.74/0.875/0.938 of the cap after 1–4 tokens (0.967 after 5) of s≈1, time constant ≈10 tokens, and reset() between sequences means A3/H4 multi-turn escalation cannot occur; it needs λ≈0.998 or a turn-level integrator.",
+    "steering.py 'open loop' and K2–K3 stability transfer: the probe reads the pre-injection stream at the same layer, so the loop closes only through sampled tokens; the op-amp/characteristic-polynomial analysis does not apply to A4. The leaky integrator has no setpoint, so it is a low-pass gain schedule, not integral control.",
+    "probe.py/steering.py: probe trained on last prompt token but applied to every generated token (distribution shift); token-level probes as in streaming-monitor work are needed.",
+    "Gist direction does not handle massive activations at delimiter/first tokens (Sun et al. 2024), a predicted confound for the EMA difference.",
+    "'Gist momentum under negative feedback' is not implemented: the gist arm is open-loop positive feedback with a cap (R3 planned only).",
+    "docs/references.bib: several entries have placeholder author lists ('Chen and others', 'Azizi and others', etc.); shi2026internalizing appeared at EMNLP 2026 as 'STIR: Self-Distilled Latent Tools for Dynamic Control of LLM Reasoning'; CAA's arXiv first author is listed as Panickssery."
+   ],
+   "report": "ca2.md",
+   "declared_limits": [
+    "DAMO (ICLR 2025) mentioned in the review but not cited or included in the bib because no DOI/arXiv record could be verified; Wintzer et al. 2014 dropped (DOI did not resolve).",
+    "Biology abstracts for most CA2 papers were not retrievable (PubMed/Europe PMC blocked; OpenAlex lacked abstracts); specific claims were checked via web search of publisher/PubMed pages instead of full text.",
+    "No experiments were run; controller-dynamics numbers are analytic computations at steering.py defaults, not model runs."
+   ]
+  },
+  "dg_moe": {
+   "summary": "limbic-llm's DentateGyrus (learned expansion + k-WTA + per-unit gain + reserve units with age-boosted plasticity) is a top-k sparse FFN; as GDN write keys it is a Kanerva-style sparse-address memory. Both are published (k-sparse AE, Ahmad 2019, SDM-MLP Bricken 2023; Kanerva SDM incl. successor sequence storage; Schlag 2021 key expansion; Sparse State Expansion 2025; Mixture-of-Memories 2025). 'DG as MoE gate' holds formally only in the fine-grained limit (PKM/PEER: single-neuron experts selected by top-k), and HiCL already implements a DG-gated MoE. It is functionally wrong for Qwen3/Qwen3-Next/Qwen3.5 coarse routers (128/8, 512/10+1, 256/8+1 provisional), which are trained with load balancing to send similar tokens to the same experts and collapse representations toward centroids: clustering, closer to completion than separation. Repo evidence for a DG benefit is weak: M7 is a ceiling effect, T13 is single seed, and T16 does not test Treves-Rolls because there is no CA3 recurrent completion stage. Biology fixes: mossy cells are excitatory, not inhibitory; mossy-fibre detonation is frequency-dependent, not a static gain; 2007-era DG remapping may reflect mossy cells; immature granule cells are hyperexcitable integrators; human adult neurogenesis is contested. Highest-value experiments: (1) overlap-controlled sparse-vs-dense key capacity above d_k (exact delta-rule capacity is bounded by d_k regardless of sparsity); (2) measure whether Qwen MoE router codes separate or cluster near-duplicates, then use them as side-memory keys vs FlyHash; (3) expert neurogenesis for continual fine-tuning vs ESFT and LoRA, which links to the author's subnetwork-restricted fine-tuning project via ESFT and sparse memory finetuning.",
+   "closest_prior_work": [
+    {
+     "citation": "Kapoor et al. 2025, HiCL: Hippocampal-Inspired Continual Learning (preprint)",
+     "id": "arXiv:2508.16651",
+     "relation": "anticipates",
+     "note": "DG top-k codes route to experts via cosine to task prototypes, with CA3 store and replay; anticipates DG-gated MoE. Already in repo bib, but the repo implements no DG-gated MoE."
+    },
+    {
+     "citation": "Bricken et al. 2023, Sparse Distributed Memory is a Continual Learner",
+     "id": "arXiv:2303.11934",
+     "relation": "anticipates",
+     "note": "Top-k, L2-normalised, bias-free SDM-MLP learns continually without replay; closest analogue of DentateGyrus as continual learner; not cited by repo."
+    },
+    {
+     "citation": "Bricken & Pehlevan 2021, Attention Approximates Sparse Distributed Memory",
+     "id": "arXiv:2111.05498",
+     "relation": "background",
+     "note": "Links attention/associative read-out to Kanerva SDM; frame for sparse-address CA3 memory."
+    },
+    {
+     "citation": "Pan et al. 2025, Scaling Linear Attention with Sparse State Expansion (preprint)",
+     "id": "arXiv:2507.16577",
+     "relation": "anticipates",
+     "note": "Row-sparse top-k state updates in linear attention to cut inter-class interference, scaled to 2B hybrid; essentially k-WTA addressing of a delta-style state ('dg' mode)."
+    },
+    {
+     "citation": "Du et al. 2025, MoM: Linear Sequence Modeling with Mixture-of-Memories (preprint)",
+     "id": "arXiv:2502.13685",
+     "relation": "overlaps",
+     "note": "Router sends tokens to independent linear-memory states: an MoE over CA3-like memories, the published form of a DG-CA3 MoE."
+    },
+    {
+     "citation": "He 2024, Mixture of A Million Experts (PEER) (preprint)",
+     "id": "arXiv:2407.04153",
+     "relation": "anticipates",
+     "note": "Product-key top-k over >1M single-neuron experts = expansion + k-WTA with per-unit output (granule cell + mossy fibre); the only regime where DG-as-MoE is exact."
+    },
+    {
+     "citation": "Lample et al. 2019, Large Memory Layers with Product Keys",
+     "id": "arXiv:1907.05242",
+     "relation": "background",
+     "note": "Sparse top-k addressing into a huge key table."
+    },
+    {
+     "citation": "Berges et al. 2024, Memory Layers at Scale (preprint)",
+     "id": "arXiv:2412.09764",
+     "relation": "background",
+     "note": "Scaled memory layers; substrate for sparse memory finetuning."
+    },
+    {
+     "citation": "Dasgupta, Stevens & Navlakha 2017, A neural algorithm for a fundamental computing problem",
+     "id": "10.1126/science.aam9868",
+     "relation": "background",
+     "note": "Random sparse expansion + WTA is locality-sensitive hashing: preserves, not destroys, similarity. Correct baseline for DG keys."
+    },
+    {
+     "citation": "Schlag, Irie & Schmidhuber 2021, Linear Transformers Are Secretly Fast Weight Programmers",
+     "id": "arXiv:2102.11174",
+     "relation": "anticipates",
+     "note": "Key expansion (DPFP) to raise fast-weight capacity; capacity bounded by key dimension. In repo bib."
+    },
+    {
+     "citation": "Qwen Team 2025, Qwen3 Technical Report",
+     "id": "arXiv:2505.09388",
+     "relation": "background",
+     "note": "128 experts, 8 active, no shared experts, global-batch load-balancing loss (verified in PDF)."
+    },
+    {
+     "citation": "Qiu et al. 2025, Demons in the Detail: load balancing loss for specialized MoE",
+     "id": "arXiv:2501.11873",
+     "relation": "contradicts",
+     "note": "Global-batch balancing yields domain-specialised experts: Qwen routers are optimised to cluster, against DG-like separation."
+    },
+    {
+     "citation": "Chi et al. 2022, On the Representation Collapse of Sparse Mixture of Experts",
+     "id": "arXiv:2204.09179",
+     "relation": "contradicts",
+     "note": "Routing clusters tokens around expert centroids: completion-like, opposite of DG separation."
+    },
+    {
+     "citation": "Wang et al. 2024, Expert-Specialized Fine-Tuning (ESFT)",
+     "id": "arXiv:2407.01906",
+     "relation": "overlaps",
+     "note": "Tune only task-routed experts; matches full FT. The published version of subnetwork-restricted fine-tuning in MoE; baseline for expert neurogenesis."
+    },
+    {
+     "citation": "Lin et al. 2025, Continual Learning via Sparse Memory Finetuning (preprint)",
+     "id": "arXiv:2510.15103",
+     "relation": "overlaps",
+     "note": "Update only slots that new data selectively activates; NQ F1 drop 11% vs 89% full FT and 71% LoRA. Sparse-code-defined subnetwork."
+    },
+    {
+     "citation": "Chen et al. 2023, Lifelong-MoE (preprint)",
+     "id": "arXiv:2305.12281",
+     "relation": "anticipates",
+     "note": "Adds experts during lifelong pretraining = 'expert neurogenesis'."
+    },
+    {
+     "citation": "Draelos et al. 2017, Neurogenesis deep learning",
+     "id": "10.1109/ijcnn.2017.7965898",
+     "relation": "anticipates",
+     "note": "Neurogenesis-style unit addition for new classes; anticipates DentateGyrus.grow()."
+    },
+    {
+     "citation": "Tran et al. 2022, Adult neurogenesis acts as a neural regularizer",
+     "id": "10.1073/pnas.2206704119",
+     "relation": "anticipates",
+     "note": "Neurogenesis-like unit reinitialisation in deep nets."
+    },
+    {
+     "citation": "Leutgeb et al. 2007, Pattern separation in the dentate gyrus and CA3",
+     "id": "10.1126/science.1135801",
+     "relation": "supports",
+     "note": "DG decorrelates at small morphs; caveat: recorded units may include mossy cells."
+    },
+    {
+     "citation": "Neunuebel & Knierim 2014, CA3 retrieves coherent representations from degraded input",
+     "id": "10.1016/j.neuron.2013.11.017",
+     "relation": "supports",
+     "note": "DG separation / CA3 completion dissociation; completion needs CA3 recurrence that T16 lacks."
+    },
+    {
+     "citation": "Treves & Rolls 1992, Two distinct input systems to CA3",
+     "id": "10.1002/hipo.450020209",
+     "relation": "contradicts",
+     "note": "Repo T16 reports the opposite, but without a recurrent completion stage, so this is not a valid test."
+    },
+    {
+     "citation": "GoodSmith et al. 2017, Spatial representations of granule cells and mossy cells",
+     "id": "10.1016/j.neuron.2016.12.026",
+     "relation": "background",
+     "note": "Mossy cells, not granule cells, may carry much of the remapping signal."
+    },
+    {
+     "citation": "Aimone, Deng & Gage 2011, Resolving new memories",
+     "id": "10.1016/j.neuron.2011.05.010",
+     "relation": "contradicts",
+     "note": "Immature granule cells integrate rather than separate and are hyperexcitable; repo treats newborn units as standard k-WTA competitors."
+    },
+    {
+     "citation": "Scharfman 2016, The enigmatic mossy cell of the dentate gyrus",
+     "id": "10.1038/nrn.2016.87",
+     "relation": "contradicts",
+     "note": "Mossy cells are excitatory; the repo docstring calls them feedback inhibition."
+    },
+    {
+     "citation": "Gershman, Fiete & Irie 2025, Key-value memory in the brain",
+     "id": "10.1016/j.neuron.2025.02.029",
+     "relation": "supports",
+     "note": "Separated keys vs content values: frame for DG keys + stream values."
+    },
+    {
+     "citation": "Samsonovich & Ascoli 2005, hippocampal pathfinding model",
+     "id": "10.1101/lm.85205",
+     "relation": "background",
+     "note": "CA3 successor links for path retrieval; echoes successor-bound addressing."
+    }
+   ],
+   "novelty": [
+    {
+     "idea": "DentateGyrus module: expansion + k-WTA + mossy gain + decorrelation loss",
+     "verdict": "anticipated",
+     "rationale": "k-sparse autoencoders (Makhzani & Frey 2013), k-WTA nets (Ahmad & Scheinkman 2019), SDM-MLP (Bricken 2023); decorrelation loss is a generic covariance penalty."
+    },
+    {
+     "idea": "Neurogenesis reserve units with age-dependent plasticity boost",
+     "verdict": "anticipated",
+     "rationale": "Draelos 2017, Tran 2022, Aimone 2009 models; physiology of 4-6-week hyperplasticity (Schmidt-Hieber 2004, Ge 2007). Implementation detail (gradient-hook boost) is minor."
+    },
+    {
+     "idea": "DG as an MoE gate",
+     "verdict": "anticipated",
+     "rationale": "DG-gated MoE is HiCL (Kapoor 2025); router-free fine-grained selection is PKM/PEER. For coarse Qwen routers the analogy is functionally wrong (routers cluster under load balancing; Chi 2022, Qiu 2025)."
+    },
+    {
+     "idea": "'dg' sparse addressing of a Gated DeltaNet state",
+     "verdict": "anticipated",
+     "rationale": "Kanerva SDM; Schlag 2021 key expansion; Sparse State Expansion (Pan 2025) row-sparse top-k updates; Mixture-of-Memories (Du 2025)."
+    },
+    {
+     "idea": "Successor-bound tied addressing (a_{t-1} -> v_t) giving exact RAM",
+     "verdict": "partially_novel",
+     "rationale": "Heteroassociative sequence storage with pattern t as the address of t+1 is Kanerva SDM / Levy 1996; the delta-rule exact-overwrite version on GDN is an engineering combination, and the Qwenputer blog precedes it."
+    },
+    {
+     "idea": "Sparse DG write keys break closed-loop self-rehearsal primacy (T13)",
+     "verdict": "partially_novel",
+     "rationale": "Not found in literature, but single seed, two arms, small model; needs replication."
+    },
+    {
+     "idea": "Qwen MoE router selections (multi-layer) as DG keys for a side-channel associative memory on a frozen hybrid model",
+     "verdict": "unclear",
+     "rationale": "No precedent found in this review's searches; untested in repo (R1, W4). Prediction: router codes cluster, so they may lose to random expansion for similar items."
+    },
+    {
+     "idea": "Expert neurogenesis in a pretrained Qwen MoE for continual fine-tuning",
+     "verdict": "anticipated",
+     "rationale": "Lifelong-MoE, MoE-adapters, SEMA, Expert Gate, SEED add or select experts; ESFT and sparse memory finetuning restrict updates. A Qwen-specific comparison would be an empirical, not conceptual, contribution."
+    }
+   ],
+   "proposed_experiments": [
+    {
+     "title": "Overlap-controlled capacity of sparse vs dense keys",
+     "hypothesis": "Exact delta-rule capacity is bounded by d_k regardless of sparsity; above d_k and at high key overlap, sparse keys degrade more gracefully because each write touches only k columns.",
+     "design": "gdn_capacity.py with key cosine rho in {0,0.5,0.8,0.9,0.95}, load N/d_k in {0.5,1,2,4}; arms gdn_x8, tied_x8, dg_x8 at sparsity {1,2,5,10,25,100}%, plus fixed random FlyHash at matched sparsity; >=3 seeds.",
+     "metric": "Recall vs load and rho; oldest-pair retention; measured input-output overlap curve of trained addresses.",
+     "extends": "M7, M4, M5, RESULTS §3",
+     "priority": "H"
+    },
+    {
+     "title": "Do Qwen MoE router codes separate or cluster? Router codes as DG keys",
+     "hypothesis": "Concatenated multi-layer top-k router selections are a clustering code (expert-set Jaccard above hidden cosine for near-duplicates); as write keys they lose to FlyHash of h_t for similar items.",
+     "design": "Stage 1: Qwen3-30B-A3B and Qwen3.5-35B-A3B, record router top-k for paraphrase, minimal-edit and unrelated pairs; plot Jaccard vs hidden cosine. Stage 2: side-channel memory write keys = dense h_t, learned DG (W4), FlyHash matched active bits, router code.",
+     "metric": "Pattern-separation curve; needle recall with 2-8 template-sharing pairs; similar-pair interference; recency probe.",
+     "extends": "W4, T13, NOTEBOOK R1",
+     "priority": "H"
+    },
+    {
+     "title": "Expert neurogenesis for continual fine-tuning",
+     "hypothesis": "Newborn experts with age-decaying router bias, with updates confined to them and their router columns, limit forgetting as well as or better than ESFT and better than LoRA.",
+     "design": "Qwen3-30B-A3B; add E_new experts per layer (copy+noise or zero-output init); sequential new-fact and new-domain tasks; baselines full FT, LoRA, ESFT, replay+sleep (M3). GPU required.",
+     "metric": "New-task accuracy; forgetting on held-out general and fact-recall sets; router load drift; newborn recruitment rate.",
+     "extends": "M3, DentateGyrus.grow(); author's subnetwork-restricted fine-tuning project",
+     "priority": "H"
+    },
+    {
+     "title": "Treves-Rolls re-test with a CA3 completion stage",
+     "hypothesis": "With recurrent completion, a dense direct cue matches or beats a DG-coded read at high cue noise when storage used DG keys.",
+     "design": "Add 1-3 Hopfield-softmax iterations (ca3.py) after the read in the temporal-loop ablation; arms direct+completion, DG+completion, current two; sigma in {0,0.5,1,2,3}; >=3 seeds.",
+     "metric": "Recall vs cue noise sigma.",
+     "extends": "T16",
+     "priority": "M"
+    },
+    {
+     "title": "Detonator-gated write strength",
+     "hypothesis": "Write strength beta_t driven by a facilitation trace of active DG units speeds learning without the instability of stacked DG + novelty-lr.",
+     "design": "New beta term in temporal loop and GDN memory; compare constant, learned, CA1-novelty (with warm-up) and facilitation-gated beta.",
+     "metric": "Steps to 0.5 recall; newer vs older recall.",
+     "extends": "M2, T13",
+     "priority": "M"
+    },
+    {
+     "title": "Recruitment audit for newborn granule units",
+     "hypothesis": "Without an excitability bias newborn units are rarely (or always) recruited; with a decaying bias they preferentially encode novel and temporally adjacent items (integration).",
+     "design": "M3 continual protocol with reserve units; log per-unit win rates, code overlap of adjacent items, backward transfer; with and without age-decaying bias.",
+     "metric": "Newborn win rate; adjacent-item code overlap; backward transfer.",
+     "extends": "M3",
+     "priority": "L"
+    }
+   ],
+   "corrections": [
+    "dentate_gyrus.py docstring: 'Strong feedback inhibition (basket / mossy cells)': mossy cells are excitatory glutamatergic hilar neurons (Scharfman 2016, 10.1038/nrn.2016.87); inhibition is from basket and other GABAergic interneurons.",
+    "'Mossy-fibre gain g' as a static learned per-unit scale misrepresents conditional, frequency-dependent detonation (Henze 2002; Vyleta 2016); a faithful analogue gates write strength by recent DG activity.",
+    "REFERENCES.md annotates Shazeer 2017 as 'DG as an expert gate', and genesis.md frames 'DG -> MoE gate'. NOTEBOOK R1 already concedes that nothing reuses an MoE router and that routers optimise load balance; coarse routers cluster (Chi 2022; Qiu 2025). The framing should be corrected or restricted to the fine-grained (PEER/PKM) limit and credited to HiCL.",
+    "T16 is labelled 'Not supported' for Treves-Rolls, but the temporal loop has no CA3 recurrent completion stage, which the hypothesis requires; the test compares a thresholded vs an unthresholded read. Relabel as not a test of the hypothesis.",
+    "M7 'DG faster early' rests on one seed at ceiling (RESULTS §3 acknowledges the task does not separate arms); it should not be read as a DG benefit.",
+    "DG separation is asserted from a single cosine in a unit test (pattern_separation); with backprop-trained expansion weights codes may align rather than separate. Measure input-vs-output overlap curves on trained models.",
+    "Neurogenesis citation relies only on Spalding 2013; human adult neurogenesis is contested (Sorrells 2018 vs Moreno-Jimenez 2019).",
+    "grow() initialises newborn units at Kaiming scale under the same global k-WTA as trained units; whether they are ever recruited is unmonitored (code-review observation, not run). Immature granule cells are hyperexcitable integrators (Aimone 2011).",
+    "Uncited directly relevant prior art: Bricken et al. 2023 SDM-MLP, Sparse State Expansion (Pan 2025), Mixture-of-Memories (Du 2025), PEER, ESFT, sparse memory finetuning (Lin 2025), Kanerva 1988 SDM sequence storage."
+   ],
+   "report": "dg_moe.md",
+   "declared_limits": [
+    "Qwen3.5-35B-A3B MoE configuration (256 experts, top-8 + shared) comes from secondary web sources that conflict with NVIDIA docs (512/top-10); huggingface.co was blocked, I did not request access (non-critical), so config.json was not read. Marked provisional.",
+    "Kanerva 1988 (book) has no DOI; verified via an OpenAlex record and a CrossRef book-review record, cited with ISBN instead of a DOI link.",
+    "Qwen3-Next details cited from the official Qwen blog (no paper); Qwen3 MoE details checked against pages 1-8 of the arXiv PDF only.",
+    "No experiments were run; code observations (e.g. newborn-unit recruitment) are from reading the code, not execution."
+   ]
+  },
+  "gdn": {
+   "summary": "The GDN formalism in limbic-llm is published. 'GDN update = one SGD step on the Titans loss at the decayed state' is in the GDN paper itself, Longhorn, Miras and test-time regression (Wang, Shi & Fox 2025). 'One-hot keys = exact RAM' is Kohonen's correlation-matrix memory plus the Schlag et al. 2021 d_k capacity bound. Successor-bound keys are Sompolinsky-Kanter sequence memory, the induction-head and H3-shift mechanism, and the design principle of Memory Mosaics. 'GDN state = CA3' relabels the fast-weight-as-hippocampus view and is biologically weak: CA3 is an autoassociative attractor with Hebbian plasticity, while GDN is a linear heteroassociative, error-corrective readout. Under a linear readout, DG sparsity cannot raise the d_k bound, and the repo's own data agree (tied_x8 = dg_x8 = 1.00). M4 is contradicted by its own numbers: gdn_x8 with d_k=128 fails at 8-32 pairs, so the failure is optimisation, not capacity. M5 never loads the memory beyond d_k. M6 compares against a simplified chunked Titans, and full attention scores only 0.49 on the same task. P1 is expected: HLA (2026) shows needle attenuation in pretrained Qwen3.5 GDN, and G&A, SWAX and hybrid-ratio studies find retrieval concentrated in a few attention heads. P2, where a 4.38M residual module at block 12 recruits frozen GDN layers for exact 500-token recall, is the one partially novel result. It is mechanistically unexplained: the loop kernel is zero at the gap and the loop gain barely moved, so the module behaves as an adapter. It needs parameter-matched adapter, LoRA and state-offset controls plus state probes. W1 is anticipated by δ-mem (2026, a delta-rule state on a frozen Qwen3-4B), and W3 by a crowded replay and LLM-sleep literature (Lee et al. 2026; Behrouz et al. 2026; sparse memory finetuning). Next: E1 (state probing), E2 (adapter controls) and E3 (state-space injection).",
+   "closest_prior_work": [
+    {
+     "citation": "Schlag et al. 2021, Linear Transformers Are Secretly Fast Weight Programmers",
+     "id": "arXiv:2102.11174",
+     "relation": "anticipates",
+     "note": "d_k capacity bound of linear attention and delta-rule overwrite; source of the 'exact RAM' and counterfactual-overwrite results (M5)."
+    },
+    {
+     "citation": "Yang, Kautz & Hatamizadeh 2024, Gated Delta Networks",
+     "id": "arXiv:2412.06464",
+     "relation": "background",
+     "note": "The GDN rule implemented in gated_delta.py; frames delta rule as online regression."
+    },
+    {
+     "citation": "Yang et al. 2024, Parallelizing Linear Transformers with the Delta Rule",
+     "id": "arXiv:2406.06484",
+     "relation": "anticipates",
+     "note": "Chunkwise WY/UT algorithm that gated_delta_chunked re-derives; delta-rule models strong on associative recall (contrasts with M4)."
+    },
+    {
+     "citation": "Liu et al. 2024, Longhorn",
+     "id": "arXiv:2407.14207",
+     "relation": "anticipates",
+     "note": "State-space layers as amortised online learners on ||Sk-v||^2: the 'GDN = one SGD step' identity."
+    },
+    {
+     "citation": "Behrouz et al. 2025, It's All Connected (Miras)",
+     "id": "arXiv:2504.13173",
+     "relation": "anticipates",
+     "note": "Unifies GDN/Titans/TTT by attentional bias, retention and optimiser; the docstring equivalence is a special case."
+    },
+    {
+     "citation": "Wang, Shi & Fox 2025, Test-time regression",
+     "id": "arXiv:2501.12352",
+     "relation": "anticipates",
+     "note": "Associative-memory regression framework covering GDN, Mamba, Titans."
+    },
+    {
+     "citation": "Sun et al. 2024, Learning to (Learn at Test Time): TTT layers",
+     "id": "arXiv:2407.04620",
+     "relation": "background",
+     "note": "Test-time gradient memory generalising the delta rule."
+    },
+    {
+     "citation": "Kohonen 1972, Correlation Matrix Memories",
+     "id": "10.1109/TC.1972.5008975",
+     "relation": "anticipates",
+     "note": "Linear matrix memory exact for orthonormal keys up to d_k: 'one-hot keys = exact RAM'."
+    },
+    {
+     "citation": "Tsodyks & Feigel'man 1988, Enhanced storage capacity with low activity",
+     "id": "10.1209/0295-5075/6/2/002",
+     "relation": "contradicts",
+     "note": "Sparse-coding capacity gains require non-linear readout; GDN's linear readout cannot benefit, contradicting the DG-raises-capacity premise of gdn_capacity.py."
+    },
+    {
+     "citation": "Arora et al. 2023, Zoology (MQAR)",
+     "id": "arXiv:2312.04927",
+     "relation": "background",
+     "note": "Defines MQAR; the repo's AssociativeRecall is an MQAR variant; recall gap explains LM gap."
+    },
+    {
+     "citation": "Okpekpe & Orvieto 2025, Revisiting associative recall in modern recurrent models",
+     "id": "arXiv:2508.19029",
+     "relation": "contradicts",
+     "note": "Recurrent AR results are highly learning-rate sensitive; M4's single-LR single-seed failure is not evidence of a capacity limit."
+    },
+    {
+     "citation": "Jelassi et al. 2024, Repeat After Me",
+     "id": "arXiv:2402.01032",
+     "relation": "supports",
+     "note": "Fixed-state models cannot copy beyond state information; constrains O3 / never-ending chat."
+    },
+    {
+     "citation": "Grazzi et al. 2024, Unlocking State-Tracking via Negative Eigenvalues",
+     "id": "arXiv:2411.12537",
+     "relation": "background",
+     "note": "beta in (0,1) in _gates precludes parity/state tracking."
+    },
+    {
+     "citation": "Hatamizadeh, Choi & Kautz 2026, Gated DeltaNet-2 (preprint)",
+     "id": "arXiv:2605.22791",
+     "relation": "extended_by_limbic",
+     "note": "Decoupled erase/write gates; needed for true slot-overwrite RAM semantics that scalar-beta GDN cannot express."
+    },
+    {
+     "citation": "Chen et al. 2026, HLA: Hybrid Linear Attention (preprint)",
+     "id": "arXiv:2610.05842",
+     "relation": "supports",
+     "note": "Pretrained Qwen3.5 GDN attenuates an early needle chunk by orders of magnitude: explains P1."
+    },
+    {
+     "citation": "Cabannes et al. 2025, Short window attention enables long-term memorization (SWAX)",
+     "id": "arXiv:2509.24552",
+     "relation": "supports",
+     "note": "Recurrent layers learn long-range memory only when local attention cannot do retrieval; explains P1 and suggests the adaptation route in P2."
+    },
+    {
+     "citation": "Bick, Xing & Gu 2025, Gather-and-Aggregate",
+     "id": "arXiv:2504.18574",
+     "relation": "supports",
+     "note": "Retrieval concentrated in few heads in both Transformers and SSMs; P1 read-bottleneck hypothesis."
+    },
+    {
+     "citation": "Wang et al. 2025, A Systematic Analysis of Hybrid Linear Attention",
+     "id": "arXiv:2507.06457",
+     "relation": "supports",
+     "note": "Recall improves with more full attention below 3:1; GDN best standalone but not best hybrid."
+    },
+    {
+     "citation": "Lei et al. 2026, delta-mem (preprint)",
+     "id": "arXiv:2605.12357",
+     "relation": "anticipates",
+     "note": "Delta-rule 8x8 state attached to frozen full-attention backbone (Qwen3-4B adapter) with low-rank attention corrections: anticipates W1."
+    },
+    {
+     "citation": "Munkhdalai, Faruqui & Gopal 2024, Infini-attention",
+     "id": "arXiv:2404.07143",
+     "relation": "anticipates",
+     "note": "Delta-rule compressive memory added to attention of pretrained LLMs."
+    },
+    {
+     "citation": "Rodkin et al. 2024, Associative Recurrent Memory Transformer",
+     "id": "arXiv:2407.04841",
+     "relation": "overlaps",
+     "note": "Delta-rule associative memory across segments for long-context fact retrieval."
+    },
+    {
+     "citation": "Kang et al. 2025, State-offset Tuning",
+     "id": "arXiv:2503.03499",
+     "relation": "overlaps",
+     "note": "Learned offsets into SSM state beat prompt/prefix tuning: the obvious control and alternative for P2 / E3."
+    },
+    {
+     "citation": "Paulo, Marshall & Belrose 2024, Does Transformer Interpretability Transfer to RNNs?",
+     "id": "arXiv:2404.05971",
+     "relation": "anticipates",
+     "note": "Activation-addition steering works on Mamba/RWKV and state-based steering improves it."
+    },
+    {
+     "citation": "Zhang et al. 2024, Memory Mosaics",
+     "id": "arXiv:2405.06394",
+     "relation": "anticipates",
+     "note": "Associative memories keyed on the past with next-token values: successor-bound addressing as an architecture."
+    },
+    {
+     "citation": "Olsson et al. 2022, Induction Heads",
+     "id": "arXiv:2209.11895",
+     "relation": "anticipates",
+     "note": "Previous-token shift + content match; the W1/P4a address-shift fix."
+    },
+    {
+     "citation": "Fu et al. 2022, Hungry Hungry Hippos (H3)",
+     "id": "arXiv:2212.14052",
+     "relation": "anticipates",
+     "note": "Shift-SSM supplying token shift for associative recall; same role as tied addressing."
+    },
+    {
+     "citation": "Sompolinsky & Kanter 1986, Temporal association in asymmetric networks",
+     "id": "10.1103/PhysRevLett.57.2861",
+     "relation": "anticipates",
+     "note": "Hebbian successor binding for sequence recall in Hopfield networks."
+    },
+    {
+     "citation": "Samsonovich & Ascoli 2005, Hippocampus pathfinding model",
+     "id": "10.1101/lm.85205",
+     "relation": "supports",
+     "note": "CA3 as a store of transitions enabling path search; motivates iterated successor reads (E10)."
+    },
+    {
+     "citation": "McDermott, Heath & Parhi 2025, LoLA",
+     "id": "arXiv:2505.23666",
+     "relation": "anticipates",
+     "note": "Window + sparse exact cache selected by self-recall error + linear state: the three-tier design for never-ending chat / O3."
+    },
+    {
+     "citation": "Lee et al. 2026, Do Language Models Need Sleep? (preprint)",
+     "id": "arXiv:2605.26099",
+     "relation": "anticipates",
+     "note": "Offline recurrent consolidation of context into SSM fast weights before clearing KV: anticipates GDN 'sleep' for never-ending chat."
+    },
+    {
+     "citation": "Behrouz et al. 2026, Language Models Need Sleep (preprint)",
+     "id": "arXiv:2606.03979",
+     "relation": "overlaps",
+     "note": "Sleep = distillation-based consolidation + dreaming; overlaps replay.py's sleep phase."
+    },
+    {
+     "citation": "Lin et al. 2025, Continual Learning via Sparse Memory Finetuning",
+     "id": "arXiv:2510.15103",
+     "relation": "overlaps",
+     "note": "Sparse slot updates cut forgetting (NQ F1 drop 11% vs 71% LoRA); required baseline for W3."
+    },
+    {
+     "citation": "Gershman, Fiete & Irie 2025, Key-value memory in the brain",
+     "id": "arXiv:2501.02950",
+     "relation": "contradicts",
+     "note": "Separate key (retrieval) and value (storage) representations sit awkwardly with mapping the whole GDN state onto CA3."
+    },
+    {
+     "citation": "Bittner et al. 2017, Behavioral time scale synaptic plasticity",
+     "id": "10.1126/science.aan3846",
+     "relation": "background",
+     "note": "One-shot instructive plasticity is documented in CA1, not CA3: better analogue of a beta~1 successor write."
+    },
+    {
+     "citation": "Treves & Rolls 1994, Computational analysis of hippocampus",
+     "id": "10.1002/hipo.450040319",
+     "relation": "background",
+     "note": "CA3 autoassociative capacity scales with recurrent connectivity and sparseness under non-linear dynamics."
+    }
+   ],
+   "novelty": [
+    {
+     "idea": "GDN update = one SGD step on the Titans associative loss at the decayed state",
+     "verdict": "anticipated",
+     "rationale": "Stated in Yang et al. 2024 (GDN) and formalised by Longhorn (Liu 2024), Miras (Behrouz 2025a) and test-time regression (Wang, Shi & Fox 2025)."
+    },
+    {
+     "idea": "One-hot keys with alpha=beta=1 make the GDN state exact RAM",
+     "verdict": "anticipated",
+     "rationale": "Kohonen 1972 correlation-matrix memory and the Schlag et al. 2021 d_k capacity bound; the repo credits only a blog (Qwenputer). Note alpha, beta are strictly <1 under the code's parametrisation."
+    },
+    {
+     "idea": "GDN state as the CA3 analogue",
+     "verdict": "anticipated",
+     "rationale": "Fast-weight/attention-as-hippocampus mappings exist (Whittington 2022; Tyulmankov 2021; Gershman 2025); CA3's attractor, Hebbian character fits the linear error-corrective GDN read poorly."
+    },
+    {
+     "idea": "Successor-bound ('tied') addressing a_{t-1} -> v_t in a delta memory",
+     "verdict": "partially_novel",
+     "rationale": "The principle is Sompolinsky-Kanter / induction heads / H3 shift / Memory Mosaics; sharing one projection as query and successor write key inside a GDN mixer is a clean simplification but not a new mechanism."
+    },
+    {
+     "idea": "DG k-WTA sparse keys raise GDN capacity",
+     "verdict": "unclear",
+     "rationale": "Theory (Tsodyks-Feigel'man; Willshaw) gives sparse-coding gains only with non-linear readout; repo data show tied_x8 = dg_x8 = 1.00, a null at loads below d_k."
+    },
+    {
+     "idea": "CA1 novelty scaling of the write strength beta / replay priority",
+     "verdict": "anticipated",
+     "rationale": "Titans surprise gating, LoLA self-recall-error admission, prioritised experience replay (Schaul 2015)."
+    },
+    {
+     "idea": "A small residual side module at block 12 recruits frozen Qwen3.5 GDN layers for exact 500-token needle recall (P2)",
+     "verdict": "partially_novel",
+     "rationale": "No paper found reporting this; nearest are HLA (modifies GDN), state-offset tuning, delta-mem, SWAX. Mechanism unestablished; adapter control missing."
+    },
+    {
+     "idea": "Fixed-size GDN side memory on a frozen pure-attention Qwen3 (W1)",
+     "verdict": "anticipated",
+     "rationale": "delta-mem (Lei et al. 2026) attaches a delta-rule state to a frozen Qwen3-4B; Infini-attention and ARMT earlier."
+    },
+    {
+     "idea": "Sleep consolidation of replayed traces into slow parameters / LoRA (M3, W3)",
+     "verdict": "anticipated",
+     "rationale": "CLS (McClelland 1995; Kumaran 2016), DER, brain-inspired and sleep-like replay, O-LoRA, sparse memory finetuning, and 2026 LLM-sleep papers (Lee; Behrouz)."
+    },
+    {
+     "idea": "P4a diagnosis: loop recovers exactly one digit because key and value share a position",
+     "verdict": "partially_novel",
+     "rationale": "The diagnosis via the k-digits-known loss ladder is a neat, specific result; the prescribed fix is the induction-head shift."
+    }
+   ],
+   "proposed_experiments": [
+    {
+     "title": "E1 Probe GDN state for the needle in frozen Qwen3.5",
+     "hypothesis": "With attention windowed, needle digits remain linearly recoverable from some GDN layers' state at the query (P1 is a read failure, not a write failure).",
+     "design": "No side channels. Record per-head S_t for each GDN layer at the answer position; per-layer ridge probe and learned-query probe (decode S q*); HLA-style attenuation ||S(with needle)-S(needle swapped)||/||S|| vs gap. Controls: gap 32, shuffled needle, Qwen3 residual stream.",
+     "metric": "Probe digit accuracy by layer (chance 0.1); attenuation slope vs gap.",
+     "extends": "P1, P2, O5",
+     "priority": "H"
+    },
+    {
+     "title": "E2 Parameter-matched adapter controls for P2",
+     "hypothesis": "Any trainable 4.4M perturbation upstream of GDN layers 13-21 reaches exact recall, so P2 is adaptation rather than hippocampal-loop memory.",
+     "design": "Qwen3.5-2B, attention windowed, gap ~501, 3000 steps, 3 seeds. Arms: current side channels; zero-init residual MLP at block 12 with memory and time off; LoRA on GDN q/k/v/alpha/beta of layers 13-21; state-offset tuning; side channels with loop read zeroed at eval.",
+     "metric": "Exact match, token acc, per-digit CE (C1a), held-out perplexity drift.",
+     "extends": "P2, P5, O4, O5",
+     "priority": "H"
+    },
+    {
+     "title": "E3 State-space injection instead of residual injection",
+     "hypothesis": "Writing side-memory content directly into a downstream GDN state, in that layer's key space, gives recall with fewer params and less perplexity damage than residual injection, including with all layers windowed.",
+     "design": "Side memory (W1 successor GDN or horizon loop) emits (k,v); inject S <- S + gamma v k^T into GDN layers after the tap with k = norm(W_k^(l) x); gamma gated by CA1 novelty. Baselines: residual injection, learned state offset, delta-mem low-rank attention correction. Run S1 saturation sweep first.",
+     "metric": "Needle exact at gaps 500/2k/8k (allwin); WikiText perplexity change; injected-state norm ratio.",
+     "extends": "W1, O3, D-c, S7",
+     "priority": "H"
+    },
+    {
+     "title": "E4 W1 as a head-to-head against delta-mem and same-position keys",
+     "hypothesis": "Address shift lifts P4a from one recovered digit to four.",
+     "design": "Qwen3-1.7B allwin; fixed-size side GDN memory d_k in {64,256}; addressing arms: same-position, tied successor, learned short-conv shift; plus delta-mem reproduction; pairs sweep up to 2*d_k.",
+     "metric": "Per-digit CE against the k-digits-known ladder (1.842/1.382/0.921), exact match, recall vs pairs.",
+     "extends": "W1, P4a, C1a",
+     "priority": "H"
+    },
+    {
+     "title": "E5 Capacity sweep that can falsify 'exact RAM'",
+     "hypothesis": "Linear readout is exact up to P ~ d_k then degrades smoothly; DG sparsity does not move the boundary; softmax/thresholded readout does.",
+     "design": "Pure-GDN small LMs on AssociativeRecall, P in {8..512}, n_keys in {64,1024}, d_k in {16,64,128}; arms gdn (prev-token conv init), tied, dg, DeltaProduct n_h=2, modern-Hopfield readout, tuned softmax attention; LR sweep and 3 seeds.",
+     "metric": "Recall vs P/d_k curves.",
+     "extends": "M4, M5, M7",
+     "priority": "M"
+    },
+    {
+     "title": "E6 Fair Titans comparison",
+     "hypothesis": "The 1.00 vs 0.48 gap of M6 shrinks with a per-token Titans update and a properly trained attention baseline.",
+     "design": "Per-token Titans (chunk=1, no averaged eta/alpha, no boundary drop) or reference implementation; matched state; retune full attention until it solves 6 pairs; 3 seeds.",
+     "metric": "Recall and learning curves.",
+     "extends": "M6, J3",
+     "priority": "M"
+    },
+    {
+     "title": "E7 Causal tracing of the needle route in the hybrid",
+     "hypothesis": "With full attention, the needle is carried by a few attention heads (G&A) reading GDN-prepared representations; windowing only those heads reproduces P1.",
+     "design": "Activation and state patching clean vs corrupted needle across GDN and attention layers; identify G&A heads; window only them.",
+     "metric": "Patching recovery fraction per layer and head; exact match when only G&A heads are windowed.",
+     "extends": "O5, P1",
+     "priority": "M"
+    },
+    {
+     "title": "E8 Consolidating GDN state into weights for never-ending chat",
+     "hypothesis": "Distilling segment content into LoRA at boundaries ('sleep') preserves recall of evicted facts better than state alone, and error-prioritised replay beats uniform.",
+     "design": "Qwen3.5-2B on a segment stream with facts queried K segments later. Arms: state only; sleep-LoRA uniform; novelty priority; GDN self-recall-error priority; offline recurrence into state (Lee 2026); SDFT.",
+     "metric": "Fact recall vs K; backward transfer; perplexity and MMLU subset.",
+     "extends": "W3, M3, O1",
+     "priority": "M"
+    },
+    {
+     "title": "E9 Three-tier memory for KV trimming",
+     "hypothesis": "Window KV + sparse exact cache admitted by GDN self-recall error + GDN state beats KV-only eviction at equal cache bytes.",
+     "design": "LoLA-style split on Qwen3.5 using gated_delta_scan's err; baselines SnapKV, H2O, StreamingLLM.",
+     "metric": "RULER needle accuracy at 32k-128k vs cache bytes.",
+     "extends": "O3",
+     "priority": "L"
+    },
+    {
+     "title": "E10 Multi-hop successor retrieval as pathfinding",
+     "hypothesis": "Iterated reads of a tied-address GDN memory solve multi-hop chains a single read cannot; beta in (0,2) adds state tracking.",
+     "design": "Synthetic graph-walk task; iterate read v_{t+1} as next query; side arm with negative eigenvalues.",
+     "metric": "Accuracy vs hop count; parity accuracy.",
+     "extends": "W1, D-b",
+     "priority": "L"
+    }
+   ],
+   "corrections": [
+    "M4 ('standard GDN loses recall once stored pairs exceed its key size') is contradicted by results/gdn_capacity.json: gdn (d_k=16) is already 0.426 at 8 pairs (<d_k), and gdn_x8 (d_k=128) is 0.428/0.320/0.222 at 8/16/32 pairs, far below d_k. Failure is not capacity-bound; likely optimisation (single seed, 1500 steps, one LR 3e-3, conv initialised to the current token rather than a shift).",
+    "M5 ('exact RAM up to 32 pairs') never loads the memory beyond d_k=128 (64 key tokens); 1.00 is the expected linear-memory result, and the fair comparison is gdn_x8 vs tied_x8 (gdn at d_k=16 has a 8x smaller state). The overwrite ('100% new / 0% old') is the delta rule's defining property (Schlag et al. 2021).",
+    "DG sparsity shows no effect: tied_x8 and dg_x8 both 1.00 at every load; under GDN's linear readout sparsity cannot raise the d_k exact-capacity bound (Tsodyks-Feigel'man, Willshaw need non-linear readout). Claims that DG addressing raises GDN capacity should be withdrawn or restated.",
+    "M6 compares against a simplified chunked Titans (gradients at chunk start, eta/alpha averaged per chunk, trust-region clip, boundary transition dropped; docstring notes same-key writes add within a chunk), and full attention scores only 0.49 on the same task, so the task/budget does not discriminate. State as 'per-token delta rule beats this Titans re-implementation'.",
+    "P2's stated route ('through the GDN layers above the tap') is unsupported as a loop mechanism: the default osc kernel weight is exactly 0 at the ~501 gap, the loop gain moved only 0.2689 -> 0.2697, and TimeChannel integrates a scalar salience (no content). The 4.38M side module acts as an adapter; a parameter-matched adapter control is missing.",
+    "gated_delta.py docstring: 'with one-hot keys and alpha = beta = 1 the state is exact RAM' is unreachable under the parametrisation alpha = exp(-softplus(.)) < 1 and beta = sigmoid(.) < 1; with init bias -5, alpha ~ 0.9933 so an association keeps ~3.5% of its strength after 500 tokens unless alpha is learned toward 1.",
+    "beta = sigmoid(.) in (0,1) means GDN memories here cannot track parity-like state (Grazzi et al. 2024); relevant if the 'Qwenputer'/RAM framing is extended to computation.",
+    "The 'GDN update = one SGD step on the Titans loss' and 'one-hot keys = exact RAM' identities should cite Yang et al. 2024/Longhorn/Miras/Wang-Shi-Fox 2025 and Kohonen 1972/Schlag 2021 rather than only the Qwenputer blog.",
+    "W1 should cite and benchmark against delta-mem (Lei et al. 2026, arXiv:2605.12357), which already attaches a delta-rule state to a frozen Qwen3 backbone; W3 needs O-LoRA, sparse memory finetuning, SDFT and uniform-replay baselines.",
+    "Biological mapping: GDN's linear, error-corrective, heteroassociative read is not CA3 pattern completion (attractor, Hebbian); one-shot instructive plasticity (BTSP) is documented in CA1; alpha is global down-scaling, not input-specific LTD; 'dg' mode using DG codes for reads contradicts Treves & Rolls' perforant-path retrieval argument (consistent with the repo's own T16)."
+   ],
+   "report": "gdn.md",
+   "declared_limits": [
+    "Assessed only the repo code and results at commit 3799b36 on main; the round-1 branch feat/round1-side-memory named in the HANDOFF was not pulled.",
+    "No experiments were run; the critiques of M4-M6 rest on the existing JSON results (single seed).",
+    "Where papers also appear at peer-reviewed venues, only their arXiv records were verified; the bib gives them as @misc arXiv entries without venue.",
+    "The Qwen3-Next blog and the Qwen3.5 model card are not cited directly because they have no DOI or arXiv record; Qwen3.5 architecture facts rely on the repo's qwen2026qwen35 entry and on Qiu et al. 2026."
+   ]
+  },
+  "bib_audit": {
+   "summary": "All 82 entries in docs/references.bib (same key set as REFERENCES.md) exist; none is fabricated. 54 are bibliographically correct, 22 need correction, 5 are misdescribed and 1 (O'Keefe & Nadel 1978) is not machine-verifiable. Systemic issues: no DOIs (49 added, all resolve, none retracted); stale arXiv-only venues (Titans is NeurIPS 2025, HiCL AAAI 2026, Larimar ICML 2024, CAST ICLR 2025, Coconut and SEAL COLM 2025, ASC Findings ACL 2026 with an added author, STIR EMNLP 2026 under a new title, PID steering ICLR 2026); 'Surname and others' author lists for ten reasoning-steering entries; two arXiv retitlings (Turner, Omidi). Web resources: Qwenputer is real (Divyansh Agrawal, Oct 2026, non-peer-reviewed); LAYA is real (Nandakishor Mukkunnoth); Jev is cited via a third-party site, and its method (RLCD) is unpublished. Content misstatements: the GDN-as-one-gradient-step identity that genesis.md presents as derived here is published in the GDN, DeltaNet and Titans papers. TimeChannel implements only the Laplace layer of Shankar & Howard, not time cells. The gain-control reading of Sik 1994 is the project's analogy. Zhao 2025 is over-generalised. Hippoformer is TEM-based spatial memory, not Titans-style. TCM is not a CA2 theory. The 'graded runtime controller' novelty claim is largely anticipated by AdaSteer and PID steering; only the leaky temporal integral is distinct. HiCL anticipates most of the DG-gated MoE track. The corrected bib keeps all keys and adds six verified sources.",
+   "closest_prior_work": [
+    {
+     "citation": "Yang, Kautz & Hatamizadeh 2025, Gated Delta Networks",
+     "id": "arXiv:2412.06464",
+     "relation": "anticipates",
+     "note": "§3 already states the delta rule as test-time SGD on ½‖Sk−v‖² with the gate as adaptive weight decay, the identity genesis.md claims to derive."
+    },
+    {
+     "citation": "Behrouz, Zhong & Mirrokni 2025, Titans",
+     "id": "10.52202/085713-3786",
+     "relation": "anticipates",
+     "note": "NeurIPS 2025; appendix states the LMM generalizes Gated DeltaNet and Longhorn."
+    },
+    {
+     "citation": "Yang et al. 2024, Parallelizing Linear Transformers with the Delta Rule",
+     "id": "10.52202/079017-3668",
+     "relation": "background",
+     "note": "DeltaNet online-regression view; missing from bib."
+    },
+    {
+     "citation": "Kapoor et al. 2026, HiCL",
+     "id": "10.1609/aaai.v40i27.39411",
+     "relation": "anticipates",
+     "note": "DG top-k sparsity, CA3 autoassociator, DG-prototype-gated experts, prioritized replay: most of the DG→CA3 MoE track."
+    },
+    {
+     "citation": "Zhao W. et al. 2025, AdaSteer",
+     "id": "10.18653/v1/2025.emnlp-main.1248",
+     "relation": "anticipates",
+     "note": "Input-adaptive steering coefficients from harmfulness and refusal directions; anticipates the graded controller apart from its temporal integral."
+    },
+    {
+     "citation": "Nguyen et al. 2026, Activation Steering with a Feedback Controller",
+     "id": "arXiv:2510.04309",
+     "relation": "overlaps",
+     "note": "PID steering; integral across layers, not across time."
+    },
+    {
+     "citation": "Do et al. 2025, Dynamic Steering With Episodic Memory (DSEM)",
+     "id": "10.18653/v1/2025.findings-acl.706",
+     "relation": "anticipates",
+     "note": "Memory-retrieved steering vectors."
+    },
+    {
+     "citation": "Shi et al. 2026, STIR",
+     "id": "10.18653/2026.emnlp-main.2278",
+     "relation": "anticipates",
+     "note": "Library-retrieved reasoning steering with gated injection; EMNLP 2026 version of arXiv:2602.04925."
+    },
+    {
+     "citation": "Zhao J. et al. 2025, LLMs Encode Harmfulness and Refusal Separately",
+     "id": "10.52202/085713-4688",
+     "relation": "supports",
+     "note": "Supports a harmfulness probe as controller input; limited to certain jailbreaks; abliteration untested."
+    },
+    {
+     "citation": "Shankar & Howard 2012, A Scale-Invariant Internal Representation of Time",
+     "id": "10.1162/neco_a_00212",
+     "relation": "background",
+     "note": "Time cells require an inverse-Laplace step that TimeChannel lacks."
+    },
+    {
+     "citation": "Sik et al. 1994, Inhibitory CA1-CA3-hilar region feedback",
+     "id": "10.1126/science.8085161",
+     "relation": "background",
+     "note": "Anatomy correct; the paper reads the pathway as a synchronization mechanism, not gain control."
+    },
+    {
+     "citation": "Samsonovich & Ascoli 2005, pathfinding model of the hippocampus",
+     "id": "10.1101/lm.85205",
+     "relation": "anticipates",
+     "note": "CA3 stores EC-state transitions, with retrieval as pathfinding; close to the successor store; not in bib."
+    }
+   ],
+   "novelty": [
+    {
+     "idea": "GDN update = one gradient step on the Titans loss at the decayed state",
+     "verdict": "anticipated",
+     "rationale": "Stated in Yang et al. 2025 §3, Yang et al. 2024 and the Titans appendix (via Longhorn)."
+    },
+    {
+     "idea": "One-hot / successor-bound GDN keys as exact RAM",
+     "verdict": "partially_novel",
+     "rationale": "Exact one-hot RAM is Qwenputer; successor binding is Levy 1996 / Jensen & Lisman 1996; using the combination for recall in a GDN side memory (M5) is the repo's."
+    },
+    {
+     "idea": "DG k-WTA gate as MoE router with replay",
+     "verdict": "anticipated",
+     "rationale": "HiCL (AAAI 2026)."
+    },
+    {
+     "idea": "Memory-retrieved CA2 steering",
+     "verdict": "anticipated",
+     "rationale": "DSEM (Findings ACL 2025) and STIR (EMNLP 2026)."
+    },
+    {
+     "idea": "Graded harm-driven steering controller with leaky temporal integral and cap",
+     "verdict": "partially_novel",
+     "rationale": "Input-adaptive coefficients are AdaSteer's and closed-loop control is PID steering's; integration across tokens/turns is not found in either."
+    },
+    {
+     "idea": "Closed, damped, subtractively regulated temporal loop on a frozen hybrid LLM",
+     "verdict": "partially_novel",
+     "rationale": "Components have precedents (RetNet/LRU decays, activation addition, GDN); the regulated closed organisation and its ringing threshold were not found in the audited literature."
+    }
+   ],
+   "proposed_experiments": [
+    {
+     "title": "Escalating controller vs AdaSteer and PID steering",
+     "hypothesis": "A leaky temporal integral beats per-input adaptive coefficients on multi-turn escalation at equal single-turn safety.",
+     "design": "Same Qwen3 models; arms: static, CAST, AdaSteer, PID steering, escalating controller; multi-turn pressure scripts.",
+     "metric": "Per-turn HarmBench ASR, XSTest over-refusal, recovery time after benign turns.",
+     "extends": "A2, A3, A4",
+     "priority": "H"
+    },
+    {
+     "title": "TimeChannel with inverse-Laplace readout",
+     "hypothesis": "A TILT/Post inverse readout yields more accurate, scale-invariant elapsed-time estimates than the learned linear readout.",
+     "design": "Replace TimeChannel.out with a fixed inverse operator over log-spaced s; test under 4x rescaled gaps.",
+     "metric": "Elapsed-time error and its ratio across rescalings.",
+     "extends": "W2, T1",
+     "priority": "M"
+    },
+    {
+     "title": "HiCL router baseline for the DG gate",
+     "hypothesis": "Prototype-cosine DG routing (HiCL) matches or beats k-WTA addressing under overlapping keys.",
+     "design": "Overlapping-key recall task, DG sparsity sweep, 3 or more seeds.",
+     "metric": "Recall accuracy and forgetting vs key similarity.",
+     "extends": "M7, T13",
+     "priority": "M"
+    }
+   ],
+   "corrections": [
+    "behrouz2024titans [corrected]: Listed as 2024 arXiv preprint; it is published in NeurIPS 2025 (Adv. NeurIPS 38, pp. 125925–125962). README cites \"Behrouz et al., 2024\". Fix: Change to @inproceedings NeurIPS 2025, add DOI 10.52202/085713-3786 and eprint; key retained.",
+    "qwenputer2026 [corrected]: Author given as \"{divagr.com}\". The work is by Divyansh Agrawal (blog divagr.com/blog/qwenputer, code github.com/divagr18/qwenputer, models on Hugging Face), announced late Oct 2026, built on Qwen3.5-4B. It is a non-peer-reviewed engineering demonstration. The second URL (divagr.com/attention-lab/delta) was not checked. Fix: Author = Agrawal, Divyansh; @software with GitHub URL; mark as non-archival; keep the claim limited to \"one-hot keys with α=β=1 make a GDN head an exact RAM row\" (stated in the model card).",
+    "andersen2007hippocampus [corrected]: The five names are editors, not authors (edited volume). Missing DOI. Fix: Use editor field; add DOI 10.1093/acprof:oso/9780195100273.001.0001 (Oxford Academic edition; Crossref dates the record 2006).",
+    "okeefe1978hippocampus [unverifiable]: Classic monograph with no DOI; Crossref returned no record, so metadata were not machine-verified here (no evidence of error). Fix: None; keep as is.",
+    "howard2002distributed [misdescribed]: Bibliographic data correct. REFERENCES.md lists it under CA2 as \"CA2 temporal context\", but the Temporal Context Model is a behavioural model of free recall that makes no claim about CA2; the CA2 link is the repo's own inference. Fix: Add DOI 10.1006/jmps.2001.1388; relabel relevance as \"drifting temporal context (TCM); CA2 link is our hypothesis\".",
+    "li2026hippoformer [misdescribed]: Bibliographic data correct (ICLR 2026; six authors match the ICLR listing). REFERENCES.md says \"EC + Titans-style memory\"; the paper builds mm-TEM, a Tolman–Eichenbaum-Machine variant with a meta-MLP relational memory that forms grid-like codes, and couples it to a Transformer for 2D/3D spatial prediction. The meta-MLP memory resembles Titans, but the contribution is structural spatial memory. Fix: Relabel: \"TEM-style structural spatial memory (mm-TEM, meta-MLP relational memory) + Transformer\".",
+    "kapoor2025hicl [corrected]: Listed as arXiv preprint; published in AAAI 2026 (Proc. AAAI 40(27):22518–22526). Description \"DG-gated mixture of experts\" is accurate. HiCL also includes grid-cell input, top-k DG sparsity, a CA3 autoassociator, EWC and prioritized replay, so it anticipates most of the repo's DG→CA3 MoE track. Fix: @inproceedings AAAI 2026 with DOI 10.1609/aaai.v40i27.39411.",
+    "das2024larimar [corrected]: Listed as arXiv preprint; arXiv record states ICML 2024. Fix: @inproceedings ICML 2024 (PMLR volume not re-checked).",
+    "fountas2025human [corrected]: Venue correct (ICLR 2025). Last author name mis-split as \"Ammar, Haitham Bou\"; the ICLR listing gives \"Haitham Bou Ammar\" (arXiv: Bou-Ammar). No arXiv id. Fix: Author \"{Bou Ammar}, Haitham\"; add eprint 2407.09450.",
+    "omidi2025memory [corrected]: Title changed on arXiv: now \"…from Neuroscience Principles to Enhanced Model Architectures\" (bib has \"…to Technical Solutions\"). Still an arXiv preprint. Fix: Update title.",
+    "turner2023activation [corrected]: Bib/REFERENCES.md use the v1 title. The current arXiv version (v5) is titled \"Steering Language Models With Activation Engineering\"; the method is still ActAdd. Still arXiv-only. Fix: Use current title; keep a note giving the original title.",
+    "typesafe2026jev [corrected]: Weak provenance. jevai.net is a third-party site; the primary source is TypeSafe AI's launch post (Diogo Almeida, founder; 15 Sep 2026). RLCD's reward, architecture and calibration method are unpublished. An independent test reported good calibration on moderation (ECE 0.032) but poor calibration on answer rating (ECE 0.284). The \"calibrated confidence\" relevance rests on vendor claims. Fix: Cite typesafe.ai launch post as primary; state that the method is undisclosed; do not cite Jev as evidence that calibrated single-pass CA1 decisions work.",
+    "nandhakishor2026laya [corrected]: Author handle only. The repository owner is Nandakishor Mukkunnoth (Convai Innovations). README describes ModernBERT-large (421M) and mmBERT-base (322M) checkpoints, trained with RL against strictly proper scoring rules, using the same name RLCD. The Apache-2.0 licence field was not re-checked. Fix: Author = Mukkunnoth, Nandakishor; keep URL; add PyPI note.",
+    "sik1994inhibitory [misdescribed]: Bibliographic data correct. The anatomy (in vivo-labelled CA1 interneurons with axons back to CA3 and hilus, longitudinally widespread) is accurately reported. Sik et al. propose that this long-range inhibition synchronizes population activity and times spikes for coordinated plasticity. \"Negative-feedback gain control\" and the op-amp law A/(1+Aβ) are the repo's own analogy, not the paper's claim. Fix: Add DOI 10.1126/science.8085161; relabel relevance as \"anatomical basis for CA1→CA3 inhibitory feedback; gain-control reading is ours\".",
+    "shankar2012scale [misdescribed]: Bibliographic data correct. The repo (temporal-loop.md, genesis.md, temporal_loop.py docstring) says leaky integrators with log-spaced time constants give scale-invariant time cells. In the paper the integrators compute a Laplace transform; scale-invariant sequential time cells come only after an approximate inverse Laplace operator (TILT/Post). TimeChannel implements only the Laplace layer plus a learned linear readout. Fix: Add DOI 10.1162/neco_a_00212; reword as \"Laplace-domain (leaky integrator) layer of Shankar & Howard; no inverse transform\".",
+    "lee2024programming [corrected]: Listed as arXiv preprint; arXiv record states ICLR 2025 (spotlight). Fix: @inproceedings ICLR 2025, year 2025 (key retained).",
+    "qwen2026qwen35 [corrected]: Title \"Qwen3.5\" plus URL of the 397B flagship. The official citation in the Qwen model cards is \"Qwen3.5: Towards Native Multimodal Agents\" (Qwen Team, Feb 2026, qwen.ai/blog?id=qwen3.5). The model actually used, Qwen3.5-2B, came out on 2 Mar 2026; it has 24 layers, 6×(3×GDN→FFN→1×Gated Attention→FFN). Fix: Use the official title and URL; add a note naming the Qwen3.5-2B checkpoint.",
+    "zhao2025llms [misdescribed]: Bibliographic data correct (NeurIPS 2025). The REFERENCES.md and genesis.md wording (\"harmfulness survives jailbreaks and harmful fine-tuning\") over-generalises. The paper shows certain jailbreak methods reduce refusal without reversing the harmfulness belief, and adversarial fine-tuning has minimal impact on it. It did not test abliterated models. Fix: Add DOI 10.52202/085713-4688; reword as \"certain jailbreaks\".",
+    "chen2025seal [corrected]: Author \"Chen and others\"; venue omitted (COLM 2025). Fix: Full authors; @inproceedings COLM 2025.",
+    "azizi2025activation [corrected]: Author \"Azizi and others\"; published in Findings of ACL 2026, where Souvik Kundu was added as a fourth author (arXiv v2 lists three). Fix: Full authors; @inproceedings Findings ACL 2026 with DOI 10.18653/v1/2026.findings-acl.1828; key retained.",
+    "huang2025mitigating [corrected]: Author \"Huang and others\"; NeurIPS 2025 only in howpublished. Fix: Full authors; @inproceedings with DOI 10.52202/085713-3430.",
+    "lin2025controlling [corrected]: Author \"Lin and others\". Fix: Full authors; @inproceedings NeurIPS 2025 (spotlight), DOI 10.52202/085713-2623.",
+    "ma2025cotvalve [corrected]: Author \"Ma and others\". Fix: Full authors; ACL 2025 long, DOI 10.18653/v1/2025.acl-long.300.",
+    "sun2025thinkedit [corrected]: Author \"Sun and others\". Fix: Full authors; EMNLP 2025, DOI 10.18653/v1/2025.emnlp-main.861.",
+    "venhoff2025understanding [corrected]: Author \"Venhoff and others\"; venue omitted (ICLR 2025 Workshop on Reasoning and Planning for LLMs). Fix: Full authors; note workshop.",
+    "hao2024training [corrected]: Author \"Hao and others\"; published at COLM 2025. Fix: Full authors; @inproceedings COLM 2025, year 2025.",
+    "nguyen2025activation [corrected]: Author \"Nguyen and others\"; ICLR 2026 poster held in howpublished with year 2025. Description \"steering as PID control\" is fair. Its integral term accumulates error across layers within one forward pass, not across tokens or turns as in the repo's escalating controller. Fix: Full authors; @inproceedings ICLR 2026, year 2026 (key retained).",
+    "shi2026internalizing [corrected]: Author \"Shi and others\". The work appeared at EMNLP 2026 under a new title, \"STIR: Self-Distilled Latent Tools for Dynamic Control of LLM Reasoning\" (pp. 51814–51829); its Crossref DOI 10.18653/2026.emnlp-main.2278 lacks the usual \"v1/\" segment and resolves as such. \"Memory-retrieved reasoning steering\" fits: a library of steering primitives with anchor-based gated injection. Fix: Full authors; cite EMNLP 2026 version, keep arXiv as eprint.",
+    "README.md: 'Behrouz et al., 2024' should be NeurIPS 2025 (doi 10.52202/085713-3786).",
+    "docs/genesis.md §3: the GDN = one gradient step on the Titans loss at the decayed state identity is published (Yang, Kautz & Hatamizadeh 2025 §3; Yang et al. 2024 DeltaNet; Titans appendix; Longhorn); credit it rather than presenting it as derived here.",
+    "docs/genesis.md §5.6: 'What is new here is a runtime, graded controller' is largely anticipated by AdaSteer (EMNLP 2025, doi 10.18653/v1/2025.emnlp-main.1248) and PID steering (ICLR 2026); only the leaky temporal integral across tokens/turns with a capped gain is distinct.",
+    "docs/genesis.md §5.7 and REFERENCES.md: Zhao et al. 2025 show that certain jailbreaks (not all) leave the harmfulness belief intact; abliterated models were not tested.",
+    "limbic_llm/temporal_loop.py TimeChannel docstring and temporal-loop.md: log-spaced leaky integrators are the Laplace layer of Shankar & Howard 2012; their scale-invariant time cells require the approximate inverse Laplace (TILT) step, which is not implemented.",
+    "REFERENCES.md: 'negative-feedback gain control' for Sik et al. 1994 is the project's op-amp analogy; the paper proposes synchronization/spike timing.",
+    "README.md: 'as in models of CA3 sequence memory' should cite levy1996sequence / jensen1996hippocampal explicitly; Samsonovich & Ascoli 2005 (doi 10.1101/lm.85205), the closest classical model of the successor store, is absent from the bibliography.",
+    "REFERENCES.md: Jev citation should point to TypeSafe AI's own launch post; RLCD is unpublished and independently measured calibration is mixed (ECE 0.032 moderation vs 0.284 answer rating), so Jev cannot support claims of calibrated CA1 decisions.",
+    "None of the 82 entries had a DOI field; 49 resolvable DOIs were added in the corrected bib."
+   ],
+   "report": "bib_audit.md",
+   "declared_limits": [
+    "Deliverable (b) follows the track-specific instruction: a full corrected replacement references.bib (82 entries) plus a 6-entry 'recommended additions' section, rather than a new-sources-only file.",
+    "Venues of HarmBench (ICML 2024), Larimar (ICML 2024), CAST (ICLR 2025) and Coconut (COLM 2025) rest on arXiv comment fields; PMLR/OpenReview records were not queried.",
+    "O'Keefe & Nadel 1978 (book, no DOI) could not be machine-verified; LAYA's Apache-2.0 licence and the divagr.com/attention-lab/delta URL were not re-checked.",
+    "Content (Relevance) checks covered the 15 named load-bearing works plus HiCL, Hippoformer, TCM and web resources, from abstracts, project pages and, for GDN and Titans, full text; the other entries were checked bibliographically only."
+   ]
+  },
+  "pathfinding": {
+   "summary": "Samsonovich & Ascoli (2005, doi:10.1101/lm.85205, verified) model hippocampal retrieval as greedy search through a graph of remembered contexts: CA3->CA3 synapses (J) store traversed transitions; CA3->CA1 synapses (W) store a goal field written at sharp waves by W_ij=max(W_ij,1/(t-t_j)), i.e. hindsight goal relabelling of a shortest-observed-distance table; theta sweeps probe candidate successors and PFC picks the one exciting the goal CA1 unit. At N=10^4 contexts paths are 6.75 vs 4.22 optimal; a re-implementation here reproduces 6.69+/-3.29 vs 4.24+/-0.66 and shows that removing the two-hop CA3 packet tail lengthens paths 4x (single graph/seed, provisional). Its lineage (Muller 1996 cognitive graph, Samsonovich & McNaughton 1997, Teyler & DiScenna index theory) and descendants (SR, reverse/planning replay, Mattar & Daw, CSCG, TEM, Vector-HaSH, endotaxis, DNC, SoRB, HER) mostly do not cite it (OpenAlex: 128 citers). Theta-cycle alternation of futures (Kay 2020) supports its theta prediction; barrier data (Duvelle 2021, Widloski & Foster 2022) place path information in replay rather than place-field gradients. limbic-llm's successor-bound CA3/GDN store is the J matrix and is anticipated (Levy 1996, Jensen & Lisman 1996, DNC temporal links, induction heads, GDN's own token-shift conv); exact-RAM with one-hot keys is anticipated; novelty replay+sleep is anticipated (CLS; Lee et al. 2026 LLM sleep into SSM fast weights is the closest new prior art). The repo lacks the goal field and any multi-hop task; CA3 n_iter does not chain successors. The frozen-Qwen3.5 side-channel recall through downstream GDN layers (P2) is the most original result. Biological issues: CA2 wired in series (Kohara 2014: DG->CA2->CA1deep parallel path; docstring 'CA2 lacks mossy-fibre input' is wrong); store holds content not pointers; SWR mapped only to cortical consolidation. Top experiments: missing-key k-hop recall with chained reads, and a hindsight goal-field path search benchmarked against the S&A reference.",
+   "closest_prior_work": [
+    {
+     "citation": "Samsonovich & Ascoli 2005, pathfinding role in episodic retrieval",
+     "id": "10.1101/lm.85205",
+     "relation": "anticipates",
+     "note": "J transition store = repo successor-bound CA3; adds the CA3->CA1 hindsight goal field and greedy search the repo lacks."
+    },
+    {
+     "citation": "Samsonovich & McNaughton 1997, continuous attractor path integration",
+     "id": "10.1523/JNEUROSCI.17-15-05900.1997",
+     "relation": "background",
+     "note": "Charts, multiple maps, population reading of phase precession."
+    },
+    {
+     "citation": "Muller, Stead & Pach 1996, hippocampus as a cognitive graph",
+     "id": "10.1085/jgp.107.6.663",
+     "relation": "anticipates",
+     "note": "Place cells as nodes, CA3 recurrent synapses as edges; path planning as graph search."
+    },
+    {
+     "citation": "Teyler & DiScenna 1986, memory indexing theory",
+     "id": "10.1037/0735-7044.100.2.147",
+     "relation": "background",
+     "note": "Pointer/content split; repo's store holds content, not pointers."
+    },
+    {
+     "citation": "Goode et al. 2020, integrated index",
+     "id": "10.1016/j.neuron.2020.07.011",
+     "relation": "background",
+     "note": "Index theory restated in engram terms."
+    },
+    {
+     "citation": "Stachenfeld, Botvinick & Gershman 2017, hippocampus as predictive map",
+     "id": "10.1038/nn.4650",
+     "relation": "overlaps",
+     "note": "SR is the policy-averaged relative of S&A's max-rule goal field; competing account of place-field skew."
+    },
+    {
+     "citation": "Dayan 1993, successor representation",
+     "id": "10.1162/neco.1993.5.4.613",
+     "relation": "background",
+     "note": "Original SR."
+    },
+    {
+     "citation": "Foster & Wilson 2006, reverse replay",
+     "id": "10.1038/nature04587",
+     "relation": "supports",
+     "note": "Empirical counterpart of S&A backward recency-weighted goal binding; repo replays forward only."
+    },
+    {
+     "citation": "Pfeiffer & Foster 2013, place-cell sequences depict future paths",
+     "id": "10.1038/nature12112",
+     "relation": "supports",
+     "note": "Replay as planning; absent from repo's replay."
+    },
+    {
+     "citation": "Mattar & Daw 2018, prioritized memory access",
+     "id": "10.1038/s41593-018-0232-z",
+     "relation": "overlaps",
+     "note": "Gain x need priority; repo's novelty priority approximates gain only."
+    },
+    {
+     "citation": "Kay et al. 2020, sub-second cycling between possible futures",
+     "id": "10.1016/j.cell.2020.01.014",
+     "relation": "supports",
+     "note": "Confirms S&A theta-alternation prediction; repo's temporal loop injects one candidate, no alternation."
+    },
+    {
+     "citation": "Widloski & Foster 2022, replay reroutes around barriers",
+     "id": "10.1016/j.neuron.2022.02.002",
+     "relation": "contradicts",
+     "note": "Contradicts S&A's locus (place-field gradients) while supporting sequence-based path knowledge."
+    },
+    {
+     "citation": "Duvelle et al. 2021, place cells do not encode connectivity",
+     "id": "10.1016/j.cub.2021.01.005",
+     "relation": "contradicts",
+     "note": "Against S&A prediction 3."
+    },
+    {
+     "citation": "George et al. 2021, clone-structured cognitive graphs",
+     "id": "10.1038/s41467-021-22559-5",
+     "relation": "background",
+     "note": "Learned graph + planning; descendant of cognitive-graph idea."
+    },
+    {
+     "citation": "Chandra et al. 2025, Vector-HaSH scaffold memory",
+     "id": "10.1038/s41586-024-08392-y",
+     "relation": "overlaps",
+     "note": "Fixed scaffold index separated from content; sequence memory along scaffold; close to successor-bound RAM."
+    },
+    {
+     "citation": "Zhang et al. 2024, endotaxis",
+     "id": "10.7554/elife.84141",
+     "relation": "overlaps",
+     "note": "Direct citing descendant: learned goal 'virtual odour' + gradient climbing."
+    },
+    {
+     "citation": "Jensen, Hennequin & Mattar 2024, RNN model of planning and replay",
+     "id": "10.1038/s41593-024-01675-7",
+     "relation": "background",
+     "note": "Modern PFC control module deciding when to roll out."
+    },
+    {
+     "citation": "Graves et al. 2016, Differentiable Neural Computer",
+     "id": "10.1038/nature20101",
+     "relation": "anticipates",
+     "note": "Temporal link matrix = successor-bound memory used for graph traversal/shortest path."
+    },
+    {
+     "citation": "Olsson et al. 2022, induction heads",
+     "id": "arXiv:2209.11895",
+     "relation": "anticipates",
+     "note": "[A][B]..[A]->[B]: successor-bound lookup implemented inside attention."
+    },
+    {
+     "citation": "Eysenbach, Salakhutdinov & Levine 2019, Search on the Replay Buffer",
+     "id": "arXiv:1906.05253",
+     "relation": "anticipates",
+     "note": "Graph search over stored states with learned goal-conditioned distances: S&A in ML form."
+    },
+    {
+     "citation": "Andrychowicz et al. 2017, Hindsight Experience Replay",
+     "id": "arXiv:1707.01495",
+     "relation": "background",
+     "note": "S&A's a-posteriori goal choice is hindsight relabelling."
+    },
+    {
+     "citation": "Chaudhry et al. 2023, Long Sequence Hopfield Memory",
+     "id": "arXiv:2306.04532",
+     "relation": "anticipates",
+     "note": "Heteroassociative dense Hopfield sequence memory with capacity analysis."
+    },
+    {
+     "citation": "Lee et al. 2026, Do Language Models Need Sleep? (preprint)",
+     "id": "arXiv:2605.26099",
+     "relation": "anticipates",
+     "note": "Offline recurrent passes into SSM fast weights before KV eviction; gains on multi-hop graph retrieval. Closest to repo's sleep + GDN + KV-trimming agenda."
+    },
+    {
+     "citation": "Gutierrez et al. 2025, HippoRAG 2",
+     "id": "arXiv:2502.14802",
+     "relation": "overlaps",
+     "note": "Hippocampal index via PPR over KG; one-shot diffusion, no goal-directed path search."
+    },
+    {
+     "citation": "Momennejad et al. 2023, CogEval (preprint)",
+     "id": "arXiv:2309.15129",
+     "relation": "supports",
+     "note": "LLMs hallucinate invalid trajectories and loop on graph planning: motivates a memory pathfinder."
+    },
+    {
+     "citation": "Saparov et al. 2024, Transformers Struggle to Learn to Search (ICLR 2025)",
+     "id": "arXiv:2412.04703",
+     "relation": "supports",
+     "note": "Learned search degrades with graph size; CoT does not fix it."
+    },
+    {
+     "citation": "Balesni, Korbak & Evans 2024, two-hop latent reasoning (preprint)",
+     "id": "arXiv:2411.16353",
+     "relation": "supports",
+     "note": "Latent composition of two synthetic facts fails: the 'missing contextual key' problem in LLMs."
+    },
+    {
+     "citation": "HippoTune, ICLR 2026",
+     "id": "openreview:MtDiLnnYgm",
+     "relation": "overlaps",
+     "note": "Iterated per-layer retrieval loops; iterated CA3 retrieval without a goal."
+    },
+    {
+     "citation": "Kohara et al. 2014, CA2 circuits",
+     "id": "10.1038/nn.3614",
+     "relation": "contradicts",
+     "note": "DG->CA2 functional input and CA2->CA1deep parallel circuit contradict repo's serial CA2 wiring and 'no mossy fibre' docstring."
+    },
+    {
+     "citation": "Kumaran & McClelland 2012, REMERGE (in repo bib)",
+     "id": "10.1037/a0028681",
+     "relation": "anticipates",
+     "note": "Big-loop recurrence for multi-hop inference."
+    }
+   ],
+   "novelty": [
+    {
+     "idea": "Successor-bound CA3 store / tied-dg GDN addressing (h_t -> h_{t+1})",
+     "verdict": "anticipated",
+     "rationale": "Levy 1996; Jensen & Lisman 1996; S&A 2005 J matrix; DNC temporal link matrix 2016; induction heads 2022; Chaudhry 2023; standard GDN's short conv already binds key to next value."
+    },
+    {
+     "idea": "Delta-rule state as exact RAM with one-hot/sparse keys",
+     "verdict": "anticipated",
+     "rationale": "Delta rule with orthogonal keys (Schlag 2021), NTM/DNC location addressing, Qwenputer blog. Repo adds small-model capacity evidence (M4/M5), single seed."
+    },
+    {
+     "idea": "Novelty-prioritised replay with sleep updating only slow parameters",
+     "verdict": "anticipated",
+     "rationale": "CLS (McClelland 1995), prioritized replay (Mattar & Daw 2018), DER; offline sleep into hybrid fast weights in Lee et al. 2026 (preprint)."
+    },
+    {
+     "idea": "Goal-directed pathfinding through stored transitions (S&A goal field) inside an LLM recurrent side memory",
+     "verdict": "partially_novel",
+     "rationale": "Mechanism published (S&A 2005, DNC, SoRB); not implemented in repo; placing it in a frozen hybrid LLM's GDN side channel for beyond-window multi-hop recall would be a new combination."
+    },
+    {
+     "idea": "Side channels on frozen Qwen3.5 restore exact needle recall via downstream GDN layers (P2)",
+     "verdict": "partially_novel",
+     "rationale": "Neighbours (Larimar, EM-LLM, Lee 2026, HippoTune) do not report hybrid GDN layers relaying injected memory with attention windowed; single-seed, route a hypothesis."
+    },
+    {
+     "idea": "Temporal loop as theta-like re-injection plus log-spaced time channel",
+     "verdict": "partially_novel",
+     "rationale": "Time channel follows Shankar & Howard / TCM; re-injection resembles S&A theta sweep but lacks candidate alternation (Kay 2020)."
+    },
+    {
+     "idea": "Big-loop recurrence for multi-hop integration",
+     "verdict": "anticipated",
+     "rationale": "REMERGE (Kumaran & McClelland 2012), Koster 2018; looped LMs (Ouro)."
+    },
+    {
+     "idea": "Iterated CA3 retrieval (n_iter) as recurrent settling",
+     "verdict": "unclear",
+     "rationale": "As implemented (xi = h + retrieved) it neither chains successors nor converges to attractors; its function is untested."
+    }
+   ],
+   "proposed_experiments": [
+    {
+     "title": "Missing-key multi-hop recall beyond the window",
+     "hypothesis": "Single-read memories solve only k=1; k chained reads through successor-bound memory give ~p^k accuracy; attention degrades with k.",
+     "design": "Chains key->bridge_1->...->value outside a 16-token window, bridges never adjacent to the query; k=1..6. Arms: full/windowed attention, Titans, GDN tied/dg single read, GDN with q_{i+1}=address(o_i) chained reads, CA3 with n_iter fixed to chain. Qwen3.5 variant: needles A->B, B->C at 500/1000 tokens, 1 vs 2 reads of W1 side memory.",
+     "metric": "Exact match vs k; per-hop accuracy; counterfactual bridge-swap following rate.",
+     "extends": "M1, M5, W1, P4a",
+     "priority": "H"
+    },
+    {
+     "title": "Hindsight goal-field path search (S&A W matrix in a GDN)",
+     "hypothesis": "A second delta-rule matrix written at hindsight sharp-wave events turns successor memory into a pathfinder approaching S&A's ~1.6x optimality.",
+     "design": "Random graphs N=1e2..1e4, out-degree 10, presented as random-walk token streams; write address(j)->goal code with gamma^(t-t_j) at random events; test greedy step over enumerated successors scored by goal readout + 0.2 x successor readout. Baselines: BFS, numpy S&A reference (6.69 vs 4.24 at N=1e4), transformer trained on paths, SR field.",
+     "metric": "Success rate, path length / shortest, invalid-edge and loop rates, noise robustness.",
+     "extends": "M5, M3, O1, T13",
+     "priority": "H"
+    },
+    {
+     "title": "Replay content and direction",
+     "hypothesis": "Reverse goal-anchored replay builds goal fields with fewer steps than forward novelty replay; gain x need beats novelty.",
+     "design": "Uniform vs novelty vs reverse-from-salient vs gain x need (need = SR occupancy) priorities under fixed sleep budget.",
+     "metric": "Backward transfer; goal-field path-search success after sleep.",
+     "extends": "M3, W3, O1",
+     "priority": "M"
+    },
+    {
+     "title": "Barrier reconfiguration",
+     "hypothesis": "S&A max-rule cannot unlearn closed shortcuts; decaying delta-rule or SR fields can, at a reach cost (cf. T5).",
+     "design": "Train on graph, delete edges, compare max-rule, delta-rule (alpha<1), SR goal fields.",
+     "metric": "Invalid-path rate; relearning time; reach.",
+     "extends": "M5, T5",
+     "priority": "M"
+    },
+    {
+     "title": "Alternating candidates in the temporal loop",
+     "hypothesis": "Alternating top-k retrieved candidates across loop periods with CA1 goal selection improves accuracy per reasoning token over gist steering.",
+     "design": "Theta-like alternation of candidate injections during CoT on graph-planning (CogEval-style) then GSM8K; run after S1 gain sweep.",
+     "metric": "Accuracy vs tokens; loop/invalid-step rates; stability.",
+     "extends": "R2, R3, J4, D-b, S1",
+     "priority": "M"
+    },
+    {
+     "title": "Cluster disconnection",
+     "hypothesis": "Deleting one bridge binding makes a downstream cluster unreachable; one direct cue restores it (S&A prediction 2).",
+     "design": "Delete bridge in multi-hop task; probe reachability before/after one direct cue.",
+     "metric": "Fraction of downstream nodes reachable.",
+     "extends": "M5",
+     "priority": "L"
+    }
+   ],
+   "corrections": [
+    "limbic_llm/ca2.py docstring says CA2 'lacks mossy-fibre input'; Kohara et al. 2014 (doi:10.1038/nn.3614) showed functional monosynaptic DG->CA2 input.",
+    "hippocampal_block.py wires CA2 (FiLM) in series between CA3 and CA1 so all retrieved CA3 content passes through CA2; anatomically CA3->CA1 Schaffer collaterals bypass CA2, and CA2 forms a parallel DG->CA2->CA1-deep circuit (Kohara 2014).",
+    "ca3.py describes n_iter as recurrent settling/attractor dynamics, but the query is re-anchored to the cue (xi = h + retrieved); with sequential=True extra iterations retrieve the successor of a cue+successor mixture rather than chaining successors or converging.",
+    "replay.py frames sharp-wave replay solely as cortical consolidation and replays whole sequences forward; omits hippocampal-side writing/stabilisation (S&A 2005; Roux 2017; Yang 2024), reverse replay and replay-as-planning (Foster & Wilson 2006; Pfeiffer & Foster 2013).",
+    "The CA3 episodic store holds residual-stream content vectors, functionally a selective KV cache; it should not be described as hippocampal indexing (index theory and S&A store pointers, content in neocortex).",
+    "REFERENCES.md omits direct prior art for successor-bound memory and graph traversal (DNC 2016, induction heads 2022, Chaudhry 2023) and for sleep-into-fast-weights (Lee et al. 2026 preprint), plus the pathfinding lineage (Muller 1996, Samsonovich & Ascoli 2005, Teyler & DiScenna 1986).",
+    "REFERENCES.md describes Hippoformer as 'EC + Titans-style memory'; it is mm-TEM (a TEM descendant with meta-MLP relational memory) joined to a transformer, evaluated on 2D/3D spatial prediction.",
+    "M3's replay result has no uniform-replay control (already O1), so 'novelty-prioritised' is not yet shown to matter."
+   ],
+   "report": "pathfinding.md",
+   "declared_limits": [
+    "Forward-citation tracing used OpenAlex only (128 citing records); the 'descendants do not cite S&A' statement checked 8 landmark DOIs against that list and is provisional.",
+    "Replication of S&A Fig. 8 used one random graph and seed per condition; noise model approximated (paper's normalisation under-specified); M=2 and noise sensitivities did not match the paper (+31% vs +11%, +3% vs +9%).",
+    "Abstracts for some journal papers (Kay 2020, Widloski 2022, Chandra 2025, Graves 2016, Pfeiffer 2013, Mattar 2018, Gupta 2010) were not retrievable from OpenAlex; claims rest on titles plus web-search snippets; PubMed (eutils) was blocked and not requested.",
+    "HippoTune cited via OpenReview (no arXiv id found); its first author appears as a username on OpenReview and is reproduced as such in the bib.",
+    "Did not re-review CA2 alignment/feedback tracks except where they bear on pathfinding; did not run any limbic-llm code."
+   ]
+  },
+  "code_review": {
+   "summary": "The code is mostly faithful: the Gated DeltaNet scan and chunkwise solver match a literal transcription of the gated delta rule to 1e-15 (fp64), the op-amp ringing threshold reproduces exactly (K=1.680, period 44.1 tokens), and pytest gives 101 passed, 2 skipped (transformers absent). The Titans module is a chunk-level variant (eta/alpha averaged and applied once per chunk, extra update-norm clip, no q/k/v convs), so Titans numbers describe this variant. The headline results need restating. The CPU associative-recall task is teacher-forced with values drawn from 16, so remembering the set of studied values and eliminating revealed ones scores 0.476 with no binding; Strategy I (0.414) is below that ceiling and full attention (0.485) and Titans (0.483-0.490) exceed it by only 0.007-0.014 (<=1.6 binomial SE over 3,072 scored queries), so M1 shows set memory, not binding. The same baseline (0.424/0.319/0.243 at 8/16/32 pairs) matches gdn_x8 (0.428/0.320/0.222), so M4 is not a capacity curve. Only successor-tied GDN memories bind; this is the H3 shift/induction-head mechanism, and M6 is confounded by tied q/k projections. On Qwen3.5 the windowed baseline is below the answer-format floor (loss 4.03), the loop's kernel is zero at the needle lag, and its gain barely moved, so the 1.00 recall is most simply read as adapter repair of a windowing shift, not loop memory; P1 is unsupported until a memory-off adapter control is run. The needle task (one digit string in digit-free filler) is passkey retrieval, not binding. Most components are anticipated (delta rule as test-time regression, k-WTA/DG-gated MoE, FiLM, ActAdd/CAST/PID steering, CLS replay, neurogenesis units). Plausibly new: the regulated re-injection loop analysis (self-rehearsal primacy, delay-limited subtractive feedback) and the graded/gist controllers, which are unrun. The minimal publishable set is Zoology-style MQAR with a binding-free baseline, adapter controls plus RULER on Qwen, multi-seed temporal-loop runs, and standard-protocol alignment arms.",
+   "closest_prior_work": [
+    {
+     "citation": "Yang, Kautz & Hatamizadeh 2024, Gated Delta Networks",
+     "id": "arXiv:2412.06464",
+     "relation": "background",
+     "note": "Reference rule implemented in gated_delta.py; verified exact. GDN paper itself frames delta rule as online regression."
+    },
+    {
+     "citation": "Yang et al. 2024, Parallelizing Linear Transformers with the Delta Rule over Sequence Length",
+     "id": "arXiv:2406.06484",
+     "relation": "background",
+     "note": "Chunkwise WY/UT algorithm; repo's triangular-solve chunk kernel is mathematically equivalent."
+    },
+    {
+     "citation": "Schlag, Irie & Schmidhuber 2021, Linear Transformers Are Secretly Fast Weight Programmers",
+     "id": "arXiv:2102.11174",
+     "relation": "anticipates",
+     "note": "Delta-rule fast weights; GDN-as-gradient-step identity follows."
+    },
+    {
+     "citation": "Wang, Shi & Fox 2025, Test-time regression",
+     "id": "arXiv:2501.12352",
+     "relation": "anticipates",
+     "note": "Unifies linear attention, SSMs, fast weights and softmax attention as test-time regression; anticipates the repo's GDN=Titans-step framing. Preprint."
+    },
+    {
+     "citation": "Behrouz et al. 2025, It's All Connected (Miras)",
+     "id": "arXiv:2504.13173",
+     "relation": "anticipates",
+     "note": "Titans, linear RNNs as associative memories with attentional-bias objective and retention gates. Preprint."
+    },
+    {
+     "citation": "Sun et al. 2024, Learning to (Learn at Test Time)",
+     "id": "arXiv:2407.04620",
+     "relation": "anticipates",
+     "note": "Hidden state as a model trained by self-supervised steps at test time."
+    },
+    {
+     "citation": "Fu et al. 2022, Hungry Hungry Hippos (H3)",
+     "id": "arXiv:2212.14052",
+     "relation": "anticipates",
+     "note": "Explicit shift to bind token to predecessor for recall; repo's successor-bound address is a hard-wired version."
+    },
+    {
+     "citation": "Olsson et al. 2022, In-context Learning and Induction Heads",
+     "id": "arXiv:2209.11895",
+     "relation": "anticipates",
+     "note": "Previous-token + induction circuit = successor binding in transformers; full attention in repo failed to form it (undertraining)."
+    },
+    {
+     "citation": "Arora et al. 2023, Zoology (MQAR)",
+     "id": "arXiv:2312.04927",
+     "relation": "background",
+     "note": "Standard multi-query associative recall protocol the repo's assoc-recall task should be replaced with."
+    },
+    {
+     "citation": "Arora et al. 2024, Based: recall-throughput tradeoff",
+     "id": "arXiv:2402.18668",
+     "relation": "background",
+     "note": "State-size vs recall tradeoff; relevant to fixed-state GDN side memory (O3, W1)."
+    },
+    {
+     "citation": "Allen-Zhu 2025, Canon Layers",
+     "id": "arXiv:2512.17351",
+     "relation": "supports",
+     "note": "Short horizontal mixing lifts linear attention/GDN; supports that token-shift is the missing ingredient in standard gdn mode. Preprint."
+    },
+    {
+     "citation": "Hsieh et al. 2024, RULER",
+     "id": "arXiv:2404.06654",
+     "relation": "background",
+     "note": "Vanilla NIAH hides failures; repo's single-needle digit task should be replaced by S-NIAH/MK/MV variants."
+    },
+    {
+     "citation": "Jelassi et al. 2024, Repeat After Me",
+     "id": "arXiv:2402.01032",
+     "relation": "supports",
+     "note": "Fixed-state models limited at copying; frames how track 4 must be tested (load-dependent retrieval)."
+    },
+    {
+     "citation": "Mohtashami & Jaggi 2023, Landmark Attention",
+     "id": "arXiv:2305.16300",
+     "relation": "background",
+     "note": "Passkey retrieval; the repo's needle task (one digit string, digit-free filler) is this task."
+    },
+    {
+     "citation": "Hwang et al. 2024, TransformerFAM",
+     "id": "arXiv:2404.09173",
+     "relation": "overlaps",
+     "note": "Feedback loop as working memory on pretrained models; overlaps the temporal loop. Preprint."
+    },
+    {
+     "citation": "Fan et al. 2020, Feedback Transformer",
+     "id": "arXiv:2002.09402",
+     "relation": "overlaps",
+     "note": "Higher-level past representations fed back to lower layers; overlaps closed-loop re-injection."
+    },
+    {
+     "citation": "Lin et al. 2025, Forgetting Transformer",
+     "id": "arXiv:2503.02130",
+     "relation": "overlaps",
+     "note": "Softmax attention with decay-weighted scores; loop's age kernel is a fixed multiplicative variant."
+    },
+    {
+     "citation": "Press, Smith & Lewis 2021, ALiBi",
+     "id": "arXiv:2108.12409",
+     "relation": "overlaps",
+     "note": "Distance-dependent attention bias; same family as the loop kernel."
+    },
+    {
+     "citation": "Golovneva et al. 2024, Contextual Position Encoding",
+     "id": "arXiv:2405.18719",
+     "relation": "overlaps",
+     "note": "Position increments on model-selected tokens; close to salience-driven time channel."
+    },
+    {
+     "citation": "Wu et al. 2022, Memorizing Transformers",
+     "id": "arXiv:2203.08913",
+     "relation": "overlaps",
+     "note": "kNN memory of past activations; overlaps CA3 episodic slot store."
+    },
+    {
+     "citation": "Munkhdalai et al. 2024, Infini-attention",
+     "id": "arXiv:2404.07143",
+     "relation": "overlaps",
+     "note": "Compressive linear-attention memory inside attention; overlaps Titans/GDN side memory. Preprint."
+    },
+    {
+     "citation": "Ahmad & Scheinkman 2019, How Can We Be So Dense?",
+     "id": "arXiv:1903.11257",
+     "relation": "anticipates",
+     "note": "k-winners sparse layers with winner-only gradients, as in dentate_gyrus.py/kwta."
+    },
+    {
+     "citation": "Lample et al. 2019, Product Key Memory",
+     "id": "arXiv:1907.05242",
+     "relation": "anticipates",
+     "note": "Sparse top-k key-value memory; anticipates DG-addressed expert memory."
+    },
+    {
+     "citation": "He 2024, Mixture of A Million Experts (PEER)",
+     "id": "arXiv:2407.04153",
+     "relation": "anticipates",
+     "note": "Retrieval over many tiny experts via product keys; DG-as-MoE analogue. Preprint."
+    },
+    {
+     "citation": "Bricken et al. 2023, Sparse Distributed Memory is a Continual Learner",
+     "id": "arXiv:2303.11934",
+     "relation": "anticipates",
+     "note": "Top-k sparse MLP from SDM/cerebellar biology for continual learning; overlaps DG k-WTA + CL claims."
+    },
+    {
+     "citation": "Kapoor et al. 2025, HiCL",
+     "id": "arXiv:2508.16651",
+     "relation": "anticipates",
+     "note": "Explicit DG-gated mixture of experts for continual learning (already in repo bib). Preprint."
+    },
+    {
+     "citation": "Zhou et al. 2024, Value Residual Learning",
+     "id": "arXiv:2410.17897",
+     "relation": "anticipates",
+     "note": "First-layer value residuals into deep layers; anticipates EC-III->CA1 temporoammonic skip."
+    },
+    {
+     "citation": "Pagliardini et al. 2024, DenseFormer",
+     "id": "arXiv:2402.02622",
+     "relation": "anticipates",
+     "note": "Depth-weighted averaging of earlier layers; skip-connection track baseline."
+    },
+    {
+     "citation": "Zhu et al. 2024, Hyper-Connections",
+     "id": "arXiv:2409.19606",
+     "relation": "anticipates",
+     "note": "Learned cross-depth connections; skip-connection track baseline."
+    },
+    {
+     "citation": "Conneau et al. 2017, InferSent",
+     "id": "arXiv:1705.02364",
+     "relation": "anticipates",
+     "note": "Matching features [u;v;|u-v|;u*v] identical to the CA1 comparator features."
+    },
+    {
+     "citation": "Nguyen et al. 2025, Activation Steering with a Feedback Controller",
+     "id": "arXiv:2510.04309",
+     "relation": "anticipates",
+     "note": "PID-regulated steering gain; closest precedent for graded controller and op-amp framing. Preprint."
+    },
+    {
+     "citation": "Lee et al. 2024, Conditional Activation Steering (CAST)",
+     "id": "arXiv:2409.05907",
+     "relation": "anticipates",
+     "note": "Probe-conditioned refusal steering; the conditional arm."
+    },
+    {
+     "citation": "Arditi et al. 2024, Refusal mediated by a single direction",
+     "id": "arXiv:2406.11717",
+     "relation": "background",
+     "note": "Refusal direction and abliteration; basis of A6."
+    },
+    {
+     "citation": "Scalena, Sarti & Nissim 2024, Dynamic Activation Composition",
+     "id": "arXiv:2406.17563",
+     "relation": "overlaps",
+     "note": "Steering intensity modulated during generation; overlaps graded controller."
+    },
+    {
+     "citation": "Tan et al. 2024, Generalization and Reliability of Steering Vectors",
+     "id": "arXiv:2407.12404",
+     "relation": "contradicts",
+     "note": "Steerability varies by input and can be brittle OOD; cautions the claim that one transplanted direction re-aligns abliterated models."
+    },
+    {
+     "citation": "Azizi et al. 2025, Activation Steering for CoT Compression",
+     "id": "arXiv:2507.04742",
+     "relation": "overlaps",
+     "note": "Concise-reasoning steering vector; nearest baseline for gist steering. Preprint."
+    },
+    {
+     "citation": "Muennighoff et al. 2025, s1: Simple test-time scaling",
+     "id": "arXiv:2501.19393",
+     "relation": "background",
+     "note": "Budget forcing; needed token-budget baseline for R2."
+    },
+    {
+     "citation": "Souly et al. 2024, StrongREJECT",
+     "id": "arXiv:2402.10260",
+     "relation": "background",
+     "note": "Harmfulness evaluator; substring refusal judges overstate effects."
+    },
+    {
+     "citation": "Rolnick et al. 2019, Experience Replay for Continual Learning",
+     "id": "arXiv:1811.11682",
+     "relation": "anticipates",
+     "note": "Uniform replay baseline absent from M3."
+    },
+    {
+     "citation": "van de Ven, Siegelmann & Tolias 2020, Brain-inspired replay",
+     "id": "10.1038/s41467-020-17866-2",
+     "relation": "anticipates",
+     "note": "Hippocampus-inspired replay for continual learning; anticipates replay+sleep consolidation."
+    },
+    {
+     "citation": "Draelos et al. 2016, Neurogenesis Deep Learning",
+     "id": "arXiv:1612.03770",
+     "relation": "anticipates",
+     "note": "Adding new units for new data; anticipates DG reserve units."
+    },
+    {
+     "citation": "Samsonovich & Ascoli 2005, pathfinding role of the hippocampus",
+     "id": "10.1101/lm.85205",
+     "relation": "extended_by_limbic",
+     "note": "CA3 transition graph with search-based retrieval; repo uses one-step successor lookup; chained lookup is the natural fix for P4a."
+    },
+    {
+     "citation": "Tsao et al. 2018, Integrating time from experience in LEC",
+     "id": "10.1038/s41586-018-0459-6",
+     "relation": "supports",
+     "note": "Leaky temporal-context signals in LEC match the time channel better than hippocampal time cells."
+    },
+    {
+     "citation": "Kohara et al. 2014, Hippocampal CA2 circuits",
+     "id": "10.1038/nn.3614",
+     "relation": "contradicts",
+     "note": "Reports DG input to CA2, contradicting ca2.py's 'lacks mossy-fibre input'."
+    },
+    {
+     "citation": "Neunuebel & Knierim 2014, CA3 retrieves coherent representations from degraded input",
+     "id": "10.1016/j.neuron.2013.11.017",
+     "relation": "background",
+     "note": "Physiological DG separation / CA3 completion; supports direct-path read (Treves-Rolls) not used in Titans/GDN memories."
+    },
+    {
+     "citation": "Babadi & Sompolinsky 2014, Sparseness and expansion",
+     "id": "10.1016/j.neuron.2014.07.035",
+     "relation": "background",
+     "note": "Random expansion + sparsification decorrelates only in specific regimes; explains weak DG effects (T16, M7)."
+    }
+   ],
+   "novelty": [
+    {
+     "idea": "GDN update equals one SGD step on the Titans associative loss at the decayed state",
+     "verdict": "anticipated",
+     "rationale": "Delta rule as online regression is in Schlag 2021, Yang 2024, TTT (Sun 2024), test-time regression (Wang 2025) and Miras (Behrouz 2025)."
+    },
+    {
+     "idea": "Successor-bound (previous-token) addressing turning GDN state into exact RAM",
+     "verdict": "anticipated",
+     "rationale": "Equivalent to H3's shift-then-bind and the previous-token/induction-head circuit; short convs and Canon layers supply the same shift; Qwenputer blog (repo bib) already states the RAM view. Repo result M5 is a confirmation."
+    },
+    {
+     "idea": "DG expansion + k-WTA as pattern-separated addresses / MoE gate",
+     "verdict": "anticipated",
+     "rationale": "k-WTA layers (Ahmad 2019), product keys (Lample 2019), PEER (He 2024), SDM continual learner (Bricken 2023), DG-gated MoE (HiCL 2025)."
+    },
+    {
+     "idea": "CA3 novelty-gated episodic slot store with Hopfield retrieval",
+     "verdict": "anticipated",
+     "rationale": "Modern Hopfield = attention (Ramsauer 2020); kNN activation memories (Wu 2022), surprise-gated episodic memory (EM-LLM, Larimar in repo bib)."
+    },
+    {
+     "idea": "CA1 comparator [a;r;a*r;|a-r|] producing novelty",
+     "verdict": "anticipated",
+     "rationale": "Identical to InferSent matching features (Conneau 2017); surprise-as-loss targets are standard in Titans/EM-LLM."
+    },
+    {
+     "idea": "CA2 FiLM side channel and activation addition as CA2",
+     "verdict": "anticipated",
+     "rationale": "FiLM (Perez 2018), ActAdd/CAA (repo bib); hippocampal labelling is a re-description."
+    },
+    {
+     "idea": "Graded escalating controller: leaky integral of a harm-probe score drives a capped steering gain",
+     "verdict": "partially_novel",
+     "rationale": "Neighbours: CAST (conditional), PID steering (Nguyen 2025), dynamic activation composition (Scalena 2024), adaptive steering (Wang 2024). The multi-turn escalation integral is not published in this form, but no experiment has been run."
+    },
+    {
+     "idea": "Re-aligning abliterated models with a refusal direction transplanted from the aligned sibling",
+     "verdict": "partially_novel",
+     "rationale": "Adding the refusal direction induces refusal (Arditi 2024) and harmfulness is encoded separately from refusal (Zhao 2025, repo bib); cross-model transplant into abliterated weights is a modest extension; unrun; Tan 2024 predicts input-dependent reliability."
+    },
+    {
+     "idea": "Gist (fast-minus-slow EMA of residual) momentum steering to shorten chain-of-thought",
+     "verdict": "unclear",
+     "rationale": "Not found in this form; nearest are concise-CoT vectors (Azizi 2025), SEAL, manifold steering. Not wired into run.py and not run."
+    },
+    {
+     "idea": "Temporal loop: lagged content-addressed re-injection with clamped damped-sinusoid kernel",
+     "verdict": "partially_novel",
+     "rationale": "Functionally one extra full-range attention head with an age kernel (ALiBi/FoX family) plus feedback (Feedback Transformer, TransformerFAM). The kernel shape and the regulated injection are new, but O(T) memory and phase nulls are drawbacks."
+    },
+    {
+     "idea": "Control-theoretic analysis of re-injection (divisive vs subtractive, delay-limited critical gain, self-rehearsal primacy in closed loops)",
+     "verdict": "partially_novel",
+     "rationale": "Op-amp and delayed-feedback stability are textbook (verified K_crit=1.680); applying them to activation loops and the primacy-by-rehearsal finding appear new but rest on one seed per arm."
+    },
+    {
+     "idea": "Time channel: salience-driven log-spaced leaky integrators/oscillators",
+     "verdict": "anticipated",
+     "rationale": "Shankar & Howard Laplace layer (repo bib), real-decay linear RNNs, CoPE (Golovneva 2024). The what/when dissociation result is a clean small demonstration."
+    },
+    {
+     "idea": "Novelty-prioritised replay with sleep updates of slow parameters and logit distillation",
+     "verdict": "anticipated",
+     "rationale": "CLS theory, DER (Buzzega 2020), brain-inspired replay (van de Ven 2020), prioritised replay; no ablation isolating novelty priority."
+    },
+    {
+     "idea": "DG neurogenesis reserve units with hyper-plastic young units",
+     "verdict": "anticipated",
+     "rationale": "Neurogenesis deep learning (Draelos 2016); boost is neutralised by Adam and grow() is never exercised."
+    },
+    {
+     "idea": "Side channels at mid-depth of a frozen GDN hybrid restoring needle recall under windowed attention",
+     "verdict": "unclear",
+     "rationale": "Interesting empirical observation about hybrids, but confounded with adapter repair of a windowing distribution shift; mechanism untested."
+    },
+    {
+     "idea": "CA3-CA1 / EC-III->CA1 skip connections as architecture improvement",
+     "verdict": "anticipated",
+     "rationale": "Value residuals (Zhou 2024), DenseFormer (Pagliardini 2024), Hyper-connections (Zhu 2024); repo has no experiment for this track."
+    }
+   ],
+   "proposed_experiments": [
+    {
+     "title": "E1 Zoology MQAR re-benchmark with binding-free baseline",
+     "hypothesis": "Properly trained full attention, standard GDN and deep Titans all bind; tied/DG addresses help only in sample efficiency or near load = d_k.",
+     "design": "Zoology MQAR generator (vocab 8192, len 64-512, 4-64 pairs); widths 64/128/256; full attn, SWA, repo GDN, GDN with random-init conv, GDN tied, GDN dg, Titans deep, Titans-GDN, Strategy I; 4 LRs x 3 seeds; factorial for M6 (tied q/k x linear/deep x per-token/chunk x heads). ~1,100 runs x ~3 min = ~55 GPU-h (<1.5 days on 2x RTX 5090).",
+     "metric": "MQAR accuracy, first-query accuracy (no elimination possible), gap to bag-of-values ceiling; best-LR per width; mean and bootstrap 95% CI over seeds.",
+     "extends": "M1, M2, M4, M5, M6, M7",
+     "priority": "H"
+    },
+    {
+     "title": "E2 Adapter controls and RULER on frozen Qwen",
+     "hypothesis": "On Qwen3.5 a memory-free adapter of equal size restores needle recall (GDN carried the needle); on Qwen3 only a loop with a covering horizon helps.",
+     "design": "Qwen3.5-2B and Qwen3-1.7B; arms: frozen windowed; trained adapter with loop+clock off (4.38M params); LoRA r=16 on tap block; clock only; default loop; horizon loop; horizon loop + GDN side store with successor keys (W1); 3 seeds; 6,000 steps. Eval RULER S-NIAH-1/2/3, MK-NIAH, MV-NIAH at 1k/2k/4k with UUID values; per-digit logging. 42 runs x ~20 min = ~15 GPU-h.",
+     "metric": "Exact match, per-token accuracy, per-digit CE against format floor; mean +/- CI over seeds.",
+     "extends": "P1, P2, P4, P4a, W1, C1a, g2b, O5",
+     "priority": "H"
+    },
+    {
+     "title": "E3 Chained successor retrieval (pathfinding)",
+     "hypothesis": "Iterating successor lookups k times (Samsonovich & Ascoli pathfinding) recovers all digits/tokens of a multi-token value where one-step lookup recovers one.",
+     "design": "GDN side memory with successor keys on all-windowed Qwen models; 1, 2, 4 chained reads per generated token; RULER multi-hop variable tracking. ~5 GPU-h within E2.",
+     "metric": "Exact match; accuracy by value position; multi-hop tracing accuracy.",
+     "extends": "P4a, W1, M5",
+     "priority": "H"
+    },
+    {
+     "title": "E4 Separate memory from domain adaptation in perplexity",
+     "hypothesis": "Most of the WikiText perplexity gain is adaptation, not long-range memory.",
+     "design": "Qwen3 and Qwen3.5 windowed; arms frozen, parameter-matched LoRA trained on WikiText, side with memory ablated, default kernel, horizon kernel; 3 seeds; 30 runs x ~7 min (<4 GPU-h). Add BABILong/PG-19 long-range evaluation.",
+     "metric": "Perplexity overall and on tokens whose predictive context lies > W back (e.g. second occurrences of rare n-grams); BABILong accuracy.",
+     "extends": "P5, O4",
+     "priority": "M"
+    },
+    {
+     "title": "E5 Multi-seed temporal-loop suite",
+     "hypothesis": "Stability (T3), subtractive-only learning (T9) and the primacy/recency ordering (T11-T15) survive 5 seeds.",
+     "design": "Rerun the 14 scripted configurations x 5 seeds; replace zero-shot recency probe with a trained recency task with curriculum on separation; ~70 CPU runs x 15 min = ~16 CPU-h (~2 h wall on 16 cores).",
+     "metric": "What/when accuracy, echo ratio by range, newer/older naming; stratified bootstrap 95% CI (Agarwal 2021).",
+     "extends": "T2, T3, T9, T11-T16, O2, S3",
+     "priority": "H"
+    },
+    {
+     "title": "E6 DG pattern separation under key similarity and overload",
+     "hypothesis": "Sparse DG addresses reduce interference only when keys are similar or load exceeds d_k; DG on the write path only (Treves-Rolls) beats DG on both paths for noisy cues.",
+     "design": "MQAR with controlled key cosine rho in {0,0.5,0.8,0.95} and shared-prefix keys; loads P/d_k in {0.5,1,2,4}; arms dense tied, learned DG k-WTA 2/5/10%, fixed random expansion+k-WTA, product keys, top-k experts; write-only vs read+write DG; 5 seeds; ~300 runs, ~25 GPU-h.",
+     "metric": "Recall vs similarity and load; interference index; cue-noise completion curve.",
+     "extends": "M7, T13, T16, W4 (track 3)",
+     "priority": "M"
+    },
+    {
+     "title": "E7 Replay controls",
+     "hypothesis": "Novelty priority and sleep add nothing over uniform replay at equal buffer size on easy tasks; differences appear only with small buffers and overlapping keys.",
+     "design": "10 sequential fact tasks with overlapping keys; buffers 16/64/256; arms naive, uniform, reservoir, DER++, EWC, novelty-prioritised, sleep-only, awake-only; 5 seeds; CPU, a few hours. Then LoRA consolidation on a frozen model (W3).",
+     "metric": "Average accuracy, backward transfer with CI.",
+     "extends": "M3, O1, W3",
+     "priority": "M"
+    },
+    {
+     "title": "E8 Alignment arms on standard protocols",
+     "hypothesis": "The graded controller matches static steering's harmful-refusal rate at lower over-refusal and capability cost.",
+     "design": "Qwen3-1.7B aligned/abliterated/base; arms none, static CAA, CAST, PID (Nguyen 2025), graded, graded_self; probe/direction from 3 disjoint splits, probe trained on one distribution and tested on another; full XSTest (450), OR-Bench, HarmBench classifier, StrongREJECT; WildGuard or Llama Guard as second judge; MMLU, GSM8K, perplexity. Selectivity curves over gain, compared at matched over-refusal. <10 GPU-h.",
+     "metric": "Harmful refusal / StrongREJECT score vs over-refusal (curve and AUC); capability deltas; probe AUROC and ECE in/out of distribution; bootstrap CI.",
+     "extends": "A1, A2, A6, J1",
+     "priority": "H"
+    },
+    {
+     "title": "E9 Gist steering of reasoning",
+     "hypothesis": "Gist momentum steering shortens reasoning at equal accuracy better than budget forcing.",
+     "design": "Qwen3 thinking 1.7B and 4B; GSM8K, MATH-500, AIME 2024-25 (8 samples/problem); arms full thinking, no-think, budget forcing at matched budgets, SEAL, concise vector, gist at 3 gains after S1 saturation sweep; ~9M tokens per arm, 1-2 days on 2 GPUs. Wire gist into run.py with static gain (graded mode without probe gives zero gain).",
+     "metric": "Accuracy vs mean reasoning tokens (Pareto front), paired bootstrap; flip and 'wait' rates.",
+     "extends": "R2, R3, R4, S1",
+     "priority": "M"
+    },
+    {
+     "title": "E10 Skip-connection track at small LM scale",
+     "hypothesis": "A temporoammonic (embedding-to-late-comparator) skip does not beat value residuals, DenseFormer or hyper-connections at matched parameters.",
+     "design": "125M-param models on 2.5B tokens; 5 arms (baseline, temporoammonic skip, value residual, DenseFormer, hyper-connections); 3 seeds; ~15 runs x 5 h = ~75 GPU-h.",
+     "metric": "Validation perplexity, MQAR, RULER at 4k.",
+     "extends": "Track 1 (no register ID); D-a, D-c",
+     "priority": "M"
+    }
+   ],
+   "corrections": [
+    "M1 / RESULTS §1 / README: assoc-recall scores do not show binding. Teacher-forced shuffled queries with values from 16 allow a binding-free bag-of-values + elimination strategy scoring 0.476 (per position 0.288, 0.307, 0.337, 0.395, 0.531, 1.000; simulated, 200k sequences). Strategy I 0.414 is below it; full attention 0.485, titans_mac 0.483 and titans_seq 0.490 exceed it by 0.009, 0.007 and 0.014, i.e. 1.0, 0.7 and 1.5 binomial SE (SE ~0.009 for 3,072 scored queries), so they are statistically indistinguishable from the binding-free ceiling.",
+    "RESULTS §1 'Not a task ceiling' argument: the full-attention per-position profile 0.26->0.82 is the elimination signature, and its first-query accuracy (0.26) is below the binding-free first-query value (0.288). 'Titans matches full attention' means both learned the same heuristic.",
+    "M4 / README 'Standard Gated DeltaNet loses recall once stored pairs exceed its key dimension (0.43 -> 0.13)': binding-free baseline at 8/16/32 pairs is 0.424/0.319/0.243 and gdn_x8 scores 0.428/0.320/0.222; gdn scores 0.426 at 8 pairs (< d_k=16). Standard GDN never learned binding, so this is not a capacity result.",
+    "M6 'exact delta-rule memory beats Titans' deep memory' is confounded: titans_gdn also ties wq = wk in sequential mode (a hard-wired previous-token address), uses 4 memory heads, per-token updates and no trust-region clip, while NeuralMemory keeps separate wq/wk. Needs a factorial ablation.",
+    "M2 marked Refuted and M7 Open on a task that only tied addressing solves; neither DG writes nor CA1 novelty-lr could show a benefit there. M2 should be Open.",
+    "neural_memory.py is a chunk-level Titans variant: eta and alpha averaged over the chunk and momentum/decay applied once per chunk (Titans keeps them per token within the chunk), plus max_update_norm=4 trust region and max_lr=0.4 not in Titans; q/k/v convolutions absent; MAC output gate o = y * M*(y) omitted. All 'Titans' numbers refer to this variant.",
+    "P1 'Qwen3.5's GDN layers alone do not recall a needle 500 tokens back' is unsupported: the windowed baseline (attention windowed, GDN intact) has digit loss 4.03 and token accuracy 0.056, below the 1.84 / 0.28 answer-format floor, i.e. the untrained windowed model is out of distribution. The 1.00 recall with side channels coincides with loop kernel weight exactly 0 at the needle lag and gain 0.2689 -> 0.2697, consistent with adapter repair. A memory-off adapter / LoRA control is required; the layer-22 control does not discriminate.",
+    "P2 route hypothesis should be stated as one of two: re-injection through later GDN layers vs adapter repair of the windowing shift with GDN carrying the needle throughout.",
+    "Needle task (pairs=1, digit-free filler) contains exactly one digit string: it is passkey retrieval and needs no key-value binding; RULER S-NIAH/MK/MV variants are needed before claims about memory.",
+    "P4a 'equals exactly one digit known' is one decomposition consistent with mean loss 1.381 and accuracy 0.461; other per-digit mixtures fit; should be a hypothesis until per-digit logging (C1a).",
+    "T11-T14 marked Supported (some 'weakly') on one seed each with a zero-shot out-of-distribution two-event probe; T15 already shows seeds disagreeing (0.54 vs 0.38). Should be Open; the analogy to the psychological primacy effect is a hypothesis.",
+    "T6/T7 are analytic properties of the linear delayed loop (independently verified: K_crit = 1.680, period 44.1 tokens for tau=16, rho_E=0.9); '3 untrained seeds' adds no evidence. With the default clamp on, subtractive feedback changes only injection direction, so the op-amp law does not describe the deployed ca1_control configuration.",
+    "M3 'prevents forgetting': the 256-sequence buffer holds essentially every fact of every prior task (8 keys/task, ~12 pairs/sequence); no uniform-replay, DER, sleep-only or awake-only arm; novelty priority untested. Status should be 'replay works; priority and sleep untested'.",
+    "DG neurogenesis: grow() is never called in any experiment, and the per-unit gradient boost is a gradient rescale that Adam/AdamW normalises away (x5 gradient scaling changed a 50-step AdamW trajectory by 1.2e-7). Neurogenesis claims in docs are untested.",
+    "ca3.py docstring: 'iterated n_iter times with tied weights (recurrent settling)' — the update xi = h + W_o(softmax(.) V) is residual attention with untied value/output projections, not the Hopfield update; all experiments use n_iter=1.",
+    "ca3.py sequential mode mixes semantics in one softmax: store slots return successors (wv(h_{t+1})) while current-segment keys return their own values (wv(h_t)).",
+    "Titans and GatedDeltaMemory DG modes compute the read query through the same DG code as the write key, contrary to the Treves-Rolls split (DG for encoding, perforant path for retrieval) the repo cites; only HippocampalLoop offers read='direct'.",
+    "ca2.py: 'CA2 lacks mossy-fibre input' and receives projections 'no other CA field gets' are inaccurate: DG input to CA2 was reported by Kohara et al. 2014 (doi:10.1038/nn.3614); supramammillary fibres also target DG; CA2 is distinguished by strong EC-II drive and output to CA1 (Chevaleyre & Siegelbaum 2010).",
+    "TimeChannel is described as Shankar-Howard time cells; it implements only the Laplace-domain leaky integrators (closer to LEC temporal context, Tsao et al. 2018); time cells require the inverse transform.",
+    "ca2.py TemporalContext called 'slowly drifting', but init rho=0.9 gives a ~10-token time constant truncated at 64 tokens.",
+    "CPU assoc-recall windowed baseline still uses sliding windows: 3 layers x (16-1) = 45-token reach exceeds the 41-token distance from the last study value to the first query; the C2 block-window fix was applied only to pretrained runs (the baseline did not exploit it).",
+    "gated_delta.py initialises the short causal convolutions to the identity (fla uses random init), so standard 'gdn' mode starts with no token shift; a plausible cause of standard GDN never learning binding in 1,500 steps. Decay gate uses a single bias (-5) rather than fla/Mamba-2's per-head A and dt_bias spread.",
+    "Alignment harness: the gist direction is implemented in steering.py but not wired into run.py; graded mode without a probe silently yields zero gain (b = -30); the probe is fitted on harmful_behaviors vs harmless_alpaca, a stylistic split; refusal is substring-judged; --n-eval 64 gives about +/-12-point 95% CI at p=0.5, too wide for the expected selectivity differences.",
+    "docs/references.bib: turner2023activation uses the superseded v1 title; arXiv 2308.10248 is now 'Steering Language Models With Activation Engineering'. 45 of 82 entries carry no DOI or eprint field. The 37 eprint IDs present all resolve to matching titles.",
+    "Tests: without installing the package (pip install -e .) three test modules fail to collect with ModuleNotFoundError: limbic_llm; with the repo on PYTHONPATH the suite gives '101 passed, 2 skipped' (transformers-dependent modules skipped)."
+   ],
+   "report": "code_review.md",
+   "declared_limits": [
+    "Pretrained-model tests (tests/test_pretrained_loop.py, one alignment test) were skipped because transformers was not installed; no GPU or pretrained-model experiments were rerun.",
+    "No training runs were repeated; the binding-free baseline is an analytic simulation (200k sequences for 6 pairs, 20k for 8/16/32 pairs), and all other numbers were read from the repo's result files.",
+    "Tests were run with the repo on PYTHONPATH because pip install -e failed in the sandbox (build isolation could not fetch setuptools).",
+    "Comparison to flash-linear-attention was made against its documented formulation and a literal recurrence, not by importing the fla package (not installed).",
+    "Venue publication of arXiv-cited works was not verified; they are cited as arXiv preprints.",
+    "docs/*.docx, docs/*.html, the GPT-2-XL notebook and round0_plan.md were not read in full; NOTEBOOK.md and genesis.md were read only through targeted greps and excerpts."
+   ]
+  }
+ }
+}

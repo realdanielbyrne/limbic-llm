@@ -52,7 +52,11 @@ def authors(raw: str) -> str:
 
 def cite(e) -> str:
     f = {k: clean(e[k]) for k in e.fields_dict}
-    a, y, t = authors(e["author"]), f.get("year", "n.d."), f["title"]
+    if "author" in e.fields_dict:
+        a = authors(e["author"])
+    else:  # edited volumes carry editors only
+        a = authors(e["editor"]) + " (Eds.)"
+    y, t = f.get("year", "n.d."), f["title"]
     if e.entry_type == "article":
         venue = f.get("journal", "")
         vol = f.get("volume")

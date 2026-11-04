@@ -14,7 +14,7 @@ It is a research library, not a pretrained LLM: memory modules you can drop into
 ## What's inside
 
 * **Strategy I, the direct circuit.** EC → DG → CA3 → CA2 → CA1 → Subiculum as one residual block, with a one-shot episodic store in CA3.
-* **Strategy II, a Titans hybrid.** The Titans test-time memory ([Behrouz et al., 2024](https://arxiv.org/abs/2501.00663)) with a dentate-gyrus write path, a CA1 comparator and novelty-scaled learning rates.
+* **Strategy II, a Titans hybrid.** The Titans test-time memory ([Behrouz et al., NeurIPS 2025](https://arxiv.org/abs/2501.00663)) with a dentate-gyrus write path, a CA1 comparator and novelty-scaled learning rates.
 * **Gated DeltaNet memory.** The linear special case of the Titans memory ([Yang et al., 2025](https://arxiv.org/abs/2412.06464)), with exact per-token updates, a fast chunkwise kernel and dentate-gyrus addressing.
 * **Replay consolidation.** A novelty-prioritized replay buffer and an offline "sleep" phase that trains only the slow parameters, after the complementary learning systems theory.
 * **A regulated temporal loop.** The model's own lagged activations are written into an associative memory and fed back as clamped, damped sinusoids that weaken on every circuit, as a contrast of episode against prior, under CA1 negative-feedback gain control. A clock of elapsed time, built from scale-invariant time cells, rides alongside. See [the design note](docs/design/temporal-loop.md).
@@ -40,6 +40,8 @@ Small CPU models (0.2–0.4 M parameters, single seed), so these are sanity chec
 
 **One-shot recall beyond the attention window.** The model sees 6 key→value pairs, 40 filler tokens, then is queried on every key. Local models see 16 tokens at a time; chance is 0.06.
 
+> **Caveat (literature review, 2 Nov 2026).** Queries are teacher-forced and values repeat, so a model that only remembers *which* values were studied, and strikes each as it is revealed, scores **0.476** without binding any key to its value. Full attention, Titans and Strategy I sit at or below that ceiling. Only the Gated DeltaNet memories, whose addresses are successor-bound, show binding. See [`research/reviews/2026-11-02_literature/`](research/reviews/2026-11-02_literature/README.md) and register RV2.X1.
+
 | Model | Recall |
 |---|---:|
 | Windowed attention, no memory | 0.06 |
@@ -51,7 +53,7 @@ Small CPU models (0.2–0.4 M parameters, single seed), so these are sanity chec
 
 **Continual learning.** Learning three fact sets in sequence, naive training forgets badly (backward transfer −0.73). Novelty-prioritized replay with a sleep phase removes the forgetting (backward transfer 0.00).
 
-**Memory capacity.** Standard Gated DeltaNet loses recall once the number of stored pairs exceeds its key dimension (0.43 → 0.13). Successor-bound addressing turns the state into exact RAM, with perfect recall up to 32 pairs.
+**Memory capacity.** Successor-bound addressing gives perfect recall up to 32 pairs, within the key dimension, where a linear memory is exact (Kohonen 1972; Schlag et al. 2021). Standard Gated DeltaNet's drop with more pairs (0.43 → 0.13) follows the binding-free ceiling, so it is not a capacity limit: it never learned binding (register M4, B12).
 
 **A regulated temporal loop and a clock of elapsed time.** On a task that asks what happened and how long ago, beyond a 16-token window, the loop carries content and the clock carries elapsed time; each alone leaves the other at baseline.
 
@@ -62,7 +64,7 @@ Small CPU models (0.2–0.4 M parameters, single seed), so these are sanity chec
 | Clock | 0.10 | 0.88 |
 | Loop + clock (3,000 steps; others 1,500) | **1.00** | **0.92** |
 
-Closed loops that feed their output back into memory run away when undamped (echo 14× the input, peak 63×). The clamped, damped loop with CA1 control holds the echo at about 0.3× across 520 tokens and still learns the task on two seeds. Two findings shaped the design. A closed loop rehearses, so the *first* event captures it however strongly each trace is damped; subtracting the prior and sparse dentate-gyrus keys counter this. And CA1's inverted copy obeys the op-amp law, $y = A\Delta/(1+A\beta)$, but only below a loop gain of 1.68, because it arrives a circuit late. On frozen Qwen3.5-2B, the side channels restore exact needle recall 500 tokens back (0.00 → 1.00) with help from its Gated DeltaNet layers. See [RESULTS.md §4](RESULTS.md#4-temporal-loop-what-when-stability-and-feedback).
+Closed loops that feed their output back into memory run away when undamped (echo 14× the input, peak 63×). The clamped, damped loop with CA1 control holds the echo at about 0.3× across 520 tokens and still learns the task on two seeds. Two findings shaped the design. A closed loop rehearses, so the *first* event captures it however strongly each trace is damped; subtracting the prior and sparse dentate-gyrus keys counter this. And CA1's inverted copy obeys the op-amp law, $y = A\Delta/(1+A\beta)$, but only below a loop gain of 1.68, because it arrives a circuit late. On frozen Qwen3.5-2B, the side channels restore exact needle recall 500 tokens back (0.00 → 1.00) with help from its Gated DeltaNet layers. On Qwen3-1.7B with every layer windowed, a Gated DeltaNet side memory with successor-bound keys recalls the needle exactly with a fixed-size state; with two stored pairs it still cannot choose which one to start from. See [RESULTS.md §4](RESULTS.md#4-temporal-loop-what-when-stability-and-feedback).
 
 ## Install
 
@@ -70,7 +72,7 @@ Closed loops that feed their output back into memory run away when undamped (ech
 git clone https://github.com/realdanielbyrne/limbic-llm
 cd limbic-llm
 pip install -e ".[dev]"      # needs torch >= 2.1
-pytest -q                    # 114 tests (13 need the [pretrained] extra)
+pytest -q                    # 206 tests (78 need the [pretrained] extra)
 ```
 
 ## Quick start
@@ -150,7 +152,7 @@ consolidator.sleep(steps=200)                                      # offline con
 | Gated DeltaNet | Linear associative memory | `GatedDeltaNet`, `GatedDeltaMemory` | $S_t = \alpha_t S_{t-1}(I - \beta_t k_t k_t^\top) + \beta_t v_t k_t^\top$ |
 | Replay | Consolidation | `PrioritizedReplayBuffer`, `Consolidator` | Priority from novelty; sleep updates slow parameters only |
 
-Gated DeltaNet is exactly one gradient step on the Titans loss $\tfrac12\lVert Sk_t - v_t\rVert^2$ at the decayed state $\alpha_t S_{t-1}$. Its decay gate $\alpha_t$ is the forgetting term, its write gate $\beta_t$ is encoding strength, and $v_t - \alpha_t S_{t-1}k_t$ is the prediction error CA1 computes. With one-hot keys and $\alpha = \beta = 1$ the state is exact RAM, as in [Qwenputer](https://divagr.com/blog/qwenputer), which is the limit that dentate-gyrus pattern separation approaches.
+As the Gated DeltaNet paper states ([Yang et al., 2025](https://arxiv.org/abs/2412.06464), §3; see also Longhorn), Gated DeltaNet is exactly one gradient step on the Titans loss $\tfrac12\lVert Sk_t - v_t\rVert^2$ at the decayed state $\alpha_t S_{t-1}$. Its decay gate $\alpha_t$ is the forgetting term, its write gate $\beta_t$ is encoding strength, and $v_t - \alpha_t S_{t-1}k_t$ is the prediction error CA1 computes. With orthonormal (e.g. one-hot) keys and $\alpha = \beta = 1$ the state is exact RAM up to $d_k$ items: Kohonen's correlation-matrix memory, demonstrated on Qwen3.5 by [Qwenputer](https://divagr.com/blog/qwenputer). Under this linear readout, sparse dentate-gyrus keys do not raise that bound.
 
 ## Experiments
 
@@ -164,6 +166,8 @@ python experiments/temporal_loop.py --suite ablations # contrast, DG keys, direc
 python experiments/loop_systems.py                   # the op-amp test on an untrained loop
 ```
 
+These CPU runs write `results/synthetic/<script>.json`; a `--suite` run writes `results/synthetic/temporal_loop_<suite>.json`. `gdn_capacity.py` and `temporal_loop.py` skip runs already in that file, so delete it (or pass `--out`) to rerun. Console output is not saved; the committed `.log` files were captured by redirecting it.
+
 The alignment track steers a model away from harmful outputs with a graded, regulated controller (see [`experiments/alignment/README.md`](experiments/alignment/README.md)):
 
 ```bash
@@ -171,12 +175,16 @@ python experiments/alignment/run.py --model mlabonne/Qwen3-1.7B-abliterated --di
     --dtype bfloat16 --device cuda --private-dir ~/limbic_private/a6 --name a6_qwen3_abliterated
 ```
 
+It writes labels, scores and aggregates to `results/alignment/<name>.json`. Response text goes only to `--private-dir`, which must lie outside the repository.
+
 Side channels on a frozen pretrained model (needs `pip install -e ".[pretrained]"` and a GPU for real models):
 
 ```bash
 python experiments/pretrained_loop.py --model Qwen/Qwen3.5-2B-Base --dtype bfloat16 --device cuda \
     --task needle --window 64 --window-layers attention --seq-len 512 --steps 3000
 ```
+
+Without `--out` it writes `results/pretrained/pretrained_loop_<task>.json`; the committed runs were named with `--out results/pretrained/<name>.json`. The evolution-search runner, `experiments/evolve/run.py`, takes the same flags plus per-digit logging and `--candidate`, and saves the trained side channels as a `.pt` next to the JSON; round-1 runs are in `results/evolve/round1/`.
 
 The temporal-loop experiment takes flags for each excitatory variant, so a single model can be built from the command line:
 
@@ -200,7 +208,7 @@ python experiments/temporal_loop.py --name mine --memory --time \
 | `--forward-gain`, `--fb-beta` | Open-loop gain $A$ and feedback fraction $\beta$ |
 | `--read direct\|dg` | Retrieval cue straight from the stream (EC → CA3) or through the dentate-gyrus code |
 
-Logs and JSON results are in [`results/`](results/).
+The command above writes `results/synthetic/temporal_loop_custom.json`, with the model stored under its `--name` key. Results are kept by track: `results/synthetic/` (CPU), `results/pretrained/` (frozen models on GPU), `results/evolve/round1/` (evolution search) and `results/alignment/`; see [`results/README.md`](results/README.md).
 
 ## Lessons from the experiments
 
@@ -215,7 +223,7 @@ Three design changes came out of debugging, each covered by a test.
 * **CA2 as identity steering.** Per-speaker activation-steering vectors ([Turner et al.](https://arxiv.org/abs/2308.10248)) at the CA2 point, tested on multi-speaker recall.
 * **A calibrated CA1.** Novelty trained with a proper scoring rule, in the spirit of decision models such as [JEV](https://jevai.net) and [LAYA](https://github.com/NandhaKishorM/laya), with a JEPA-style predictive target.
 * **Big-loop recurrence.** A looped HippocampalBlock whose exit gate is driven by CA1 novelty, after [Ouro](https://arxiv.org/abs/2510.25741).
-* **A full Limbic LLM.** The temporal loop and the clock on a frozen pretrained decoder: tap at a third of the depth, inject at half, consolidate into adapters. The blueprint is in the [design note](docs/design/temporal-loop.md#4-a-full-limbic-llm); first results on Qwen3 and Qwen3.5 are in RESULTS.md §4.7.
+* **A full Limbic LLM.** The temporal loop and the clock on a frozen pretrained decoder: tap at a third of the depth, inject at half, consolidate into adapters. The blueprint is in the [design note](docs/design/temporal-loop.md#4-a-full-limbic-llm); first results on Qwen3 and Qwen3.5 are in RESULTS.md §4.7–4.8.
 * **Multi-band horizons.** Damping sets a memory span of about $\tau/\ln(1/\rho)$ tokens; several bands with different $\rho$, to keep both recency and long recall.
 * **Pattern separation under similar keys.** A recall task with overlapping keys and a sweep of DG sparsity.
 * **Pretrained models.** Inserting HippocampalBlock or GatedDeltaMemory into an existing LLM.
@@ -225,15 +233,20 @@ Three design changes came out of debugging, each covered by a test.
 | | |
 |---|---|
 | [`docs/hippocampal_ml_architectures.docx`](docs/hippocampal_ml_architectures.docx) | The design document: circuit-to-ML mappings, Titans and Gated DeltaNet, recent inspirations, results |
-| [`results/evolve/REGISTER.md`](results/evolve/REGISTER.md) | Every result and conclusion with its status and evidence, and the backlog of planned experiments; the dated lab notebook is [`NOTEBOOK.md`](results/evolve/NOTEBOOK.md) |
+| [`research/REGISTER.md`](research/REGISTER.md) | Every result and conclusion with its status and evidence, every correction, and the backlog of planned experiments |
+| [`research/NOTEBOOK.md`](research/NOTEBOOK.md) | The dated lab notebook: how each register entry got there, round by round |
+| [`research/README.md`](research/README.md) | How the research records fit together: register, notebook, handoff note, plans and reviews |
+| [`results/README.md`](results/README.md) | The layout of `results/` by track, and which section of RESULTS.md each file supports |
+| [`experiments/README.md`](experiments/README.md) | The experiment scripts, by track, and where each writes its results |
 | [`docs/genesis.md`](docs/genesis.md) | How the project came about: the session's ideas in order, who proposed what, and the corrections made along the way |
 | [`docs/design/temporal-loop.md`](docs/design/temporal-loop.md) | The temporal loop: how the idea developed, biological stability, the design, plug-in versus new architecture, a full Limbic LLM |
 | [`docs/architecture.html`](docs/architecture.html) | Package and data-flow diagrams (download and open in a browser) |
 | [`docs/hippocampus_report.docx`](docs/hippocampus_report.docx) | Background on hippocampal structure and function |
-| [`docs/notebooks/`](docs/notebooks/) | Activation Addition notebook (GPT-2-XL) |
+| [`docs/notebooks/`](docs/notebooks/) | Activation Addition notebooks (GPT-2-XL; Qwen3 with alignment and chain-of-thought presets) |
 | [RESULTS.md](RESULTS.md) | Full experimental results |
 | [`docs/implementation-notes.md`](docs/implementation-notes.md) | Implementation details and simplifications |
-| [REFERENCES.md](REFERENCES.md) | Bibliography, grouped by circuit component; BibTeX in [`docs/references.bib`](docs/references.bib) |
+| [REFERENCES.md](REFERENCES.md) | Bibliography, grouped by circuit component; BibTeX in [`docs/references.bib`](docs/references.bib) (audited 2 Nov 2026, with DOIs) |
+| [`research/reviews/2026-11-02_literature/`](research/reviews/2026-11-02_literature/README.md) | Literature review: closest prior work and novelty per track, Samsonovich & Ascoli (2005) pathfinding, code audit, proposed experiments L1–L16, and a handoff note for agents |
 
 ## Repository layout
 
@@ -241,10 +254,19 @@ Three design changes came out of debugging, each covered by a test.
 limbic_llm/         memory modules and models
   dentate_gyrus.py  ca3.py  ca2.py  ca1.py  subiculum.py  hippocampal_block.py
   neural_memory.py  titans_hybrid.py  gated_delta.py  temporal_loop.py  replay.py  models.py
-experiments/        recall, continual learning, capacity, temporal loop, op-amp sweep, pretrained models
-tests/              114 tests
-results/            experiment logs and JSON
-docs/               design document, diagrams, bibliography, notebook
+experiments/        CPU experiments: recall, continual learning, capacity, temporal loop, op-amp sweep;
+                    pretrained_loop.py (side channels on frozen models)
+  evolve/           evolution-search runner (run.py) and candidates (w1_gdn.py)
+  alignment/        CA2 norm-steering track: probe, controller, judge, run.py
+results/            experiment logs and JSON, one folder per track
+  synthetic/        CPU runs (RESULTS.md §1–4.6)
+  pretrained/       frozen Qwen models on GPU (§4.7)
+  evolve/round1/    round 1 of the evolution search (§4.8); round0/ is reserved for the planned g0–g7 arms
+  evolve/round2/    round 2 (W1b), in progress
+  alignment/        alignment-track labels and scores
+research/           REGISTER.md, NOTEBOOK.md, HANDOFF.md (GPU session), plans/, reviews/
+tests/              206 tests
+docs/               design document, design notes, diagrams, bibliography, notebooks
 ```
 
 ## Citing

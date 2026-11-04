@@ -263,7 +263,7 @@ def main():
     stem = args.suite or "custom"
     if args.task == "recent" and args.suite != "recency":
         stem += "_recent"
-    out = Path(args.out or f"results/temporal_loop_{stem}.json")
+    out = Path(args.out or f"results/synthetic/temporal_loop_{stem}.json")
     out.parent.mkdir(parents=True, exist_ok=True)
     results = json.loads(out.read_text())["results"] if out.exists() else {}
     for name, cfg in runs.items():

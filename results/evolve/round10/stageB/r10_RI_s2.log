@@ -1,0 +1,22 @@
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 8659.51it/s]
+Qwen/Qwen3-1.7B-Base: 28 blocks (0 linear-attention), d_model 2048, tap block 21, 28 windowed, block window 64, reach 63
+window check: ok (block 0: far 0.0e+00 vs near 1.3e+01)
+trainable side-channel parameters 319,499 (base 1,720,574,976, frozen)
+needle gap 267–501 tokens
+step   600 loss 0.338 token_acc 1.000 inj 0.000 (144s)
+step  1200 loss 0.431 token_acc 0.975 inj 0.000 (287s)
+step  1800 loss 0.793 token_acc 0.850 inj 0.000 (431s)
+step  2400 loss 1.329 token_acc 0.650 inj 0.000 (574s)
+step  3000 loss 0.687 token_acc 0.925 inj 0.000 (716s)
+step  3600 loss 1.656 token_acc 0.550 inj 0.000 (857s)
+step  4200 loss 1.866 token_acc 0.450 inj 0.000 (998s)
+step  4800 loss 1.680 token_acc 0.525 inj 0.000 (1139s)
+step  5400 loss 1.623 token_acc 0.500 inj 0.000 (1280s)
+step  6000 loss 1.224 token_acc 0.750 inj 0.000 (1421s)
+
+condition       window side    exact  tok_acc    loss    inj
+windowed            64  off    0.000    0.211   2.706      -
+windowed+side       64   on    0.227    0.631   1.388  0.000
+full                 0  off    1.000    1.000   0.132      -
+saved results/evolve/round10/r10_RI_s2.json
+saved results/evolve/round10/r10_RI_s2.pt

@@ -682,7 +682,7 @@ def parse_args(argv=None):
     t.add_argument("--eval-n", type=int, default=128, help="evaluation sequences")
     t.add_argument("--log-every", type=int, default=0)
     t.add_argument("--seed", type=int, default=0)
-    t.add_argument("--out", default=None, help="default results/pretrained_loop_<task>.json")
+    t.add_argument("--out", default=None, help="default results/pretrained/pretrained_loop_<task>.json")
     return ap.parse_args(argv)
 
 
@@ -750,7 +750,7 @@ def main(argv=None):
     if side.loop is not None:
         results["gain"] = torch.sigmoid(side.loop.gain_logit.float()).item()
 
-    out = Path(args.out or f"results/pretrained_loop_{args.task}.json")
+    out = Path(args.out or f"results/pretrained/pretrained_loop_{args.task}.json")
     out.parent.mkdir(parents=True, exist_ok=True)
     info = {"blocks": len(lm.blocks), "linear_layers": n_lin, "tap_layer": lm.layer, "windowed_layers": len(lm.windowed),
             "reach": lm.reach() if math.isfinite(lm.reach()) else None, "window_check": check,

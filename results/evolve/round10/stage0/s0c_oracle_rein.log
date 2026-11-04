@@ -1,0 +1,22 @@
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 14981.90it/s]
+Qwen/Qwen3-1.7B-Base: 28 blocks (0 linear-attention), d_model 2048, tap block 21, 28 windowed, block window 64, reach 63
+window check: ok (block 0: far 0.0e+00 vs near 1.2e+01)
+trainable side-channel parameters 319,499 (base 1,720,574,976, frozen)
+needle gap 267–502 tokens
+step    30 loss 0.727 token_acc 0.925 inj 0.000 (7s)
+step    60 loss 0.948 token_acc 0.825 inj 0.000 (14s)
+step    90 loss 0.887 token_acc 0.900 inj 0.000 (21s)
+step   120 loss 0.707 token_acc 0.875 inj 0.000 (27s)
+step   150 loss 0.875 token_acc 0.850 inj 0.000 (34s)
+step   180 loss 0.615 token_acc 0.925 inj 0.000 (41s)
+step   210 loss 0.878 token_acc 0.825 inj 0.000 (48s)
+step   240 loss 0.770 token_acc 0.900 inj 0.000 (55s)
+step   270 loss 0.777 token_acc 0.925 inj 0.000 (61s)
+step   300 loss 0.785 token_acc 0.900 inj 0.000 (68s)
+
+condition       window side    exact  tok_acc    loss    inj
+windowed            64  off    0.000    0.188   2.725      -
+windowed+side       64   on    0.734    0.902   0.727  0.000
+full                 0  off    1.000    1.000   0.128      -
+saved results/evolve/round10/stage0/s0c_oracle_rein.json
+saved results/evolve/round10/stage0/s0c_oracle_rein.pt

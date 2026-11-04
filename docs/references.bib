@@ -1,77 +1,98 @@
-% limbic-llm bibliography
-% Grouped as in REFERENCES.md. Keys are stable; cite them from papers and docs.
+% limbic-llm bibliography (audited 2026-11-02 against Crossref, arXiv, OpenAlex and publisher pages)
+% Keys are unchanged so existing \cite commands keep working; some key years differ from the publication year (see bib_audit_review.md).
 
 % ---------------------------------------------------------------------------
 % Memory architectures implemented in this package
 % ---------------------------------------------------------------------------
 
-@article{behrouz2024titans,
-  title   = {Titans: Learning to Memorize at Test Time},
-  author  = {Behrouz, Ali and Zhong, Peilin and Mirrokni, Vahab},
-  journal = {arXiv preprint arXiv:2501.00663},
-  year    = {2024},
-  url     = {https://arxiv.org/abs/2501.00663}
+@inproceedings{behrouz2024titans,
+  author        = {Behrouz, Ali and Zhong, Peilin and Mirrokni, Vahab},
+  title         = {Titans: Learning to Memorize at Test Time},
+  booktitle     = {Advances in Neural Information Processing Systems 38 (NeurIPS 2025)},
+  pages         = {125925--125962},
+  year          = {2025},
+  doi           = {10.52202/085713-3786},
+  eprint        = {2501.00663},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2501.00663}
 }
 
 @inproceedings{yang2025gated,
-  title     = {Gated Delta Networks: Improving {Mamba2} with Delta Rule},
-  author    = {Yang, Songlin and Kautz, Jan and Hatamizadeh, Ali},
-  booktitle = {International Conference on Learning Representations},
-  year      = {2025},
-  url       = {https://arxiv.org/abs/2412.06464}
+  author        = {Yang, Songlin and Kautz, Jan and Hatamizadeh, Ali},
+  title         = {Gated Delta Networks: Improving {Mamba2} with Delta Rule},
+  booktitle     = {International Conference on Learning Representations},
+  year          = {2025},
+  eprint        = {2412.06464},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2412.06464}
 }
 
 @inproceedings{ramsauer2021hopfield,
-  title     = {Hopfield Networks is All You Need},
-  author    = {Ramsauer, Hubert and Sch{\"a}fl, Bernhard and Lehner, Johannes and others},
-  booktitle = {International Conference on Learning Representations},
-  year      = {2021},
-  url       = {https://arxiv.org/abs/2008.02217}
+  author        = {Ramsauer, Hubert and Sch{\"a}fl, Bernhard and Lehner, Johannes and Seidl, Philipp and Widrich, Michael and Adler, Thomas and Gruber, Lukas and Holzleitner, Markus and Pavlovi{\'c}, Milena and Sandve, Geir Kjetil and Greiff, Victor and Kreil, David and Kopp, Michael and Klambauer, G{\"u}nter and Brandstetter, Johannes and Hochreiter, Sepp},
+  title         = {Hopfield Networks is All You Need},
+  booktitle     = {International Conference on Learning Representations},
+  year          = {2021},
+  eprint        = {2008.02217},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2008.02217}
 }
 
 @inproceedings{krotov2016dense,
-  title     = {Dense Associative Memory for Pattern Recognition},
-  author    = {Krotov, Dmitry and Hopfield, John J.},
-  booktitle = {Advances in Neural Information Processing Systems},
-  year      = {2016}
+  author        = {Krotov, Dmitry and Hopfield, John J.},
+  title         = {Dense Associative Memory for Pattern Recognition},
+  booktitle     = {Advances in Neural Information Processing Systems},
+  year          = {2016},
+  eprint        = {1606.01164},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/1606.01164}
 }
 
 @inproceedings{schlag2021linear,
-  title     = {Linear Transformers Are Secretly Fast Weight Programmers},
-  author    = {Schlag, Imanol and Irie, Kazuki and Schmidhuber, J{\"u}rgen},
-  booktitle = {International Conference on Machine Learning},
-  year      = {2021},
-  url       = {https://arxiv.org/abs/2102.11174}
+  author        = {Schlag, Imanol and Irie, Kazuki and Schmidhuber, J{\"u}rgen},
+  title         = {Linear Transformers Are Secretly Fast Weight Programmers},
+  booktitle     = {International Conference on Machine Learning},
+  year          = {2021},
+  eprint        = {2102.11174},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2102.11174}
 }
 
 @inproceedings{vaswani2017attention,
-  title     = {Attention Is All You Need},
-  author    = {Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N. and Kaiser, {\L}ukasz and Polosukhin, Illia},
-  booktitle = {Advances in Neural Information Processing Systems},
-  year      = {2017}
+  author        = {Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N. and Kaiser, {\L}ukasz and Polosukhin, Illia},
+  title         = {Attention Is All You Need},
+  booktitle     = {Advances in Neural Information Processing Systems},
+  year          = {2017},
+  eprint        = {1706.03762},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/1706.03762}
 }
 
 @inproceedings{shazeer2017outrageously,
-  title     = {Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer},
-  author    = {Shazeer, Noam and Mirhoseini, Azalia and Maziarz, Krzysztof and Davis, Andy and Le, Quoc and Hinton, Geoffrey and Dean, Jeff},
-  booktitle = {International Conference on Learning Representations},
-  year      = {2017},
-  url       = {https://arxiv.org/abs/1701.06538}
+  author        = {Shazeer, Noam and Mirhoseini, Azalia and Maziarz, Krzysztof and Davis, Andy and Le, Quoc and Hinton, Geoffrey and Dean, Jeff},
+  title         = {Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer},
+  booktitle     = {International Conference on Learning Representations},
+  year          = {2017},
+  eprint        = {1701.06538},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/1701.06538}
 }
 
 @inproceedings{perez2018film,
-  title     = {{FiLM}: Visual Reasoning with a General Conditioning Layer},
   author    = {Perez, Ethan and Strub, Florian and de Vries, Harm and Dumoulin, Vincent and Courville, Aaron},
+  title     = {{FiLM}: Visual Reasoning with a General Conditioning Layer},
   booktitle = {Proceedings of the AAAI Conference on Artificial Intelligence},
-  year      = {2018}
+  volume    = {32},
+  number    = {1},
+  year      = {2018},
+  doi       = {10.1609/aaai.v32i1.11671}
 }
 
 @misc{qwenputer2026,
-  title        = {Qwenputer: Gated {DeltaNet} State as {RAM}},
-  author       = {{divagr.com}},
+  author       = {Agrawal, Divyansh},
+  title        = {{Qwenputer}: A Computer Compiled into the Weights of a Language Model},
   year         = {2026},
-  howpublished = {\url{https://divagr.com/blog/qwenputer}},
-  note         = {Blog post; see also \url{https://divagr.com/attention-lab/delta}}
+  howpublished = {\url{https://github.com/divagr18/qwenputer}},
+  note         = {Blog post \url{https://divagr.com/blog/qwenputer}; software and model release on Qwen3.5-4B, October 2026; not peer reviewed}
 }
 
 % ---------------------------------------------------------------------------
@@ -79,212 +100,237 @@
 % ---------------------------------------------------------------------------
 
 @book{andersen2007hippocampus,
+  editor    = {Andersen, Per and Morris, Richard and Amaral, David and Bliss, Tim and O'Keefe, John},
   title     = {The Hippocampus Book},
-  author    = {Andersen, Per and Morris, Richard and Amaral, David and Bliss, Tim and O'Keefe, John},
+  year      = {2007},
   publisher = {Oxford University Press},
-  year      = {2007}
+  doi       = {10.1093/acprof:oso/9780195100273.001.0001}
 }
 
 @article{bliss1993synaptic,
-  title   = {A Synaptic Model of Memory: Long-Term Potentiation in the Hippocampus},
   author  = {Bliss, Tim V. P. and Collingridge, Graham L.},
+  title   = {A Synaptic Model of Memory: Long-Term Potentiation in the Hippocampus},
   journal = {Nature},
   volume  = {361},
+  number  = {6407},
   pages   = {31--39},
-  year    = {1993}
+  year    = {1993},
+  doi     = {10.1038/361031a0}
 }
 
 @book{okeefe1978hippocampus,
-  title     = {The Hippocampus as a Cognitive Map},
   author    = {O'Keefe, John and Nadel, Lynn},
-  publisher = {Clarendon Press},
-  year      = {1978}
+  title     = {The Hippocampus as a Cognitive Map},
+  year      = {1978},
+  publisher = {Clarendon Press}
 }
 
 @article{squire1992memory,
-  title   = {Memory and the Hippocampus: A Synthesis from Findings with Rats, Monkeys, and Humans},
   author  = {Squire, Larry R.},
+  title   = {Memory and the Hippocampus: A Synthesis from Findings with Rats, Monkeys, and Humans},
   journal = {Psychological Review},
   volume  = {99},
   number  = {2},
   pages   = {195--231},
-  year    = {1992}
+  year    = {1992},
+  doi     = {10.1037/0033-295x.99.2.195}
 }
 
 @article{scoville1957loss,
-  title   = {Loss of Recent Memory after Bilateral Hippocampal Lesions},
   author  = {Scoville, William Beecher and Milner, Brenda},
+  title   = {Loss of Recent Memory after Bilateral Hippocampal Lesions},
   journal = {Journal of Neurology, Neurosurgery, and Psychiatry},
   volume  = {20},
   number  = {1},
   pages   = {11--21},
-  year    = {1957}
+  year    = {1957},
+  doi     = {10.1136/jnnp.20.1.11}
 }
 
 @article{hafting2005microstructure,
-  title   = {Microstructure of a Spatial Map in the Entorhinal Cortex},
   author  = {Hafting, Torkel and Fyhn, Marianne and Molden, Sturla and Moser, May-Britt and Moser, Edvard I.},
+  title   = {Microstructure of a Spatial Map in the Entorhinal Cortex},
   journal = {Nature},
   volume  = {436},
+  number  = {7052},
   pages   = {801--806},
-  year    = {2005}
+  year    = {2005},
+  doi     = {10.1038/nature03721}
 }
 
 @article{eichenbaum2017integration,
-  title   = {On the Integration of Space, Time, and Memory},
   author  = {Eichenbaum, Howard},
+  title   = {On the Integration of Space, Time, and Memory},
   journal = {Neuron},
   volume  = {95},
   number  = {5},
   pages   = {1007--1018},
-  year    = {2017}
+  year    = {2017},
+  doi     = {10.1016/j.neuron.2017.06.036}
 }
 
 @article{spalding2013dynamics,
-  title   = {Dynamics of Hippocampal Neurogenesis in Adult Humans},
   author  = {Spalding, Kirsty L. and Bergmann, Olaf and Alkass, Kanar and others},
+  title   = {Dynamics of Hippocampal Neurogenesis in Adult Humans},
   journal = {Cell},
   volume  = {153},
   number  = {6},
   pages   = {1219--1227},
-  year    = {2013}
+  year    = {2013},
+  doi     = {10.1016/j.cell.2013.05.002}
 }
 
 @article{levy1996sequence,
-  title   = {A Sequence Predicting {CA3} Is a Flexible Associator That Learns and Uses Context to Solve Hippocampal-Like Tasks},
   author  = {Levy, William B.},
+  title   = {A Sequence Predicting {CA3} Is a Flexible Associator That Learns and Uses Context to Solve Hippocampal-Like Tasks},
   journal = {Hippocampus},
   volume  = {6},
   number  = {6},
   pages   = {579--590},
-  year    = {1996}
+  year    = {1996},
+  doi     = {10.1002/(SICI)1098-1063(1996)6:6<579::AID-HIPO3>3.0.CO;2-C}
 }
 
 @article{jensen1996hippocampal,
-  title   = {Hippocampal {CA3} Region Predicts Memory Sequences: Accounting for the Phase Precession of Place Cells},
   author  = {Jensen, Ole and Lisman, John E.},
+  title   = {Hippocampal {CA3} Region Predicts Memory Sequences: Accounting for the Phase Precession of Place Cells},
   journal = {Learning \& Memory},
   volume  = {3},
   number  = {2--3},
   pages   = {279--287},
-  year    = {1996}
+  year    = {1996},
+  doi     = {10.1101/lm.3.2-3.279}
 }
 
 @article{hasselmo2006role,
-  title   = {The Role of Acetylcholine in Learning and Memory},
   author  = {Hasselmo, Michael E.},
+  title   = {The Role of Acetylcholine in Learning and Memory},
   journal = {Current Opinion in Neurobiology},
   volume  = {16},
   number  = {6},
   pages   = {710--715},
-  year    = {2006}
+  year    = {2006},
+  doi     = {10.1016/j.conb.2006.09.002}
 }
 
 @article{lisman2005hippocampal,
-  title   = {The Hippocampal-{VTA} Loop: Controlling the Entry of Information into Long-Term Memory},
   author  = {Lisman, John E. and Grace, Anthony A.},
+  title   = {The Hippocampal-{VTA} Loop: Controlling the Entry of Information into Long-Term Memory},
   journal = {Neuron},
   volume  = {46},
   number  = {5},
   pages   = {703--713},
-  year    = {2005}
+  year    = {2005},
+  doi     = {10.1016/j.neuron.2005.05.002}
 }
 
 @article{bein2020mnemonic,
-  title   = {Mnemonic Prediction Errors Bias Hippocampal States},
   author  = {Bein, Oded and Duncan, Katherine and Davachi, Lila},
+  title   = {Mnemonic Prediction Errors Bias Hippocampal States},
   journal = {Nature Communications},
   volume  = {11},
+  number  = {1},
   pages   = {3451},
-  year    = {2020}
+  year    = {2020},
+  doi     = {10.1038/s41467-020-17287-1}
 }
 
 @article{hitti2014hippocampal,
-  title   = {The Hippocampal {CA2} Region Is Essential for Social Memory},
   author  = {Hitti, Frederick L. and Siegelbaum, Steven A.},
+  title   = {The Hippocampal {CA2} Region Is Essential for Social Memory},
   journal = {Nature},
   volume  = {508},
+  number  = {7494},
   pages   = {88--92},
-  year    = {2014}
+  year    = {2014},
+  doi     = {10.1038/nature13028}
 }
 
 @article{smith2016targeted,
-  title   = {Targeted Activation of the Hippocampal {CA2} Area Strongly Enhances Social Memory},
   author  = {Smith, Adam S. and Williams Avram, Sarah K. and Cymerblit-Sabba, Adi and Song, June and Young, W. Scott},
+  title   = {Targeted Activation of the Hippocampal {CA2} Area Strongly Enhances Social Memory},
   journal = {Molecular Psychiatry},
   volume  = {21},
   number  = {8},
   pages   = {1137--1144},
-  year    = {2016}
+  year    = {2016},
+  doi     = {10.1038/mp.2015.189}
 }
 
 @article{boyle2024tuned,
-  title   = {Tuned Geometries of Hippocampal Representations Meet the Computational Demands of Social Memory},
   author  = {Boyle, Lara M. and Posani, Lorenzo and Irfan, Sarah and Siegelbaum, Steven A. and Fusi, Stefano},
+  title   = {Tuned Geometries of Hippocampal Representations Meet the Computational Demands of Social Memory},
   journal = {Neuron},
   volume  = {112},
   number  = {8},
-  pages   = {1358--1371},
-  year    = {2024}
+  pages   = {1358--1371.e9},
+  year    = {2024},
+  doi     = {10.1016/j.neuron.2024.01.021}
 }
 
 @article{howard2002distributed,
-  title   = {A Distributed Representation of Temporal Context},
   author  = {Howard, Marc W. and Kahana, Michael J.},
+  title   = {A Distributed Representation of Temporal Context},
   journal = {Journal of Mathematical Psychology},
   volume  = {46},
   number  = {3},
   pages   = {269--299},
-  year    = {2002}
+  year    = {2002},
+  doi     = {10.1006/jmps.2001.1388}
 }
 
 @article{kumaran2012generalization,
-  title   = {Generalization through the Recurrent Interaction of Episodic Memories: A Model of the Hippocampal System},
   author  = {Kumaran, Dharshan and McClelland, James L.},
+  title   = {Generalization through the Recurrent Interaction of Episodic Memories: A Model of the Hippocampal System},
   journal = {Psychological Review},
   volume  = {119},
   number  = {3},
   pages   = {573--616},
-  year    = {2012}
+  year    = {2012},
+  doi     = {10.1037/a0028681}
 }
 
 @article{koster2018bigloop,
-  title   = {Big-Loop Recurrence within the Hippocampal System Supports Integration of Information across Episodes},
   author  = {Koster, Raphael and Chadwick, Martin J. and Chen, Yi and Berron, David and Banino, Andrea and D{\"u}zel, Emrah and Hassabis, Demis and Kumaran, Dharshan},
+  title   = {Big-Loop Recurrence within the Hippocampal System Supports Integration of Information across Episodes},
   journal = {Neuron},
   volume  = {99},
   number  = {6},
-  pages   = {1342--1354},
-  year    = {2018}
+  pages   = {1342--1354.e6},
+  year    = {2018},
+  doi     = {10.1016/j.neuron.2018.08.009}
 }
 
 @article{mcclelland1995why,
-  title   = {Why There Are Complementary Learning Systems in the Hippocampus and Neocortex},
   author  = {McClelland, James L. and McNaughton, Bruce L. and O'Reilly, Randall C.},
+  title   = {Why There Are Complementary Learning Systems in the Hippocampus and Neocortex},
   journal = {Psychological Review},
   volume  = {102},
   number  = {3},
   pages   = {419--457},
-  year    = {1995}
+  year    = {1995},
+  doi     = {10.1037/0033-295x.102.3.419}
 }
 
 @article{wilson1994reactivation,
-  title   = {Reactivation of Hippocampal Ensemble Memories during Sleep},
   author  = {Wilson, Matthew A. and McNaughton, Bruce L.},
+  title   = {Reactivation of Hippocampal Ensemble Memories during Sleep},
   journal = {Science},
   volume  = {265},
   number  = {5172},
   pages   = {676--679},
-  year    = {1994}
+  year    = {1994},
+  doi     = {10.1126/science.8036517}
 }
 
 @article{mcewen1999stress,
-  title   = {Stress and Hippocampal Plasticity},
   author  = {McEwen, Bruce S.},
+  title   = {Stress and Hippocampal Plasticity},
   journal = {Annual Review of Neuroscience},
   volume  = {22},
   pages   = {105--122},
-  year    = {1999}
+  year    = {1999},
+  doi     = {10.1146/annurev.neuro.22.1.105}
 }
 
 % ---------------------------------------------------------------------------
@@ -292,8 +338,8 @@
 % ---------------------------------------------------------------------------
 
 @inproceedings{li2026hippoformer,
-  title     = {Hippoformer: Integrating Hippocampus-Inspired Spatial Memory with Transformers},
   author    = {Li, Tiantian and Cao, Xingxing and Wang, Yifei and Yang, Xiaojiao and Zou, Xiaolong and Hong, Bo},
+  title     = {Hippoformer: Integrating Hippocampus-Inspired Spatial Memory with Transformers},
   booktitle = {International Conference on Learning Representations},
   year      = {2026},
   url       = {https://mlanthology.org/iclr/2026/li2026iclr-hippoformer/},
@@ -301,67 +347,82 @@
 }
 
 @article{whittington2020tolman,
-  title   = {The {Tolman-Eichenbaum} Machine: Unifying Space and Relational Memory through Generalization in the Hippocampal Formation},
   author  = {Whittington, James C. R. and Muller, Timothy H. and Mark, Shirley and Chen, Guifen and Barry, Caswell and Burgess, Neil and Behrens, Timothy E. J.},
+  title   = {The {Tolman-Eichenbaum} Machine: Unifying Space and Relational Memory through Generalization in the Hippocampal Formation},
   journal = {Cell},
   volume  = {183},
   number  = {5},
-  pages   = {1249--1263},
-  year    = {2020}
+  pages   = {1249--1263.e23},
+  year    = {2020},
+  doi     = {10.1016/j.cell.2020.10.024}
 }
 
 @inproceedings{whittington2022relating,
-  title     = {Relating Transformers to Models and Neural Representations of the Hippocampal Formation},
-  author    = {Whittington, James C. R. and Warren, Joseph and Behrens, Timothy E. J.},
-  booktitle = {International Conference on Learning Representations},
-  year      = {2022},
-  url       = {https://arxiv.org/abs/2112.04035}
+  author        = {Whittington, James C. R. and Warren, Joseph and Behrens, Timothy E. J.},
+  title         = {Relating Transformers to Models and Neural Representations of the Hippocampal Formation},
+  booktitle     = {International Conference on Learning Representations},
+  year          = {2022},
+  eprint        = {2112.04035},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2112.04035}
 }
 
-@article{kapoor2025hicl,
-  title   = {{HiCL}: Hippocampal-Inspired Continual Learning},
-  author  = {Kapoor, Kushal and Mackey, Wyatt and Aloimonos, Yiannis and Lin, Xiaomin},
-  journal = {arXiv preprint arXiv:2508.16651},
-  year    = {2025},
-  url     = {https://arxiv.org/abs/2508.16651}
+@inproceedings{kapoor2025hicl,
+  author        = {Kapoor, Kushal and Mackey, Wyatt and Aloimonos, Yiannis and Lin, Xiaomin},
+  title         = {{HiCL}: Hippocampal-Inspired Continual Learning},
+  booktitle     = {Proceedings of the AAAI Conference on Artificial Intelligence},
+  volume        = {40},
+  number        = {27},
+  pages         = {22518--22526},
+  year          = {2026},
+  doi           = {10.1609/aaai.v40i27.39411},
+  eprint        = {2508.16651},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2508.16651}
 }
 
-@article{das2024larimar,
-  title   = {Larimar: Large Language Models with Episodic Memory Control},
-  author  = {Das, Payel and Chaudhury, Subhajit and Nelson, Elliot and Melnyk, Igor and Swaminathan, Sarathkrishna and Dai, Sihui and Lozano, Aur{\'e}lie and Kollias, Georgios and Chenthamarakshan, Vijil and Navr{\'a}til, Ji{\v{r}}{\'\i} and Dan, Soham and Chen, Pin-Yu},
-  journal = {arXiv preprint arXiv:2403.11901},
-  year    = {2024},
-  url     = {https://arxiv.org/abs/2403.11901}
+@inproceedings{das2024larimar,
+  author        = {Das, Payel and Chaudhury, Subhajit and Nelson, Elliot and Melnyk, Igor and Swaminathan, Sarathkrishna and Dai, Sihui and Lozano, Aur{\'e}lie and Kollias, Georgios and Chenthamarakshan, Vijil and Navr{\'a}til, Ji{\v{r}}{\'\i} and Dan, Soham and Chen, Pin-Yu},
+  title         = {Larimar: Large Language Models with Episodic Memory Control},
+  booktitle     = {International Conference on Machine Learning (ICML)},
+  year          = {2024},
+  eprint        = {2403.11901},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2403.11901}
 }
 
 @inproceedings{gutierrez2024hipporag,
-  title     = {{HippoRAG}: Neurobiologically Inspired Long-Term Memory for Large Language Models},
   author    = {Guti{\'e}rrez, Bernal Jim{\'e}nez and Shu, Yiheng and Gu, Yu and Yasunaga, Michihiro and Su, Yu},
+  title     = {{HippoRAG}: Neurobiologically Inspired Long-Term Memory for Large Language Models},
   booktitle = {Advances in Neural Information Processing Systems},
+  pages     = {59532--59569},
   year      = {2024},
+  doi       = {10.52202/079017-1902},
   url       = {https://arxiv.org/abs/2405.14831}
 }
 
 @inproceedings{fountas2025human,
-  title     = {Human-Inspired Episodic Memory for Infinite Context {LLMs}},
-  author    = {Fountas, Zafeirios and Benfeghoul, Martin and Oomerjee, Adnan and Christopoulou, Fenia and Lampouras, Gerasimos and Ammar, Haitham Bou and Wang, Jun},
-  booktitle = {International Conference on Learning Representations},
-  year      = {2025},
-  url       = {https://mlanthology.org/iclr/2025/fountas2025iclr-humaninspired/},
-  note      = {EM-LLM}
+  author        = {Fountas, Zafeirios and Benfeghoul, Martin A. and Oomerjee, Adnan and Christopoulou, Fenia and Lampouras, Gerasimos and {Bou Ammar}, Haitham and Wang, Jun},
+  title         = {Human-Inspired Episodic Memory for Infinite Context {LLMs}},
+  booktitle     = {International Conference on Learning Representations},
+  year          = {2025},
+  eprint        = {2407.09450},
+  archiveprefix = {arXiv},
+  url           = {https://mlanthology.org/iclr/2025/fountas2025iclr-humaninspired/},
+  note          = {EM-LLM}
 }
 
 @article{ahn2025hema,
-  title   = {{HEMA}: A Hippocampus-Inspired Extended Memory Architecture for Long-Context {AI} Conversations},
   author  = {Ahn, Kwangseob},
+  title   = {{HEMA}: A Hippocampus-Inspired Extended Memory Architecture for Long-Context {AI} Conversations},
   journal = {arXiv preprint arXiv:2504.16754},
   year    = {2025},
   url     = {https://arxiv.org/abs/2504.16754}
 }
 
 @article{omidi2025memory,
-  title   = {Memory-Augmented Transformers: A Systematic Review from Neuroscience Principles to Technical Solutions},
   author  = {Omidi, Parsa and Huang, Xingshuai and Laborieux, Axel and Nikpour, Bahareh and Shi, Tianyu and Eshaghi, Armaghan},
+  title   = {Memory-Augmented Transformers: A Systematic Review from Neuroscience Principles to Enhanced Model Architectures},
   journal = {arXiv preprint arXiv:2508.10824},
   year    = {2025},
   url     = {https://arxiv.org/abs/2508.10824}
@@ -372,12 +433,12 @@
 % ---------------------------------------------------------------------------
 
 @article{turner2023activation,
-  title   = {Activation Addition: Steering Language Models Without Optimization},
   author  = {Turner, Alexander Matt and Thiergart, Lisa and Leech, Gavin and Udell, David and Vazquez, Juan J. and Mini, Ulisse and MacDiarmid, Monte},
+  title   = {Steering Language Models With Activation Engineering},
   journal = {arXiv preprint arXiv:2308.10248},
   year    = {2023},
   url     = {https://arxiv.org/abs/2308.10248},
-  note    = {Notebook: docs/notebooks/activation\_additions\_gpt2xl.ipynb}
+  note    = {Originally titled ``Activation Addition: Steering Language Models Without Optimization'' (v1). Notebook: docs/notebooks/activation\_additions\_gpt2xl.ipynb}
 }
 
 % ---------------------------------------------------------------------------
@@ -385,45 +446,48 @@
 % ---------------------------------------------------------------------------
 
 @misc{typesafe2026jev,
-  title        = {Jev: Structured Decisions for Classification, Routing and Scoring},
   author       = {{TypeSafe AI}},
+  title        = {Introducing System One Models \& {Jev}},
   year         = {2026},
-  howpublished = {\url{https://jevai.net}},
-  note         = {Decision-model API trained with RLCD (Reinforcement Learning for Calibrated Decisions); jevai.net describes itself as an independent community resource}
+  howpublished = {\url{https://typesafe.ai/blog/introducing-system-one-models-and-jev}},
+  note         = {Product launch post, 15 September 2026; RLCD (Reinforcement Learning for Calibrated Decisions) is described but not published}
 }
 
 @software{nandhakishor2026laya,
-  title   = {{LAYA}: Multilingual Single-Pass Decision Engine},
-  author  = {{NandhaKishorM}},
+  author  = {Mukkunnoth, Nandakishor},
+  title   = {{Laya}: Non-Autoregressive System 1 Decision Engine},
   year    = {2026},
   url     = {https://github.com/NandhaKishorM/laya},
   license = {Apache-2.0},
-  note    = {ModernBERT and mmBERT encoders; choice, score and yes/no decisions with calibrated confidence}
+  note    = {GitHub NandhaKishorM/laya; PyPI package laya; ModernBERT-large and mmBERT-base checkpoints; self-reported benchmarks}
 }
 
 @inproceedings{huang2026llmjepa,
-  title     = {{LLM-JEPA}: Large Language Models Meet Joint Embedding Predictive Architectures},
-  author    = {Huang, Hai and LeCun, Yann and Balestriero, Randall},
-  booktitle = {International Conference on Learning Representations},
-  year      = {2026},
-  url       = {https://mlanthology.org/iclr/2026/huang2026iclr-llmjepa/}
+  author        = {Huang, Hai and LeCun, Yann and Balestriero, Randall},
+  title         = {{LLM-JEPA}: Large Language Models Meet Joint Embedding Predictive Architectures},
+  booktitle     = {International Conference on Learning Representations},
+  year          = {2026},
+  eprint        = {2509.14252},
+  archiveprefix = {arXiv},
+  url           = {https://mlanthology.org/iclr/2026/huang2026iclr-llmjepa/}
 }
 
 @article{balestriero2025lejepa,
-  title   = {{LeJEPA}: Provable and Scalable Self-Supervised Learning Without the Heuristics},
   author  = {Balestriero, Randall and LeCun, Yann},
+  title   = {{LeJEPA}: Provable and Scalable Self-Supervised Learning Without the Heuristics},
   journal = {arXiv preprint arXiv:2511.08544},
   year    = {2025},
   url     = {https://arxiv.org/abs/2511.08544}
 }
 
 @article{gorganmohammadi2026understanding,
-  title   = {Understanding Neural Circuit Principles for Representation Learning through Joint-Embedding Predictive Architectures},
   author  = {Gorgan Mohammadi, Ashena and Halvagal, Manu Srinath and Zenke, Friedemann},
+  title   = {Understanding Neural Circuit Principles for Representation Learning through Joint-Embedding Predictive Architectures},
   journal = {eLife},
   year    = {2026},
-  note    = {Reviewed preprint 110895},
-  url     = {https://elifesciences.org/reviewed-preprints/110895}
+  doi     = {10.7554/eLife.110895},
+  url     = {https://elifesciences.org/reviewed-preprints/110895},
+  note    = {Reviewed preprint 110895}
 }
 
 % ---------------------------------------------------------------------------
@@ -431,8 +495,8 @@
 % ---------------------------------------------------------------------------
 
 @article{zhu2025scaling,
-  title   = {Scaling Latent Reasoning via Looped Language Models},
   author  = {Zhu, Rui-Jie and Wang, Zixuan and Hua, Kai and Zhang, Tianyu and Li, Ziniu and Que, Haoran and Wei, Boyi and Wen, Zixin and Yin, Fan and Xing, He and Li, Lu and Shi, Jiajun and Ma, Kaijing and Li, Shanda and Kergan, Taylor and Smith, Andrew and Qu, Xingwei and Hui, Mude and Wu, Bohong and Min, Qiyang and Huang, Hongzhi and Zhou, Xun and Ye, Wei and Liu, Jiaheng and Yang, Jian and Shi, Yunfeng and Lin, Chenghua and Zhao, Enduo and Cai, Tianle and Zhang, Ge and Huang, Wenhao and Bengio, Yoshua and Eshraghian, Jason},
+  title   = {Scaling Latent Reasoning via Looped Language Models},
   journal = {arXiv preprint arXiv:2510.25741},
   year    = {2025},
   url     = {https://arxiv.org/abs/2510.25741},
@@ -440,11 +504,13 @@
 }
 
 @inproceedings{dehghani2019universal,
-  title     = {Universal Transformers},
-  author    = {Dehghani, Mostafa and Gouws, Stephan and Vinyals, Oriol and Uszkoreit, Jakob and Kaiser, {\L}ukasz},
-  booktitle = {International Conference on Learning Representations},
-  year      = {2019},
-  url       = {https://arxiv.org/abs/1807.03819}
+  author        = {Dehghani, Mostafa and Gouws, Stephan and Vinyals, Oriol and Uszkoreit, Jakob and Kaiser, {\L}ukasz},
+  title         = {Universal Transformers},
+  booktitle     = {International Conference on Learning Representations},
+  year          = {2019},
+  eprint        = {1807.03819},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/1807.03819}
 }
 
 % ---------------------------------------------------------------------------
@@ -452,10 +518,13 @@
 % ---------------------------------------------------------------------------
 
 @inproceedings{buzzega2020dark,
-  title     = {Dark Experience for General Continual Learning: A Strong, Simple Baseline},
-  author    = {Buzzega, Pietro and Boschini, Matteo and Porrello, Angelo and Abati, Davide and Calderara, Simone},
-  booktitle = {Advances in Neural Information Processing Systems},
-  year      = {2020}
+  author        = {Buzzega, Pietro and Boschini, Matteo and Porrello, Angelo and Abati, Davide and Calderara, Simone},
+  title         = {Dark Experience for General Continual Learning: A Strong, Simple Baseline},
+  booktitle     = {Advances in Neural Information Processing Systems},
+  year          = {2020},
+  eprint        = {2004.07211},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2004.07211}
 }
 
 % ---------------------------------------------------------------------------
@@ -463,73 +532,80 @@
 % ---------------------------------------------------------------------------
 
 @article{hasselmo2002proposed,
-  title   = {A Proposed Function for Hippocampal Theta Rhythm: Separate Phases of Encoding and Retrieval Enhance Reversal of Prior Learning},
   author  = {Hasselmo, Michael E. and Bodel{\'o}n, Clara and Wyble, Bradley P.},
+  title   = {A Proposed Function for Hippocampal Theta Rhythm: Separate Phases of Encoding and Retrieval Enhance Reversal of Prior Learning},
   journal = {Neural Computation},
   volume  = {14},
   number  = {4},
   pages   = {793--817},
-  year    = {2002}
+  year    = {2002},
+  doi     = {10.1162/089976602317318965}
 }
 
 @article{sik1994inhibitory,
-  title   = {Inhibitory {CA1-CA3}-Hilar Region Feedback in the Hippocampus},
   author  = {Sik, Attila and Ylinen, Aarne and Penttonen, Markku and Buzs{\'a}ki, Gy{\"o}rgy},
+  title   = {Inhibitory {CA1-CA3}-Hilar Region Feedback in the Hippocampus},
   journal = {Science},
   volume  = {265},
   number  = {5179},
   pages   = {1722--1724},
-  year    = {1994}
+  year    = {1994},
+  doi     = {10.1126/science.8085161}
 }
 
 @article{treves1992computational,
-  title   = {Computational Constraints Suggest the Need for Two Distinct Input Systems to the Hippocampal {CA3} Network},
   author  = {Treves, Alessandro and Rolls, Edmund T.},
+  title   = {Computational Constraints Suggest the Need for Two Distinct Input Systems to the Hippocampal {CA3} Network},
   journal = {Hippocampus},
   volume  = {2},
   number  = {2},
   pages   = {189--199},
-  year    = {1992}
+  year    = {1992},
+  doi     = {10.1002/hipo.450020209}
 }
 
 @article{buzsaki2002theta,
-  title   = {Theta Oscillations in the Hippocampus},
   author  = {Buzs{\'a}ki, Gy{\"o}rgy},
+  title   = {Theta Oscillations in the Hippocampus},
   journal = {Neuron},
   volume  = {33},
   number  = {3},
   pages   = {325--340},
-  year    = {2002}
+  year    = {2002},
+  doi     = {10.1016/S0896-6273(02)00586-X}
 }
 
 @article{macdonald2011hippocampal,
-  title   = {Hippocampal ``Time Cells'' Bridge the Gap in Memory for Discontiguous Events},
   author  = {MacDonald, Christopher J. and Lepage, Kyle Q. and Eden, Uri T. and Eichenbaum, Howard},
+  title   = {Hippocampal ``Time Cells'' Bridge the Gap in Memory for Discontiguous Events},
   journal = {Neuron},
   volume  = {71},
   number  = {4},
   pages   = {737--749},
-  year    = {2011}
+  year    = {2011},
+  doi     = {10.1016/j.neuron.2011.07.012}
 }
 
 @article{shankar2012scale,
-  title   = {A Scale-Invariant Internal Representation of Time},
   author  = {Shankar, Karthik H. and Howard, Marc W.},
+  title   = {A Scale-Invariant Internal Representation of Time},
   journal = {Neural Computation},
   volume  = {24},
   number  = {1},
   pages   = {134--193},
-  year    = {2012}
+  year    = {2012},
+  doi     = {10.1162/neco_a_00212}
 }
 
 @article{sapolsky1986neuroendocrinology,
-  title   = {The Neuroendocrinology of Stress and Aging: The Glucocorticoid Cascade Hypothesis},
   author  = {Sapolsky, Robert M. and Krey, Lewis C. and McEwen, Bruce S.},
+  title   = {The Neuroendocrinology of Stress and Aging: The Glucocorticoid Cascade Hypothesis},
   journal = {Endocrine Reviews},
   volume  = {7},
   number  = {3},
   pages   = {284--301},
-  year    = {1986}
+  year    = {1986},
+  doi     = {10.1210/edrv-7-3-284}
 }
 
 % ---------------------------------------------------------------------------
@@ -537,228 +613,1089 @@
 % ---------------------------------------------------------------------------
 
 @inproceedings{rimsky2024steering,
-  title     = {Steering {Llama 2} via Contrastive Activation Addition},
   author    = {Rimsky, Nina and Gabrieli, Nick and Schulz, Julian and Tong, Meg and Hubinger, Evan and Turner, Alexander Matt},
+  title     = {Steering {Llama 2} via Contrastive Activation Addition},
   booktitle = {Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics},
-  year      = {2024}
+  pages     = {15504--15522},
+  year      = {2024},
+  doi       = {10.18653/v1/2024.acl-long.828}
 }
 
-@article{lee2024programming,
-  title   = {Programming Refusal with Conditional Activation Steering},
-  author  = {Lee, Bruce W. and Padhi, Inkit and Ramamurthy, Karthikeyan Natesan and Miehling, Erik and Dognin, Pierre and Nagireddy, Manish and Dhurandhar, Amit},
-  journal = {arXiv preprint arXiv:2409.05907},
-  year    = {2024},
-  url     = {https://arxiv.org/abs/2409.05907}
+@inproceedings{lee2024programming,
+  author        = {Lee, Bruce W. and Padhi, Inkit and Ramamurthy, Karthikeyan Natesan and Miehling, Erik and Dognin, Pierre and Nagireddy, Manish and Dhurandhar, Amit},
+  title         = {Programming Refusal with Conditional Activation Steering},
+  booktitle     = {International Conference on Learning Representations (ICLR)},
+  year          = {2025},
+  eprint        = {2409.05907},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2409.05907}
 }
 
 @inproceedings{do2025dynamic,
-  title     = {Dynamic Steering With Episodic Memory For Large Language Models},
   author    = {Do, Van Dai and Tran, Quan Hung and Venkatesh, Svetha and Le, Hung},
+  title     = {Dynamic Steering With Episodic Memory For Large Language Models},
   booktitle = {Findings of the Association for Computational Linguistics: ACL 2025},
   pages     = {13731--13749},
   year      = {2025},
+  doi       = {10.18653/v1/2025.findings-acl.706},
   url       = {https://aclanthology.org/2025.findings-acl.706/}
 }
 
 @article{sun2023retentive,
-  title   = {Retentive Network: A Successor to Transformer for Large Language Models},
   author  = {Sun, Yutao and Dong, Li and Huang, Shaohan and Ma, Shuming and Xia, Yuqing and Xue, Jilong and Wang, Jianyong and Wei, Furu},
+  title   = {Retentive Network: A Successor to Transformer for Large Language Models},
   journal = {arXiv preprint arXiv:2307.08621},
   year    = {2023},
   url     = {https://arxiv.org/abs/2307.08621}
 }
 
 @inproceedings{orvieto2023resurrecting,
-  title     = {Resurrecting Recurrent Neural Networks for Long Sequences},
-  author    = {Orvieto, Antonio and Smith, Samuel L. and Gu, Albert and Fernando, Anushan and Gulcehre, Caglar and Pascanu, Razvan and De, Soham},
-  booktitle = {International Conference on Machine Learning},
-  year      = {2023},
-  url       = {https://arxiv.org/abs/2303.06349}
+  author        = {Orvieto, Antonio and Smith, Samuel L. and Gu, Albert and Fernando, Anushan and Gulcehre, Caglar and Pascanu, Razvan and De, Soham},
+  title         = {Resurrecting Recurrent Neural Networks for Long Sequences},
+  booktitle     = {International Conference on Machine Learning},
+  year          = {2023},
+  eprint        = {2303.06349},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2303.06349}
 }
 
 @misc{qwen2025qwen3,
-  title  = {Qwen3 Technical Report},
-  author = {{Qwen Team}},
-  year   = {2025},
-  eprint = {2505.09388},
-  archivePrefix = {arXiv},
-  url    = {https://arxiv.org/abs/2505.09388}
+  author        = {{Qwen Team}},
+  title         = {Qwen3 Technical Report},
+  year          = {2025},
+  eprint        = {2505.09388},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2505.09388}
 }
 
 @misc{qwen2026qwen35,
-  title        = {Qwen3.5},
   author       = {{Qwen Team}},
+  title        = {{Qwen3.5}: Towards Native Multimodal Agents},
   year         = {2026},
-  howpublished = {Model release, February 2026},
-  url          = {https://huggingface.co/Qwen/Qwen3.5-397B-A17B}
+  howpublished = {\url{https://qwen.ai/blog?id=qwen3.5}},
+  url          = {https://huggingface.co/Qwen/Qwen3.5-2B},
+  note         = {Model release, February 2026; experiments here use Qwen/Qwen3.5-2B (hybrid layout 6 x (3 x Gated DeltaNet + 1 x gated attention))}
 }
 
 @article{leroy2018circuit,
-  title   = {A circuit from hippocampal {CA2} to lateral septum disinhibits social aggression},
   author  = {Leroy, Felix and Park, Jung and Asok, Arun and Brann, David H. and Meira, Torcato and Boyle, Lara M. and Buss, Eric W. and Kandel, Eric R. and Siegelbaum, Steven A.},
+  title   = {A circuit from hippocampal {CA2} to lateral septum disinhibits social aggression},
   journal = {Nature},
   volume  = {564},
+  number  = {7735},
   pages   = {213--218},
   year    = {2018},
-  url     = {https://pubmed.ncbi.nlm.nih.gov/30518859/}
+  doi     = {10.1038/s41586-018-0772-0}
 }
 
 @inproceedings{geva2021transformer,
-  title     = {Transformer Feed-Forward Layers Are Key-Value Memories},
   author    = {Geva, Mor and Schuster, Roei and Berant, Jonathan and Levy, Omer},
-  booktitle = {Proceedings of EMNLP},
+  title     = {Transformer Feed-Forward Layers Are Key-Value Memories},
+  booktitle = {Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing},
+  pages     = {5484--5495},
   year      = {2021},
+  doi       = {10.18653/v1/2021.emnlp-main.446},
   url       = {https://arxiv.org/abs/2012.14913}
 }
 
 @inproceedings{meng2022locating,
-  title     = {Locating and Editing Factual Associations in {GPT}},
   author    = {Meng, Kevin and Bau, David and Andonian, Alex and Belinkov, Yonatan},
+  title     = {Locating and Editing Factual Associations in {GPT}},
   booktitle = {Advances in Neural Information Processing Systems},
+  pages     = {17359--17372},
   year      = {2022},
+  doi       = {10.52202/068431-1262},
   url       = {https://arxiv.org/abs/2202.05262}
 }
 
 @inproceedings{arditi2024refusal,
-  title     = {Refusal in Language Models Is Mediated by a Single Direction},
   author    = {Arditi, Andy and Obeso, Oscar and Syed, Aaquib and Paleka, Daniel and Panickssery, Nina and Gurnee, Wes and Nanda, Neel},
+  title     = {Refusal in Language Models Is Mediated by a Single Direction},
   booktitle = {Advances in Neural Information Processing Systems},
+  pages     = {136037--136083},
   year      = {2024},
+  doi       = {10.52202/079017-4322},
   url       = {https://arxiv.org/abs/2406.11717}
 }
 
 @misc{zou2023representation,
-  title  = {Representation Engineering: A Top-Down Approach to {AI} Transparency},
-  author = {Zou, Andy and Phan, Long and Chen, Sarah and others},
-  year   = {2023},
-  eprint = {2310.01405},
-  archivePrefix = {arXiv},
-  url    = {https://arxiv.org/abs/2310.01405}
+  author        = {Zou, Andy and Phan, Long and Chen, Sarah and others},
+  title         = {Representation Engineering: A Top-Down Approach to {AI} Transparency},
+  year          = {2023},
+  eprint        = {2310.01405},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2310.01405}
 }
 
 @inproceedings{zou2024improving,
-  title     = {Improving Alignment and Robustness with Circuit Breakers},
   author    = {Zou, Andy and Phan, Long and Wang, Justin and Duenas, Derek and Lin, Maxwell and Andriushchenko, Maksym and Wang, Rowan and Kolter, Zico and Fredrikson, Matt and Hendrycks, Dan},
+  title     = {Improving Alignment and Robustness with Circuit Breakers},
   booktitle = {Advances in Neural Information Processing Systems},
+  pages     = {83345--83373},
   year      = {2024},
+  doi       = {10.52202/079017-2651},
   url       = {https://arxiv.org/abs/2406.04313}
 }
 
 @inproceedings{mazeika2024harmbench,
-  title     = {{HarmBench}: A Standardized Evaluation Framework for Automated Red Teaming and Robust Refusal},
   author    = {Mazeika, Mantas and Phan, Long and Yin, Xuwang and others},
+  title     = {{HarmBench}: A Standardized Evaluation Framework for Automated Red Teaming and Robust Refusal},
   booktitle = {International Conference on Machine Learning},
   year      = {2024},
   url       = {https://arxiv.org/abs/2402.04249}
 }
 
 @inproceedings{rottger2024xstest,
-  title     = {{XSTest}: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models},
   author    = {R{\"o}ttger, Paul and Kirk, Hannah Rose and Vidgen, Bertie and Attanasio, Giuseppe and Bianchi, Federico and Hovy, Dirk},
-  booktitle = {Proceedings of NAACL},
+  title     = {{XSTest}: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models},
+  booktitle = {Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics (NAACL)},
+  pages     = {5377--5400},
   year      = {2024},
+  doi       = {10.18653/v1/2024.naacl-long.301},
   url       = {https://arxiv.org/abs/2308.01263}
 }
 
 @inproceedings{zhao2025llms,
-  title     = {{LLMs} Encode Harmfulness and Refusal Separately},
   author    = {Zhao, Jiachen and Huang, Jing and Wu, Zhengxuan and Bau, David and Shi, Weiyan},
+  title     = {{LLMs} Encode Harmfulness and Refusal Separately},
   booktitle = {Advances in Neural Information Processing Systems},
+  pages     = {155649--155684},
   year      = {2025},
+  doi       = {10.52202/085713-4688},
   url       = {https://arxiv.org/abs/2507.11878}
 }
 
-@misc{chen2025seal,
-  title  = {{SEAL}: Steerable Reasoning Calibration of Large Language Models for Free},
-  author = {Chen and others},
-  year   = {2025},
-  eprint = {2504.07986},
-  archivePrefix = {arXiv},
-  url    = {https://arxiv.org/abs/2504.07986}
+@inproceedings{chen2025seal,
+  author        = {Chen, Runjin and Zhang, Zhenyu and Hong, Junyuan and Kundu, Souvik and Wang, Zhangyang},
+  title         = {{SEAL}: Steerable Reasoning Calibration of Large Language Models for Free},
+  booktitle     = {Conference on Language Modeling (COLM)},
+  year          = {2025},
+  eprint        = {2504.07986},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2504.07986}
 }
 
-@misc{azizi2025activation,
-  title  = {Activation Steering for Chain-of-Thought Compression},
-  author = {Azizi and others},
-  year   = {2025},
-  eprint = {2507.04742},
-  archivePrefix = {arXiv},
-  url    = {https://arxiv.org/abs/2507.04742}
+@inproceedings{azizi2025activation,
+  author        = {Azizi, Seyedarmin and Potraghloo, Erfan Baghaei and Kundu, Souvik and Pedram, Massoud},
+  title         = {Activation Steering for Chain-of-Thought Compression},
+  booktitle     = {Findings of the Association for Computational Linguistics: ACL 2026},
+  pages         = {36676--36687},
+  year          = {2026},
+  doi           = {10.18653/v1/2026.findings-acl.1828},
+  eprint        = {2507.04742},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2507.04742}
 }
 
-@misc{huang2025mitigating,
-  title  = {Mitigating Overthinking in Large Reasoning Models via Manifold Steering},
-  author = {Huang and others},
-  year   = {2025},
-  howpublished = {NeurIPS 2025},
-  eprint = {2505.22411},
-  archivePrefix = {arXiv},
-  url    = {https://arxiv.org/abs/2505.22411}
+@inproceedings{huang2025mitigating,
+  author        = {Huang, Yao and Chen, Huanran and Ruan, Shouwei and Zhang, Yichi and Wei, Xingxing and Dong, Yinpeng},
+  title         = {Mitigating Overthinking in Large Reasoning Models via Manifold Steering},
+  booktitle     = {Advances in Neural Information Processing Systems 38 (NeurIPS 2025)},
+  pages         = {113645--113670},
+  year          = {2025},
+  doi           = {10.52202/085713-3430},
+  eprint        = {2505.22411},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2505.22411}
 }
 
-@misc{lin2025controlling,
-  title  = {Controlling Thinking Speed in Reasoning Models},
-  author = {Lin and others},
-  year   = {2025},
-  howpublished = {NeurIPS 2025},
-  eprint = {2507.03704},
-  archivePrefix = {arXiv},
-  url    = {https://arxiv.org/abs/2507.03704}
+@inproceedings{lin2025controlling,
+  author        = {Lin, Zhengkai and Fu, Zhihang and Chen, Ze and Chen, Chao and Xie, Liang and Wang, Wenxiao and Cai, Deng and Wang, Zheng and Ye, Jieping},
+  title         = {Controlling Thinking Speed in Reasoning Models},
+  booktitle     = {Advances in Neural Information Processing Systems 38 (NeurIPS 2025)},
+  pages         = {87018--87065},
+  year          = {2025},
+  doi           = {10.52202/085713-2623},
+  eprint        = {2507.03704},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2507.03704}
 }
 
-@misc{ma2025cotvalve,
-  title  = {{CoT-Valve}: Length-Compressible Chain-of-Thought Tuning},
-  author = {Ma and others},
-  year   = {2025},
-  howpublished = {ACL 2025},
-  eprint = {2502.09601},
-  archivePrefix = {arXiv},
-  url    = {https://arxiv.org/abs/2502.09601}
+@inproceedings{ma2025cotvalve,
+  author        = {Ma, Xinyin and Wan, Guangnian and Yu, Runpeng and Fang, Gongfan and Wang, Xinchao},
+  title         = {{CoT-Valve}: Length-Compressible Chain-of-Thought Tuning},
+  booktitle     = {Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics},
+  pages         = {6025--6035},
+  year          = {2025},
+  doi           = {10.18653/v1/2025.acl-long.300},
+  eprint        = {2502.09601},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2502.09601}
 }
 
-@misc{sun2025thinkedit,
-  title  = {{ThinkEdit}: Interpretable Weight Editing to Mitigate Overly Short Thinking in Reasoning Models},
-  author = {Sun and others},
-  year   = {2025},
-  howpublished = {EMNLP 2025},
-  eprint = {2503.22048},
-  archivePrefix = {arXiv},
-  url    = {https://arxiv.org/abs/2503.22048}
+@inproceedings{sun2025thinkedit,
+  author        = {Sun, Chung-En and Yan, Ge and Weng, Tsui-Wei},
+  title         = {{ThinkEdit}: Interpretable Weight Editing to Mitigate Overly Short Thinking in Reasoning Models},
+  booktitle     = {Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing},
+  pages         = {17012--17036},
+  year          = {2025},
+  doi           = {10.18653/v1/2025.emnlp-main.861},
+  eprint        = {2503.22048},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2503.22048}
 }
 
 @misc{venhoff2025understanding,
-  title  = {Understanding Reasoning in Thinking Language Models via Steering Vectors},
-  author = {Venhoff and others},
-  year   = {2025},
-  eprint = {2506.18167},
-  archivePrefix = {arXiv},
-  url    = {https://arxiv.org/abs/2506.18167}
+  author        = {Venhoff, Constantin and Arcuschin, Iv{\'a}n and Torr, Philip and Conmy, Arthur and Nanda, Neel},
+  title         = {Understanding Reasoning in Thinking Language Models via Steering Vectors},
+  year          = {2025},
+  eprint        = {2506.18167},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2506.18167},
+  note          = {ICLR 2025 Workshop on Reasoning and Planning for Large Language Models}
 }
 
-@misc{hao2024training,
-  title  = {Training Large Language Models to Reason in a Continuous Latent Space},
-  author = {Hao and others},
-  year   = {2024},
-  eprint = {2412.06769},
-  archivePrefix = {arXiv},
-  url    = {https://arxiv.org/abs/2412.06769}
+@inproceedings{hao2024training,
+  author        = {Hao, Shibo and Sukhbaatar, Sainbayar and Su, DiJia and Li, Xian and Hu, Zhiting and Weston, Jason and Tian, Yuandong},
+  title         = {Training Large Language Models to Reason in a Continuous Latent Space},
+  booktitle     = {Conference on Language Modeling (COLM)},
+  year          = {2025},
+  eprint        = {2412.06769},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2412.06769}
 }
 
-@misc{nguyen2025activation,
-  title  = {Activation Steering with a Feedback Controller},
-  author = {Nguyen and others},
-  year   = {2025},
-  howpublished = {ICLR 2026},
-  eprint = {2510.04309},
-  archivePrefix = {arXiv},
-  url    = {https://arxiv.org/abs/2510.04309}
+@inproceedings{nguyen2025activation,
+  author        = {Nguyen, Dung V. and Vu, Hieu M. and Pham, Nhi Y. and Zhang, Lei and Nguyen, Tan M.},
+  title         = {Activation Steering with a Feedback Controller},
+  booktitle     = {International Conference on Learning Representations (ICLR)},
+  year          = {2026},
+  eprint        = {2510.04309},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2510.04309}
 }
 
-@misc{shi2026internalizing,
-  title  = {Internalizing {LLM} Reasoning via Discovery and Replay of Latent Actions},
-  author = {Shi and others},
-  year   = {2026},
-  eprint = {2602.04925},
+@inproceedings{shi2026internalizing,
+  author        = {Shi, Zhenning and Zhu, Yijia and Shi, Junhan and Zhang, Xun and Wang, Lei and Miao, Congcong},
+  title         = {{STIR}: Self-Distilled Latent Tools for Dynamic Control of {LLM} Reasoning},
+  booktitle     = {Proceedings of the 2026 Conference on Empirical Methods in Natural Language Processing},
+  pages         = {51814--51829},
+  year          = {2026},
+  doi           = {10.18653/2026.emnlp-main.2278},
+  eprint        = {2602.04925},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2602.04925},
+  note          = {arXiv v1 title: ``Internalizing LLM Reasoning via Discovery and Replay of Latent Actions''}
+}
+
+% ---------------------------------------------------------------------------
+% Recommended additions (not in the original references.bib; each verified by
+% DOI or arXiv record on 2026-11-02). Cite where the docs restate their results.
+% ---------------------------------------------------------------------------
+
+@inproceedings{yang2024parallelizing,
+  author    = {Yang, Songlin and Wang, Bailin and Zhang, Yu and Shen, Yikang and Kim, Yoon},
+  title     = {Parallelizing Linear Transformers with the Delta Rule over Sequence Length},
+  booktitle = {Advances in Neural Information Processing Systems 37 (NeurIPS 2024)},
+  pages     = {115491--115522},
+  year      = {2024},
+  doi       = {10.52202/079017-3668},
+  eprint    = {2406.06484},
+  archiveprefix = {arXiv}
+}
+
+@misc{liu2024longhorn,
+  author    = {Liu, Bo and Wang, Rui and Wu, Lemeng and Feng, Yihao and Stone, Peter and Liu, Qiang},
+  title     = {Longhorn: State Space Models are Amortized Online Learners},
+  year      = {2024},
+  eprint    = {2407.14207},
+  archiveprefix = {arXiv},
+  note      = {Preprint; origin of the online-learning view of linear RNN updates used by Gated DeltaNet}
+}
+
+@misc{behrouz2025miras,
+  author    = {Behrouz, Ali and Razaviyayn, Meisam and Zhong, Peilin and Mirrokni, Vahab},
+  title     = {It's All Connected: A Journey Through Test-Time Memorization, Attentional Bias, Retention, and Online Optimization},
+  year      = {2025},
+  eprint    = {2504.13173},
+  archiveprefix = {arXiv},
+  note      = {Preprint (Miras)}
+}
+
+@inproceedings{zhao2025adasteer,
+  author    = {Zhao, Weixiang and Guo, Jiahe and Hu, Yulin and Deng, Yang and Zhang, An and Sui, Xingyu and Han, Xinyang and Zhao, Yanyan and Qin, Bing and Chua, Tat-Seng and Liu, Ting},
+  title     = {{AdaSteer}: Your Aligned {LLM} is Inherently an Adaptive Jailbreak Defender},
+  booktitle = {Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing},
+  year      = {2025},
+  doi       = {10.18653/v1/2025.emnlp-main.1248},
+  eprint    = {2504.09466},
+  archiveprefix = {arXiv}
+}
+
+@article{samsonovich2005simple,
+  author    = {Samsonovich, Alexei V. and Ascoli, Giorgio A.},
+  title     = {A Simple Neural Network Model of the Hippocampus Suggesting Its Pathfinding Role in Episodic Memory Retrieval},
+  journal   = {Learning \& Memory},
+  volume    = {12},
+  number    = {2},
+  pages     = {193--208},
+  year      = {2005},
+  doi       = {10.1101/lm.85205}
+}
+
+@misc{kabir2024deep,
+  author    = {Kabir, Md Rysul and Mochizuki-Freeman, James and Tiganj, Zoran},
+  title     = {Deep Reinforcement Learning with Time-Scale Invariant Memory},
+  year      = {2024},
+  eprint    = {2412.15292},
+  archiveprefix = {arXiv},
+  note      = {Preprint; Laplace plus inverse-Laplace (Shankar--Howard) memory inside a deep network}
+}
+
+
+% ---------------------------------------------------------------------------
+% Prior art identified by the literature review (2 Nov 2026)
+% ---------------------------------------------------------------------------
+
+@article{kohonen1972correlation,
+  title   = {Correlation Matrix Memories},
+  author  = {Kohonen, Teuvo},
+  journal = {IEEE Transactions on Computers},
+  year    = {1972},
+  volume  = {C-21},
+  number  = {4},
+  pages   = {353--359},
+  doi     = {10.1109/TC.1972.5008975}
+}
+
+@article{sompolinsky1986temporal,
+  title = {Temporal Association in Asymmetric Neural Networks},
+  author = {Sompolinsky, H. and Kanter, I.},
+  journal = {Physical Review Letters},
+  year = {1986},
+  volume = {57},
+  number = {22},
+  pages = {2861--2864},
+  doi = {10.1103/physrevlett.57.2861}
+}
+
+@misc{olsson2022context,
+  title         = {In-context Learning and Induction Heads},
+  author        = {Olsson, Catherine and Elhage, Nelson and Nanda, Neel and Joseph, Nicholas and DasSarma, Nova and Henighan, Tom and Mann, Ben and Askell, Amanda and Bai, Yuntao and Chen, Anna and Conerly, Tom and Drain, Dawn and Ganguli, Deep and Hatfield-Dodds, Zac and Hernandez, Danny and Johnston, Scott and Jones, Andy and Kernion, Jackson and Lovitt, Liane and Ndousse, Kamal and Amodei, Dario and Brown, Tom and Clark, Jack and Kaplan, Jared and McCandlish, Sam and Olah, Chris},
+  year          = {2022},
+  eprint        = {2209.11895},
   archivePrefix = {arXiv},
-  url    = {https://arxiv.org/abs/2602.04925}
+  doi           = {10.48550/arXiv.2209.11895},
+  url           = {https://arxiv.org/abs/2209.11895},
+  note          = {arXiv record verified; venue not checked}
+}
+
+@misc{fu2022hungry,
+  title         = {Hungry Hungry Hippos: Towards Language Modeling with State Space Models},
+  author        = {Fu, Daniel Y. and Dao, Tri and Saab, Khaled K. and Thomas, Armin W. and Rudra, Atri and Ré, Christopher},
+  year          = {2022},
+  eprint        = {2212.14052},
+  archivePrefix = {arXiv},
+  doi           = {10.48550/arXiv.2212.14052},
+  url           = {https://arxiv.org/abs/2212.14052},
+  note          = {arXiv record verified; venue not checked}
+}
+
+@misc{zhang2024memory,
+  title         = {Memory Mosaics},
+  author        = {Zhang, Jianyu and Nolte, Niklas and Sadhukhan, Ranajoy and Chen, Beidi and Bottou, Léon},
+  year          = {2024},
+  eprint        = {2405.06394},
+  archivePrefix = {arXiv},
+  doi           = {10.48550/arXiv.2405.06394},
+  url           = {https://arxiv.org/abs/2405.06394},
+  note          = {arXiv record verified; venue not checked}
+}
+
+@misc{wang2025test,
+  title         = {Test-time regression: a unifying framework for designing sequence models with associative memory},
+  author        = {Wang, Ke Alexander and Shi, Jiaxin and Fox, Emily B.},
+  year          = {2025},
+  eprint        = {2501.12352},
+  archivePrefix = {arXiv},
+  doi           = {10.48550/arXiv.2501.12352},
+  url           = {https://arxiv.org/abs/2501.12352},
+  note          = {arXiv record verified; venue not checked}
+}
+
+@misc{lei2026mem,
+  title         = {$\delta$-mem: Efficient Online Memory for Large Language Models},
+  author        = {Lei, Jingdi and Zhang, Di and Li, Junxian and Wang, Weida and Fan, Kaixuan and Liu, Xiang and Liu, Qihan and Ma, Xiaoteng and Chen, Baian and Poria, Soujanya},
+  year          = {2026},
+  eprint        = {2605.12357},
+  archivePrefix = {arXiv},
+  doi           = {10.48550/arXiv.2605.12357},
+  url           = {https://arxiv.org/abs/2605.12357},
+  note          = {Preprint}
+}
+
+@misc{munkhdalai2024leave,
+  title         = {Leave No Context Behind: Efficient Infinite Context Transformers with Infini-attention},
+  author        = {Munkhdalai, Tsendsuren and Faruqui, Manaal and Gopal, Siddharth},
+  year          = {2024},
+  eprint        = {2404.07143},
+  archivePrefix = {arXiv},
+  doi           = {10.48550/arXiv.2404.07143},
+  url           = {https://arxiv.org/abs/2404.07143},
+  note          = {arXiv record verified; venue not checked}
+}
+
+@misc{okpekpe2025revisiting,
+  title         = {Revisiting associative recall in modern recurrent models},
+  author        = {Okpekpe, Destiny and Orvieto, Antonio},
+  year          = {2025},
+  eprint        = {2508.19029},
+  archivePrefix = {arXiv},
+  doi           = {10.48550/arXiv.2508.19029},
+  url           = {https://arxiv.org/abs/2508.19029},
+  note          = {arXiv record verified; venue not checked}
+}
+
+@misc{arora2023zoology,
+  title         = {Zoology: Measuring and Improving Recall in Efficient Language Models},
+  author        = {Arora, Simran and Eyuboglu, Sabri and Timalsina, Aman and Johnson, Isys and Poli, Michael and Zou, James and Rudra, Atri and Ré, Christopher},
+  year          = {2023},
+  eprint        = {2312.04927},
+  archivePrefix = {arXiv},
+  doi           = {10.48550/arXiv.2312.04927},
+  url           = {https://arxiv.org/abs/2312.04927},
+  note          = {arXiv record verified; venue not checked}
+}
+
+@misc{hsieh2024ruler,
+  title         = {RULER: What's the Real Context Size of Your Long-Context Language Models?},
+  author        = {Hsieh, Cheng-Ping and Sun, Simeng and Kriman, Samuel and Acharya, Shantanu and Rekesh, Dima and Jia, Fei and Zhang, Yang and Ginsburg, Boris},
+  year          = {2024},
+  eprint        = {2404.06654},
+  archivePrefix = {arXiv},
+  doi           = {10.48550/arXiv.2404.06654},
+  url           = {https://arxiv.org/abs/2404.06654},
+  note          = {arXiv record verified; venue not checked}
+}
+
+@misc{chen2026hla,
+  title         = {HLA: Expressive Hybrid Linear Attention via Chunk-Wise Dynamic Mixing},
+  author        = {Chen, Zhuokun and Lin, Xi and Wu, Xiyu and He, Jiahao and Cai, Jianfei and Zhuang, Bohan},
+  year          = {2026},
+  eprint        = {2610.05842},
+  archivePrefix = {arXiv},
+  doi           = {10.48550/arXiv.2610.05842},
+  url           = {https://arxiv.org/abs/2610.05842},
+  note          = {Preprint}
+}
+
+@misc{cabannes2025short,
+  title         = {Short window attention enables long-term memorization},
+  author        = {Cabannes, Loïc and Beck, Maximilian and Szilvasy, Gergely and Douze, Matthijs and Lomeli, Maria and Copet, Jade and Mazaré, Pierre-Emmanuel and Synnaeve, Gabriel and Jégou, Hervé},
+  year          = {2025},
+  eprint        = {2509.24552},
+  archivePrefix = {arXiv},
+  doi           = {10.48550/arXiv.2509.24552},
+  url           = {https://arxiv.org/abs/2509.24552},
+  note          = {arXiv record verified; venue not checked}
+}
+
+@misc{bick2025understanding,
+  title         = {Understanding the Skill Gap in Recurrent Language Models: The Role of the Gather-and-Aggregate Mechanism},
+  author        = {Bick, Aviv and Xing, Eric and Gu, Albert},
+  year          = {2025},
+  eprint        = {2504.18574},
+  archivePrefix = {arXiv},
+  doi           = {10.48550/arXiv.2504.18574},
+  url           = {https://arxiv.org/abs/2504.18574},
+  note          = {arXiv record verified; venue not checked}
+}
+
+@misc{kang2025state,
+  title         = {State-offset Tuning: State-based Parameter-Efficient Fine-Tuning for State Space Models},
+  author        = {Kang, Wonjun and Galim, Kevin and Zeng, Yuchen and Lee, Minjae and Koo, Hyung Il and Cho, Nam Ik},
+  year          = {2025},
+  eprint        = {2503.03499},
+  archivePrefix = {arXiv},
+  doi           = {10.48550/arXiv.2503.03499},
+  url           = {https://arxiv.org/abs/2503.03499},
+  note          = {arXiv record verified; venue not checked}
+}
+
+@misc{lee2026language,
+  title         = {Do Language Models Need Sleep? Offline Recurrence for Improved Online Inference},
+  author        = {Lee, Sangyun and McLeish, Sean and Goldstein, Tom and Fanti, Giulia},
+  year          = {2026},
+  eprint        = {2605.26099},
+  archivePrefix = {arXiv},
+  doi           = {10.48550/arXiv.2605.26099},
+  url           = {https://arxiv.org/abs/2605.26099},
+  note          = {Preprint}
+}
+
+@misc{behrouz2026language,
+  title         = {Language Models Need Sleep: Learning to Self-Modify and Consolidate Memories},
+  author        = {Behrouz, Ali and Hashemi, Farnoosh and Javanmard, Adel and Mirrokni, Vahab},
+  year          = {2026},
+  eprint        = {2606.03979},
+  archivePrefix = {arXiv},
+  doi           = {10.48550/arXiv.2606.03979},
+  url           = {https://arxiv.org/abs/2606.03979},
+  note          = {Preprint}
+}
+
+@misc{mcdermott2025lola,
+  title         = {LoLA: Low-Rank Linear Attention With Sparse Caching},
+  author        = {McDermott, Luke and Heath, Robert W. and Parhi, Rahul},
+  year          = {2025},
+  eprint        = {2505.23666},
+  archivePrefix = {arXiv},
+  doi           = {10.48550/arXiv.2505.23666},
+  url           = {https://arxiv.org/abs/2505.23666},
+  note          = {arXiv record verified; venue not checked}
+}
+
+@misc{allenzhu2025physics,
+  author = {Allen-Zhu, Zeyuan},
+  title = {{Physics of Language Models: Part 4.1, Architecture Design and the Magic of Canon Layers}},
+  year = {2025},
+  eprint = {2512.17351},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2512.17351},
+  note = {arXiv preprint; venue not verified}
+}
+
+@misc{jelassi2024repeat,
+  title         = {Repeat After Me: Transformers are Better than State Space Models at Copying},
+  author        = {Jelassi, Samy and Brandfonbrener, David and Kakade, Sham M. and Malach, Eran},
+  year          = {2024},
+  eprint        = {2402.01032},
+  archivePrefix = {arXiv},
+  doi           = {10.48550/arXiv.2402.01032},
+  url           = {https://arxiv.org/abs/2402.01032},
+  note          = {arXiv record verified; venue not checked}
+}
+
+@misc{fan2020,
+  title = {Addressing Some Limitations of Transformers with Feedback Memory},
+  author = {Angela Fan and Thibaut Lavril and Edouard Grave and Armand Joulin and Sainbayar Sukhbaatar},
+  year = {2020},
+  eprint = {2002.09402},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2002.09402},
+  note = {arXiv preprint; venue of any published version not verified here}
+}
+
+@misc{hatamizadeh2026gated,
+  title         = {Gated DeltaNet-2: Decoupling Erase and Write in Linear Attention},
+  author        = {Hatamizadeh, Ali and Choi, Yejin and Kautz, Jan},
+  year          = {2026},
+  eprint        = {2605.22791},
+  archivePrefix = {arXiv},
+  doi           = {10.48550/arXiv.2605.22791},
+  url           = {https://arxiv.org/abs/2605.22791},
+  note          = {Preprint}
+}
+
+@misc{grazzi2024unlocking,
+  title         = {Unlocking State-Tracking in Linear RNNs Through Negative Eigenvalues},
+  author        = {Grazzi, Riccardo and Siems, Julien and Zela, Arber and Franke, Jörg K. H. and Hutter, Frank and Pontil, Massimiliano},
+  year          = {2024},
+  eprint        = {2411.12537},
+  archivePrefix = {arXiv},
+  doi           = {10.48550/arXiv.2411.12537},
+  url           = {https://arxiv.org/abs/2411.12537},
+  note          = {arXiv record verified; venue not checked}
+}
+
+@misc{conneau2017,
+  title = {Supervised Learning of Universal Sentence Representations from Natural Language Inference Data},
+  author = {Alexis Conneau and Douwe Kiela and Holger Schwenk and Loic Barrault and Antoine Bordes},
+  year = {2017},
+  eprint = {1705.02364},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/1705.02364},
+  note = {arXiv preprint; venue of any published version not verified here}
+}
+
+@article{chen2024predictive,
+  title = {Predictive sequence learning in the hippocampal formation},
+  author = {Chen, Yusi and Zhang, Huanqiu and Cameron, Mia and Sejnowski, Terrence},
+  journal = {Neuron},
+  year = {2024},
+  volume = {112},
+  number = {15},
+  pages = {2645--2658.e4},
+  doi = {10.1016/j.neuron.2024.05.024}
+}
+
+@article{nakashiba2008transgenic,
+  title = {Transgenic Inhibition of Synaptic Transmission Reveals Role of CA3 Output in Hippocampal Learning},
+  author = {Nakashiba, Toshiaki and Young, Jennie Z. and McHugh, Thomas J. and Buhl, Derek L. and Tonegawa, Susumu},
+  journal = {Science},
+  year = {2008},
+  volume = {319},
+  number = {5867},
+  pages = {1260--1264},
+  doi = {10.1126/science.1151120}
+}
+
+@article{lin2021noncanonical,
+  title = {Noncanonical projections to the hippocampal CA3 regulate spatial learning and memory by modulating the feedforward hippocampal trisynaptic pathway},
+  author = {Lin, Xiaoxiao and Amalraj, Michelle and Blanton, Crisylle and Avila, Brenda and Holmes, Todd C. and Nitz, Douglas A. and Xu, Xiangmin},
+  journal = {PLOS Biology},
+  year = {2021},
+  volume = {19},
+  number = {12},
+  pages = {e3001127},
+  doi = {10.1371/journal.pbio.3001127}
+}
+
+@misc{zhou2024value,
+  title = {Value Residual Learning},
+  author = {Zhanchao Zhou and Tianyi Wu and Zhiyun Jiang and Fares Obeid and Zhenzhong Lan},
+  year = {2024},
+  eprint = {2410.17897},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2410.17897},
+  note = {arXiv preprint; venue of any published version not verified here}
+}
+
+@misc{pagliardini2024,
+  title = {DenseFormer: Enhancing Information Flow in Transformers via Depth Weighted Averaging},
+  author = {Matteo Pagliardini and Amirkeivan Mohtashami and Francois Fleuret and Martin Jaggi},
+  year = {2024},
+  eprint = {2402.02622},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2402.02622},
+  note = {arXiv preprint; venue of any published version not verified here}
+}
+
+@misc{zhu2024hyper,
+  title = {Hyper-Connections},
+  author = {Defa Zhu and Hongzhi Huang and Zihao Huang and Yutao Zeng and Yunyao Mao and Banggu Wu and Qiyang Min and Xun Zhou},
+  year = {2024},
+  eprint = {2409.19606},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2409.19606},
+  note = {arXiv preprint; venue of any published version not verified here}
+}
+
+@misc{golovneva2024,
+  title = {Contextual Position Encoding: Learning to Count What's Important},
+  author = {Olga Golovneva and Tianlu Wang and Jason Weston and Sainbayar Sukhbaatar},
+  year = {2024},
+  eprint = {2405.18719},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2405.18719},
+  note = {arXiv preprint; venue of any published version not verified here}
+}
+
+@article{tsao2018integrating,
+  title = {Integrating time from experience in the lateral entorhinal cortex},
+  author = {Tsao, Albert and Sugar, Jørgen and Lu, Li and Wang, Cheng and Knierim, James J. and Moser, May-Britt and Moser, Edvard I.},
+  journal = {Nature},
+  year = {2018},
+  volume = {561},
+  number = {7721},
+  pages = {57--62},
+  doi = {10.1038/s41586-018-0459-6}
+}
+
+@article{brunel1999fast,
+  title = {Fast Global Oscillations in Networks of Integrate-and-Fire Neurons with Low Firing Rates},
+  author = {Brunel, Nicolas and Hakim, Vincent},
+  journal = {Neural Computation},
+  year = {1999},
+  volume = {11},
+  number = {7},
+  pages = {1621--1671},
+  doi = {10.1162/089976699300016179}
+}
+
+@article{schapiro2017complementary,
+  title = {Complementary learning systems within the hippocampus: a neural network modelling approach to reconciling episodic memory with statistical learning},
+  author = {Schapiro, Anna C. and Turk-Browne, Nicholas B. and Botvinick, Matthew M. and Norman, Kenneth A.},
+  journal = {Philosophical Transactions of the Royal Society B: Biological Sciences},
+  year = {2017},
+  volume = {372},
+  number = {1711},
+  pages = {20160049},
+  doi = {10.1098/rstb.2016.0049}
+}
+
+@article{grienberger2022entorhinal,
+  title = {Entorhinal cortex directs learning-related changes in CA1 representations},
+  author = {Grienberger, Christine and Magee, Jeffrey C.},
+  journal = {Nature},
+  year = {2022},
+  volume = {611},
+  number = {7936},
+  pages = {554--562},
+  doi = {10.1038/s41586-022-05378-6}
+}
+
+@misc{bricken2023sparse,
+  title = {Sparse Distributed Memory is a Continual Learner},
+  author = {Bricken, Trenton and Davies, Xander and Singh, Deepak and Krotov, Dmitry and Kreiman, Gabriel},
+  year = {2023},
+  eprint = {2303.11934},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2303.11934}
+}
+
+@misc{pan2025scaling,
+  title = {Scaling Linear Attention with Sparse State Expansion},
+  author = {Pan, Yuqi and An, Yongqi and Li, Zheng and Chou, Yuhong and Zhu, Ruijie and Wang, Xiaohui and Wang, Mingxuan and Wang, Jinqiao and Li, Guoqi},
+  year = {2025},
+  eprint = {2507.16577},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2507.16577}
+}
+
+@misc{du2025mom,
+  title = {MoM: Linear Sequence Modeling with Mixture-of-Memories},
+  author = {Du, Jusen and Sun, Weigao and Lan, Disen and Hu, Jiaxi and Cheng, Yu},
+  year = {2025},
+  eprint = {2502.13685},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2502.13685}
+}
+
+@misc{he2024mixture,
+  title = {Mixture of A Million Experts},
+  author = {He, Xu Owen},
+  year = {2024},
+  eprint = {2407.04153},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2407.04153}
+}
+
+@misc{lample2019large,
+  title = {Large Memory Layers with Product Keys},
+  author = {Lample, Guillaume and Sablayrolles, Alexandre and Ranzato, Marc'Aurelio and Denoyer, Ludovic and Jégou, Hervé},
+  year = {2019},
+  eprint = {1907.05242},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/1907.05242}
+}
+
+@misc{chi2022representation,
+  title = {On the Representation Collapse of Sparse Mixture of Experts},
+  author = {Chi, Zewen and Dong, Li and Huang, Shaohan and Dai, Damai and Ma, Shuming and Patra, Barun and Singhal, Saksham and Bajaj, Payal and Song, Xia and Mao, Xian-Ling and Huang, Heyan and Wei, Furu},
+  year = {2022},
+  eprint = {2204.09179},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2204.09179}
+}
+
+@misc{qiu2025demons,
+  title = {Demons in the Detail: On Implementing Load Balancing Loss for Training Specialized Mixture-of-Expert Models},
+  author = {Qiu, Zihan and Huang, Zeyu and Zheng, Bo and Wen, Kaiyue and Wang, Zekun and Men, Rui and Titov, Ivan and Liu, Dayiheng and Zhou, Jingren and Lin, Junyang},
+  year = {2025},
+  eprint = {2501.11873},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2501.11873}
+}
+
+@misc{wang2024let,
+  title = {Let the Expert Stick to His Last: Expert-Specialized Fine-Tuning for Sparse Architectural Large Language Models},
+  author = {Wang, Zihan and Chen, Deli and Dai, Damai and Xu, Runxin and Li, Zhuoshu and Wu, Y.},
+  year = {2024},
+  eprint = {2407.01906},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2407.01906}
+}
+
+@misc{lin2025continual,
+  title         = {Continual Learning via Sparse Memory Finetuning},
+  author        = {Lin, Jessy and Zettlemoyer, Luke and Ghosh, Gargi and Yih, Wen-Tau and Markosyan, Aram and Berges, Vincent-Pierre and Oğuz, Barlas},
+  year          = {2025},
+  eprint        = {2510.15103},
+  archivePrefix = {arXiv},
+  doi           = {10.48550/arXiv.2510.15103},
+  url           = {https://arxiv.org/abs/2510.15103},
+  note          = {arXiv record verified; venue not checked}
+}
+
+@article{dasgupta2017neural,
+  title = {A neural algorithm for a fundamental computing problem},
+  author = {Dasgupta, Sanjoy and Stevens, Charles F. and Navlakha, Saket},
+  journal = {Science},
+  year = {2017},
+  volume = {358},
+  number = {6364},
+  pages = {793--796},
+  doi = {10.1126/science.aam9868}
+}
+
+@article{scharfman2016enigmatic,
+  title = {The enigmatic mossy cell of the dentate gyrus},
+  author = {Scharfman, Helen E.},
+  journal = {Nature Reviews Neuroscience},
+  year = {2016},
+  volume = {17},
+  number = {9},
+  pages = {562--575},
+  doi = {10.1038/nrn.2016.87}
+}
+
+@misc{ahmad2019how,
+  title = {How Can We Be So Dense? The Benefits of Using Highly Sparse Representations},
+  author = {Ahmad, Subutai and Scheinkman, Luiz},
+  year = {2019},
+  eprint = {1903.11257},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/1903.11257}
+}
+
+@article{kohara2014cell,
+  title = {Cell type–specific genetic and optogenetic tools reveal hippocampal CA2 circuits},
+  author = {Kohara, Keigo and Pignatelli, Michele and Rivest, Alexander J and Jung, Hae-Yoon and Kitamura, Takashi and Suh, Junghyup and Frank, Dominic and Kajikawa, Koichiro and Mise, Nathan and Obata, Yuichi and Wickersham, Ian R and Tonegawa, Susumu},
+  journal = {Nature Neuroscience},
+  year = {2014},
+  volume = {17},
+  number = {2},
+  pages = {269--279},
+  doi = {10.1038/nn.3614}
+}
+
+@article{mankin2015hippocampal,
+  title = {Hippocampal CA2 Activity Patterns Change over Time to a Larger Extent than between Spatial Contexts},
+  author = {Mankin, Emily A. and Diehl, Geoffrey W. and Sparks, Fraser T. and Leutgeb, Stefan and Leutgeb, Jill K.},
+  journal = {Neuron},
+  year = {2015},
+  volume = {85},
+  number = {1},
+  pages = {190--201},
+  doi = {10.1016/j.neuron.2014.12.001}
+}
+
+@article{alexander2018ca,
+  title = {CA2 neuronal activity controls hippocampal low gamma and ripple oscillations},
+  author = {Alexander, Georgia M and Brown, Logan Y and Farris, Shannon and Lustberg, Daniel and Pantazis, Caroline and Gloss, Bernd and Plummer, Nicholas W and Jensen, Patricia and Dudek, Serena M},
+  journal = {eLife},
+  year = {2018},
+  volume = {7},
+  doi = {10.7554/eLife.38052}
+}
+
+@misc{joad2026there,
+  title = {There Is More to Refusal in Large Language Models than a Single Direction},
+  author = {Faaiz Joad and Majd Hawasly and Sabri Boughorbel and Nadir Durrani and Husrev Taha Sencar},
+  year = {2026},
+  eprint = {2602.02132},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2602.02132},
+  note = {arXiv preprint; venue per arXiv comment: EMNLP 2026}
+}
+
+@misc{herbster2026activation,
+  title = {Activation Steering for Aligned Open-ended Generation without Sacrificing Coherence},
+  author = {Niklas Herbster and Martin Zborowski and Alberto Tosato and Gauthier Gidel and Tommaso Tosato},
+  year = {2026},
+  eprint = {2604.08169},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2604.08169},
+  note = {arXiv preprint}
+}
+
+@misc{scalena2024multiproperty,
+  title = {Multi-property Steering of Large Language Models with Dynamic Activation Composition},
+  author = {Daniel Scalena and Gabriele Sarti and Malvina Nissim},
+  year = {2024},
+  eprint = {2406.17563},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2406.17563},
+  note = {arXiv preprint; published in Proceedings of BlackBoxNLP (2024) 577-603}
+}
+
+@misc{jorgensen2023improving,
+  title = {Improving Activation Steering in Language Models with Mean-Centring},
+  author = {Ole Jorgensen and Dylan Cope and Nandi Schoots and Murray Shanahan},
+  year = {2023},
+  eprint = {2312.03813},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2312.03813},
+  note = {arXiv preprint}
+}
+
+@misc{yu2026break,
+  title = {Can We Break LLMs Out of Self-Loops? Fine-Grained Reasoning Control with Activation Steering},
+  author = {Sheldon Yu and Tong Yu and Xunyi Jiang and Rohan Surana and Gagan Mundada and Sungchul Kim and Lina Yao and Julian McAuley and Junda Wu},
+  year = {2026},
+  eprint = {2607.18100},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2607.18100},
+  note = {arXiv preprint}
+}
+
+@misc{sun2024massive,
+  title = {Massive Activations in Large Language Models},
+  author = {Mingjie Sun and Xinlei Chen and J. Zico Kolter and Zhuang Liu},
+  year = {2024},
+  eprint = {2402.17762},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/abs/2402.17762},
+  note = {arXiv preprint}
+}
+
+@article{muller1996hippocampus,
+  title   = {The hippocampus as a cognitive graph.},
+  author  = {Muller, R U and Stead, M and Pach, J},
+  journal = {The Journal of general physiology},
+  volume  = {107},
+  number  = {6},
+  pages   = {663--694},
+  year    = {1996},
+  doi     = {10.1085/jgp.107.6.663}
+}
+
+@article{teyler1986hippocampal,
+  title   = {The hippocampal memory indexing theory.},
+  author  = {Teyler, Timothy J. and DiScenna, Pascal},
+  journal = {Behavioral Neuroscience},
+  volume  = {100},
+  number  = {2},
+  pages   = {147--154},
+  year    = {1986},
+  doi     = {10.1037/0735-7044.100.2.147}
+}
+
+@article{stachenfeld2017hippocampus,
+  title = {The hippocampus as a predictive map},
+  author = {Stachenfeld, Kimberly L and Botvinick, Matthew M and Gershman, Samuel J},
+  journal = {Nature Neuroscience},
+  year = {2017},
+  volume = {20},
+  number = {11},
+  pages = {1643--1653},
+  doi = {10.1038/nn.4650}
+}
+
+@article{pfeiffer2013hippocampal,
+  title   = {Hippocampal place-cell sequences depict future paths to remembered goals},
+  author  = {Pfeiffer, Brad E. and Foster, David J.},
+  journal = {Nature},
+  volume  = {497},
+  number  = {7447},
+  pages   = {74--79},
+  year    = {2013},
+  doi     = {10.1038/nature12112}
+}
+
+@article{mattar2018prioritized,
+  title   = {Prioritized memory access explains planning and hippocampal replay},
+  author  = {Mattar, Marcelo G. and Daw, Nathaniel D.},
+  journal = {Nature Neuroscience},
+  volume  = {21},
+  number  = {11},
+  pages   = {1609--1617},
+  year    = {2018},
+  doi     = {10.1038/s41593-018-0232-z}
+}
+
+@article{kay2020constant,
+  title = {Constant Sub-second Cycling between Representations of Possible Futures in the Hippocampus},
+  author = {Kay, Kenneth and Chung, Jason E. and Sosa, Marielena and Schor, Jonathan S. and Karlsson, Mattias P. and Larkin, Margaret C. and Liu, Daniel F. and Frank, Loren M.},
+  journal = {Cell},
+  year = {2020},
+  volume = {180},
+  number = {3},
+  pages = {552--567.e25},
+  doi = {10.1016/j.cell.2020.01.014}
+}
+
+@article{graves2016hybrid,
+  title   = {Hybrid computing using a neural network with dynamic external memory},
+  author  = {Graves, Alex and Wayne, Greg and Reynolds, Malcolm and Harley, Tim and Danihelka, Ivo and Grabska-Barwińska, Agnieszka and Colmenarejo, Sergio Gómez and Grefenstette, Edward and Ramalho, Tiago and Agapiou, John and Badia, Adrià Puigdomènech and Hermann, Karl Moritz and Zwols, Yori and Ostrovski, Georg and Cain, Adam and King, Helen and Summerfield, Christopher and Blunsom, Phil and Kavukcuoglu, Koray and Hassabis, Demis},
+  journal = {Nature},
+  volume  = {538},
+  number  = {7626},
+  pages   = {471--476},
+  year    = {2016},
+  doi     = {10.1038/nature20101}
+}
+
+@misc{eysenbach2019search,
+  title   = {Search on the Replay Buffer: Bridging Planning and Reinforcement Learning},
+  author  = {Eysenbach, Benjamin and Salakhutdinov, Ruslan and Levine, Sergey},
+  year    = {2019},
+  eprint  = {1906.05253},
+  archivePrefix = {arXiv},
+  url     = {https://arxiv.org/abs/1906.05253},
+  note    = {arXiv preprint}
+}
+
+@misc{andrychowicz2017hindsight,
+  title   = {Hindsight Experience Replay},
+  author  = {Andrychowicz, Marcin and Wolski, Filip and Ray, Alex and Schneider, Jonas and Fong, Rachel and Welinder, Peter and McGrew, Bob and Tobin, Josh and Abbeel, Pieter and Zaremba, Wojciech},
+  year    = {2017},
+  eprint  = {1707.01495},
+  archivePrefix = {arXiv},
+  url     = {https://arxiv.org/abs/1707.01495},
+  note    = {arXiv preprint}
+}
+
+@misc{momennejad2023evaluating,
+  title   = {Evaluating Cognitive Maps and Planning in Large Language Models with CogEval},
+  author  = {Momennejad, Ida and Hasanbeig, Hosein and Vieira, Felipe and Sharma, Hiteshi and Ness, Robert Osazuwa and Jojic, Nebojsa and Palangi, Hamid and Larson, Jonathan},
+  year    = {2023},
+  eprint  = {2309.15129},
+  archivePrefix = {arXiv},
+  url     = {https://arxiv.org/abs/2309.15129},
+  note    = {arXiv preprint}
+}
+
+@inproceedings{saparov2025transformers,
+  title     = {Transformers Struggle to Learn to Search},
+  author    = {Saparov, Abulhair and Pawar, Srushti and Pimpalgaonkar, Shreyas and Joshi, Nitish and Pang, Richard Yuanzhe and Padmakumar, Vishakh and Kazemi, Seyed Mehran and Kim, Najoung and He, He},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2025},
+  eprint    = {2412.04703},
+  archivePrefix = {arXiv},
+  url       = {https://arxiv.org/abs/2412.04703}
+}
+
+@misc{balesni2024lessons,
+  title   = {Lessons from Studying Two-Hop Latent Reasoning},
+  author  = {Balesni, Mikita and Korbak, Tomek and Evans, Owain},
+  year    = {2024},
+  eprint  = {2411.16353},
+  archivePrefix = {arXiv},
+  url     = {https://arxiv.org/abs/2411.16353},
+  note    = {arXiv preprint}
+}
+
+@article{chandra2025episodic,
+  title   = {Episodic and associative memory from spatial scaffolds in the hippocampus},
+  author  = {Chandra, Sarthak and Sharma, Sugandha and Chaudhuri, Rishidev and Fiete, Ila},
+  journal = {Nature},
+  volume  = {638},
+  number  = {8051},
+  pages   = {739--751},
+  year    = {2025},
+  doi     = {10.1038/s41586-024-08392-y}
+}
+
+@article{george2021clonestructured,
+  title   = {Clone-structured graph representations enable flexible learning and vicarious evaluation of cognitive maps},
+  author  = {George, Dileep and Rikhye, Rajeev V. and Gothoskar, Nishad and Guntupalli, J. Swaroop and Dedieu, Antoine and Lázaro-Gredilla, Miguel},
+  journal = {Nature Communications},
+  volume  = {12},
+  number  = {1},
+  year    = {2021},
+  doi     = {10.1038/s41467-021-22559-5}
+}
+
+@article{duvelle2021hippocampal,
+  title   = {Hippocampal place cells encode global location but not connectivity in a complex space},
+  author  = {Duvelle, Éléonore and Grieves, Roddy M. and Liu, Anyi and Jedidi-Ayoub, Selim and Holeniewska, Joanna and Harris, Adam and Nyberg, Nils and Donnarumma, Francesco and Lefort, Julie M. and Jeffery, Kate J. and Summerfield, Christopher and Pezzulo, Giovanni and Spiers, Hugo J.},
+  journal = {Current Biology},
+  volume  = {31},
+  number  = {6},
+  pages   = {1221--1233.e9},
+  year    = {2021},
+  doi     = {10.1016/j.cub.2021.01.005}
+}
+
+@article{widloski2022flexible,
+  title   = {Flexible rerouting of hippocampal replay sequences around changing barriers in the absence of global place field remapping},
+  author  = {Widloski, John and Foster, David J.},
+  journal = {Neuron},
+  volume  = {110},
+  number  = {9},
+  pages   = {1547--1558.e8},
+  year    = {2022},
+  doi     = {10.1016/j.neuron.2022.02.002}
 }
