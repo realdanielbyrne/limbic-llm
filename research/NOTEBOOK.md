@@ -1370,3 +1370,38 @@ Exact recall: natural 512 (3 codes) / random 512 / natural 2048 (5 codes) / rand
 
 **Stage B (pending Daniel's checkpoint):** 5 seeds (0–4) and the full DEC2 grid, with jitter, held-out names, the update task, the LM run and the CPU suite, for I1 (the winner) and A2 (combination minus centring). Possibly also I1 + lexical/tap-3 keys, to test whether keys help once centring is gone.
 
+---
+
+## Round 11 planning: compression and time (4 Nov 2026)
+
+**Daniel's questions.** Did we test temporal injection? Are the saved windows ordered? Has anyone tried compressing a snippet to its high-value (high-attention) tokens? He added: "there is also biological precedence as the hippocampus also uses compression." He then approved attention weights as inputs (DEC8).
+
+**Planning workflow.** Three planners (hippocampal biology, ML context compression, repo experiment design) and a synthesis. The proposal is `research/plans/round11_plan.md`. The planners ran eval-time diagnostics on the trained I1 checkpoints (seeds 1–2, n = 24–96, CPU, the real frozen upper blocks). These numbers are **unreproduced** diagnostics, not register rows:
+
+1. **Length fails because of the linear recency penalty.** Learned at 512 tokens, ω·age costs about 1.5 logits at an age of about 1800, against a cosine margin of 0.3–0.45. 90–98% of slot misses at 2048 tokens lose to a younger filler window.
+   - Setting ω = 0 at eval raises random 2048 × 5 from 0.71 to 0.84–0.90, and 4096 × 8 from 0.38–0.46 to 0.83–0.92.
+   - But the stale code then wins 46–50% of updates.
+   - A content-gated "superseded" recency fixes both on the cached checkpoints: an old slot is penalised only when a newer slot matches the same query. Updates rise from 0.55 to 0.88 (512, seed 2) and from 0.77–0.83 to 0.92–0.94 (2048).
+2. **Compression costs nothing.** The windows' onsets sit at a fixed offset before the first digit (−6 for seed 1, −3 for seed 2), and the read uses about 4–5 of the 24 stored entries. The 2048-d alignment code is 79–92% of the 0.89M-float state.
+   - Cutting the window to 12 and passing the code through a fixed random 64-d projection shrinks the slot buffer 39× (801k to 20.7k floats) at unchanged exact.
+3. **More slots hurt under linear recency** (K = 64: 0.73). The bottleneck is distractors, not capacity.
+4. **Received attention does not mark the code.** Inside the 64-token block, the attention a token receives puts the 4 digits at mean rank 17–24 of 24, at layers 4–20 on both fillers. Nothing near a fact attends to its code; the code is used only at the distant query.
+   - So keeping high-attention tokens at write time would drop the very content to be recalled.
+   - The biological reading is synaptic tagging and capture: a tag set at encoding must be confirmed by a later signal. Here, tags must be learned from the answer loss, or chosen by position within the episode.
+5. **The TimeChannel clock is unused.** Zeroing it changes exact by ≤ 0.03.
+
+**Proposed round 11** (single-factor arms on I1, seeds 1–2):
+- **Time:**
+  - T-scale: ordinal or log recency;
+  - T-supr: content-gated supersession in the read;
+  - T-supw: a supersession tag set at write;
+  - T0: no TimeChannel.
+- **Compression:**
+  - C-code: a learned 64-d alignment code;
+  - C-keep: a learned scorer keeps 8 of 24 tokens (Daniel's idea, in a form that works);
+  - C-n12: fixed truncation, the control for C-keep.
+- **COMB:** the best time arm + C-code + n = 12 + K = 64.
+- **Optional:** ordinal stamps with an order task, if one has a full-attention ceiling.
+
+Stage 0 has no-training gates on Stage B's checkpoints first. The decision rules are fixed in the plan.
+
