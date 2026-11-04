@@ -59,6 +59,18 @@ The scripts now default to this layout: the CPU scripts write to `results/synthe
   - `eval_by_query.py` flags `--jitter`, `--update`, `--heldout-names` and `--w1s-ctrl`;
   - diagnostics `diag_novelty.py`, `diag_surprise.py`, `diag_declarative.py` and `diag_varlen.py`.
 
+## Round 11 is ready for another session (4 Nov 2026)
+
+Daniel approved the round-11 plan (DEC9) and asked for it to be executed by another session once round 10 Stage B completes. **Start from [`plans/round11_runbook.md`](plans/round11_runbook.md).** It lists:
+- the preconditions (Stage B committed, the base recipe chosen);
+- the environment (filler text and scratch references in `~/limbic-data` on geof);
+- the code changes and tests;
+- the Stage-0 no-training gates;
+- the Stage-A arms with exact flags;
+- the evaluations, the pre-registered rules, the record-keeping, and Daniel's checkpoints.
+
+The design and its evidence are in [`plans/round11_plan.md`](plans/round11_plan.md).
+
 ## How to run a round
 
 Follow [`evolution_protocol.md`](evolution_protocol.md): the round loop, controls, the candidate interface, `experiments/evolve/queue.sh` (GPU job queue) and `experiments/evolve/sync.sh` (rebase-safe push), and the pitfalls met in rounds 0–5.
