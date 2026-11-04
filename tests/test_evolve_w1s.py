@@ -474,3 +474,293 @@ def test_ctrl_on_the_side_sets_the_loop():
     assert m.loop.ctrl == "empty"
     with pytest.raises(ValueError):
         m.ctrl = "off"
+
+
+# ===================================================================== round 11
+# research/plans/round11_runbook.md §3: time as data (rope, ordinal), recency forms (log, ord, supr, supw),
+# a learned alignment code, keeping M transitions per window. Each is tested on the round-10 recipe I1.
+from evolve.w1s_slots import newer_sum, rope_freqs, rotate  # noqa: E402
+
+I1 = ("--w1s-gate=point", "--no-w1s-centre", "--w1s-pre=0", "--w1s-key=learned", "--w1s-taps=")
+R11 = {
+    "log": ["--w1s-recency-form=log"],
+    "ord": ["--w1s-recency-form=ord"],
+    "supr": ["--w1s-recency-form=supr", "--w1s-sup-w=5"],
+    "supw": ["--w1s-recency-form=supw", "--w1s-sup-theta=0.2", "--w1s-sup-gamma=8"],   # fires on random keys
+    "none": ["--w1s-recency-form=none"],
+    "rope": ["--w1s-time-feat=rope", "--w1s-rope-dims=8", "--w1s-rope-periods=4,4096"],
+    "ordinal": ["--w1s-time-feat=ordinal"],
+    "rope+linear": ["--w1s-time-feat=rope", "--w1s-recency-form=linear", "--w1s-rope-dims=8"],
+    "code": ["--w1s-code=learned", "--w1s-dc=8"],
+    "keep-first": ["--w1s-keep=5", "--w1s-keep-by=first"],
+    "keep-value": ["--w1s-keep=5", "--w1s-keep-by=value"],
+    "keep-learned": ["--w1s-keep=5", "--w1s-keep-by=learned"],
+    "keep-ext": ["--w1s-keep=5", "--w1s-keep-by=external"],
+    "keep-pair": ["--w1s-keep=5", "--w1s-keep-by=external"],
+    "lexgate": ["--w1s-key=both", "--w1s-lex-init=-2", "--w1s-align-init=3.5"],
+    "comb": ["--w1s-recency-form=supr", "--w1s-code=learned", "--w1s-dc=8", "--w1s-win=12", "--w1s-K=3",
+             "--w1s-keep=6", "--w1s-keep-by=learned"],
+}
+
+
+def r11(name, *extra, d=D):
+    m = side(*I1, *R11[name], *extra, d=d)
+    with torch.no_grad():
+        m.loop.gain_logit.fill_(2.0)
+        if hasattr(m.loop, "ord_E"):                             # zero at init: give the rank feature a value
+            m.loop.ord_E.normal_(0, 1.0)
+    return m
+
+
+def set_ext(m, name, B, T, seed=5):
+    """External keep scores (diagnostic modes) for the keep-ext / keep-pair configurations."""
+    g = torch.Generator().manual_seed(seed)
+    m.keep_scores = m.keep_pair = None
+    if name == "keep-ext":
+        m.keep_scores = torch.rand(B, T, generator=g, dtype=torch.float64)
+    elif name == "keep-pair":
+        m.keep_pair = torch.rand(B, T, T, generator=g, dtype=torch.float64).tril()
+
+
+@pytest.mark.parametrize("name", list(R11))
+@pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
+def test_round11_strictly_causal(name, dtype):
+    """E1 for every round-11 flag on I1: perturbing h from t0 on leaves every output row before t0
+    bitwise unchanged, for float32 and bf16-rounded input (K = 2: an eviction burst)."""
+    m = r11(name, "--w1s-K=2")
+    T = 200
+    torch.manual_seed(0)
+    h = torch.randn(2, T, D).to(dtype).float()
+    set_ext(m, name, 2, T)
+    if m.keep_scores is not None:
+        m.keep_scores = m.keep_scores.float()
+    if m.keep_pair is not None:
+        m.keep_pair = m.keep_pair.float()
+    with torch.no_grad():
+        y = m(h)[0]
+        assert (m.loop.last_diag["retained"] >= 0).any()
+        for t0 in (1, 23, 60, 131, 199):
+            h2 = h.clone()
+            h2[:, t0:] += torch.randn_like(h2[:, t0:])
+            kp = None
+            if m.keep_pair is not None:                          # the future's attention changes too
+                kp = m.keep_pair.clone()
+                m.keep_pair = kp.clone()
+                m.keep_pair[:, t0:] += 1.0
+            if m.keep_scores is not None:
+                ks = m.keep_scores.clone()
+                m.keep_scores[:, t0:] += torch.rand_like(m.keep_scores[:, t0:])
+            y2 = m(h2)[0]
+            if kp is not None:
+                m.keep_pair = kp
+            if m.keep_scores is not None:
+                m.keep_scores = ks
+            assert torch.equal(y[:, :t0], y2[:, :t0]), (name, t0)
+            assert not torch.equal(y, y2)
+
+
+@pytest.mark.parametrize("name", list(R11))
+@pytest.mark.parametrize("gate", ["point", "oracle"])
+def test_round11_stream_equals_parallel(name, gate):
+    """E2 for every round-11 flag on I1 (K = 2, so slots are evicted): the read, the slots held at every t
+    and their read weights equal the independent streaming store's."""
+    m = r11(name, "--w1s-K=2", f"--w1s-gate={gate}", d=16).double()
+    B, T = 2, 170
+    torch.manual_seed(1)
+    h = torch.randn(B, T, 16, dtype=torch.float64)
+    oracle = every(B, T, 11, 3)
+    set_ext(m, name, B, T)
+    with torch.no_grad():
+        par = m.loop.read(h, None, oracle)
+    d = m.loop.last_diag
+    ref = m.loop.stream(h, None, oracle)
+    torch.testing.assert_close(par, ref["o"], atol=1e-6, rtol=1e-6)
+    assert ref["evictions"] > 0
+    for b in range(B):
+        for t in range(T):
+            held = {int(s) for s in d["retained"][b, t] if s >= 0}
+            assert held == ref["retained"][b][t], (b, t)
+            w = {int(s): float(a) for s, a in zip(d["retained"][b, t], d["read_w"][b, t]) if s >= 0}
+            for s, a in ref["read_w"][b][t].items():
+                assert abs((w[s] if s is not None else float(d["read_w"][b, t, -1])) - a) < 1e-6, (name, b, t, s)
+
+
+@pytest.mark.parametrize("name", ["keep-value", "keep-ext"])
+def test_keep_ties_go_to_the_earlier_transition(name):
+    """Top-M keep with tied scores keeps the earliest transitions, in both forms (no arbitrary topk order)."""
+    m = r11(name, "--w1s-gate=oracle", d=16).double()
+    B, T = 1, 120
+    torch.manual_seed(2)
+    h = torch.randn(B, T, 16, dtype=torch.float64)
+    if name == "keep-value":
+        with torch.no_grad():
+            m.loop.wa.weight.zero_()                              # every value norm 0: all tied
+    else:
+        m.keep_scores = torch.ones(B, T, dtype=torch.float64)
+    oracle = every(B, T, 30, 10)
+    with torch.no_grad():
+        par = m.loop.read(h, None, oracle)
+    ref = m.loop.stream(h, None, oracle)
+    torch.testing.assert_close(par, ref["o"], atol=1e-9, rtol=1e-9)
+    ent = m.loop._store(m.loop._features(m.loop.norm(h), h, None, oracle))
+    s0 = int(ent["s"][0, 0])
+    kept = ent["mem"][0, 0].nonzero().flatten().tolist()
+    assert kept == list(range(s0, s0 + 5)), kept
+
+
+@pytest.mark.parametrize("name", ["linear", "log", "ord", "supw", "rope", "ordinal", "code", "keep-learned", "comb"])
+def test_round11_state_is_independent_of_T_and_matches_the_analytic_count(name):
+    """E2: the streaming state has the same size at T = 512, 2048 and 4096, and equals ``analytic_state``
+    once the ring and the K slots are full."""
+    m = side(*I1, *R11.get(name, []), "--w1s-K=2", d=16)
+    sizes = []
+    for T in (512, 2048, 4096):
+        torch.manual_seed(2)
+        ref = m.loop.stream(torch.randn(1, T, 16))
+        assert ref["evictions"] > 0
+        sizes.append(ref["state_floats"])
+    assert sizes[0] == sizes[1] == sizes[2], sizes
+    assert ref["state_components"] == m.loop.analytic_state(16), (ref["state_components"], m.loop.analytic_state(16))
+
+
+def test_learned_code_and_keep_shrink_the_state_at_qwen_width():
+    """At width 2048, the learned 64-d code drops the 2048-d codes and keys (A5), and n = 12 with K = 64 (A8)
+    stays within E2's 1M floats; I1's own state is unchanged from round 10 (0.89M)."""
+    i1 = W1sSide(2048, ARGS, split_args(list(I1))[0]).state_report()["state_floats"]
+    a5 = W1sSide(2048, ARGS, split_args([*I1, "--w1s-code=learned", "--w1s-dc=64"])[0]).state_report()["state_floats"]
+    a8 = W1sSide(2048, ARGS, split_args([*I1, "--w1s-recency-form=supr", "--w1s-code=learned", "--w1s-dc=64",
+                                         "--w1s-win=12", "--w1s-K=64"])[0]).state_report()["state_floats"]
+    assert 850_000 < i1 < 950_000, i1
+    assert a5 * 5 <= i1, (a5, i1)
+    assert a8 <= 1_000_000, a8
+
+
+@pytest.mark.parametrize("name", list(R11))
+def test_round11_parameter_budget_at_qwen_width(name):
+    """E3: every round-11 arm stays within 4.4M parameters and 1M buffer floats at width 2048."""
+    m = W1sSide(2048, ARGS, split_args([*I1, *R11[name]])[0])
+    assert sum(p.numel() for p in m.parameters()) <= 4_400_000
+    assert sum(b.numel() for b in m.buffers()) <= 1_000_000
+
+
+@pytest.mark.parametrize("name", list(R11))
+def test_round11_empty_store_injects_nothing(name):
+    m = r11(name, "--w1s-ctrl=empty")
+    T = 150
+    set_ext(m, name, 2, T)
+    for k in ("keep_scores", "keep_pair"):
+        if getattr(m, k) is not None:
+            setattr(m, k, getattr(m, k).float())
+    h = torch.randn(2, T, D)
+    with torch.no_grad():
+        y, stats = m(h)
+    assert torch.equal(y, h) and stats.inj_ratio.abs().max() == 0
+    assert (m.loop.last_diag["read_w"][..., -1] == 1).all()
+
+
+def _supw_store(alpha: float, T: int = 120):
+    """Two oracle onsets with lexical keys u (at 10) and cos·u + sin·u⊥ (at 60): the older slot's tag at the end."""
+    m = side("--w1s-gate=oracle", "--w1s-key=lex", "--w1s-pre=0", "--w1s-pool=4", "--w1s-recency-form=supw",
+             d=V, time=False)
+    x = torch.eye(V)[[FILLER[0]] * T].clone()
+    u, w = torch.eye(V)[0], torch.eye(V)[1]
+    x[10:14] = u
+    x[60:64] = math.cos(alpha) * u + math.sin(alpha) * w
+    o = torch.zeros(1, T, dtype=torch.bool)
+    o[0, [10, 60]] = True
+    with torch.no_grad():
+        st = m.loop._store(m.loop._features(m.loop.norm(x[None]), x[None], {3: x[None]}, o))
+    i = int((st["s"][0] == 10).nonzero()[0, 0])
+    return float(st["sup"][0, -1, i])
+
+
+import math  # noqa: E402
+
+
+def test_supw_tag_is_monotone_in_the_match():
+    """supw: the older slot's supersession tag rises monotonically as the newer key's cosine to it rises."""
+    tags = [_supw_store(a) for a in (1.5, 1.0, 0.6, 0.4, 0.2, 0.0)]
+    assert all(b > a for a, b in zip(tags, tags[1:])), tags
+    assert tags[0] < 1e-6 and tags[-1] > 0.9, tags
+
+
+def test_supw_tag_does_not_grow_with_length_on_random_filler():
+    """supw with its default γ = 40, θ = 0.9: a slot's tag from ~900 unrelated candidates at T = 8192 stays
+    what it is at T = 512 (sub-θ matches do not add up into a length-dependent penalty)."""
+    m = side(*I1, "--w1s-recency-form=supw", d=32)
+    tags = []
+    for T in (512, 8192):
+        torch.manual_seed(4)
+        h = torch.randn(1, T, 32)
+        with torch.no_grad():
+            st = m.loop._store(m.loop._features(m.loop.norm(h), h, None, None))
+        tags.append(float(st["sup"][0, -1, 0]))
+    assert abs(tags[1] - tags[0]) < 0.05, tags
+
+
+def test_rope_score_depends_on_the_lag_only():
+    """Partial rotary time: rotate(q, t)·rotate(k, s) is unchanged by a common shift of t and s, the dims
+    beyond rope-dims are untouched, and norms are kept."""
+    fr = rope_freqs(8, "4,4096")
+    torch.manual_seed(0)
+    q, k = torch.randn(16, dtype=torch.float64), torch.randn(16, dtype=torch.float64)
+    a = rotate(q, torch.tensor(700), fr) @ rotate(k, torch.tensor(130), fr)
+    b = rotate(q, torch.tensor(7700), fr) @ rotate(k, torch.tensor(7130), fr)
+    assert abs(a - b) < 1e-9
+    r = rotate(q, torch.tensor(91), fr)
+    assert torch.equal(r[8:], q[8:]) and abs(r.norm() - q.norm()) < 1e-12
+
+
+def test_newer_sum_counts_newer_candidates():
+    x = torch.tensor([[1.0, 0.0, 1.0, 1.0]])
+    assert newer_sum(x).tolist() == [[2.0, 2.0, 1.0, 0.0]]
+
+
+def test_recency_form_resolution_and_defaults():
+    """Defaults reproduce round 10 (linear); a time feature defaults to no age penalty; explicit
+    combinations are kept; the lexical-key gate scales the null so it does not outvote the keys."""
+    assert split_args([])[0].w1s_recency_form == "linear"
+    assert split_args(["--w1s-time-feat=rope"])[0].w1s_recency_form == "none"
+    assert split_args(["--w1s-time-feat=rope", "--w1s-recency-form=linear"])[0].w1s_recency_form == "linear"
+    m = side(*I1, "--w1s-key=both", "--w1s-lex-init=-2")
+    assert abs(m.loop.log_beta_lex.item() + 2) < 1e-6
+    assert abs(m.loop.null_logit.item() - 0.3 * (math.exp(-2) + 10)) < 1e-5
+    with pytest.raises(ValueError):
+        side("--w1s-key=lex", "--w1s-time-feat=rope")          # time features act on the learned key
+    with pytest.raises(ValueError):
+        side(*I1, "--w1s-code=learned", "--w1s-out=reinstate", "--w1s-taps=3", "--w1s-key-taps=3")
+
+
+def test_round10_checkpoint_loads_under_the_defaults():
+    """A round-10 I1 checkpoint loads into today's W1sSide with no missing or unexpected keys."""
+    import json
+    root = Path(__file__).resolve().parents[1] / "results/evolve/round10"
+    js, pt = root / "r10_I1_s1.json", root / "r10_I1_s1.pt"
+    if not pt.exists():
+        pytest.skip("round-10 checkpoints are not in the repository (geof only)")
+    rec = json.loads(js.read_text())
+    flags = {**vars(split_args([])[0]), **rec["candidate"]["args"]}
+    import argparse
+    m = W1sSide(2048, argparse.Namespace(**rec["args"]), argparse.Namespace(**flags))
+    missing, unexpected = m.load_state_dict(torch.load(pt, map_location="cpu"), strict=False)
+    assert not missing and not unexpected, (missing, unexpected)
+    assert m.loop.rform == "linear" and m.loop.code == "lex" and m.loop.keep == 0
+
+
+def test_keep_scorer_toy_learns_through_the_module():
+    """The keep-scorer toy (experiments/evolve/toy_keep.py) runs through the module's real path, and a
+    few steps already move the held-out tag hit above chance (4/23) with a strong shared digit direction.
+    The Stage-0 run (10 seeds, 300 steps) is a recorded check, not this test."""
+    from evolve import toy_keep
+    r = toy_keep.run(0, steps=60, lr=0.05, share=3.0, batch=2, d=64)
+    assert r["curve"][0]["loss"] > 0 and r["heldout_tag_hit"] > 0.3, r
+
+
+def test_round11_options_that_would_do_nothing_are_refused():
+    """Review F0/F3: time features and recency forms on the superposed store (which reads no slots), and a
+    keep rule without M, are errors rather than silent no-ops."""
+    for flags in (["--w1s-store=superposed", "--w1s-time-feat=rope"], ["--w1s-store=superposed", "--w1s-recency-form=supw"],
+                  [*I1, "--w1s-keep-by=value"], [*I1, "--w1s-keep-by=external"]):
+        with pytest.raises(ValueError):
+            side(*flags)
+    side("--w1s-store=superposed")                               # the round-10 default still builds
