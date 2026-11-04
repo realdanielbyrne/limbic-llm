@@ -39,3 +39,6 @@ Thumbs.db
 
 # Office lock files
 ~$*
+
+# Job-queue bookkeeping (experiments/evolve/queue.sh)
+results/**/queue.*
