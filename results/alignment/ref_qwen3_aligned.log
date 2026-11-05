@@ -1,0 +1,7 @@
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]Loading weights:  10%|9         | 31/311 [00:00<00:00, 291.32it/s]Loading weights:  20%|#9        | 61/311 [00:00<00:01, 242.02it/s]Loading weights:  28%|##7       | 86/311 [00:00<00:01, 185.25it/s]Loading weights:  36%|###5      | 111/311 [00:00<00:00, 200.77it/s]Loading weights:  43%|####2     | 133/311 [00:00<00:01, 139.22it/s]Loading weights:  48%|####8     | 150/311 [00:00<00:01, 140.63it/s]Loading weights:  53%|#####3    | 166/311 [00:01<00:01, 138.96it/s]Loading weights: 100%|##########| 311/311 [00:01<00:00, 300.77it/s]
+probe at block 14: AUROC 1.000  ECE 0.000  cos(refusal, probe) +0.703
+Generating test split:   0%|          | 0/4358 [00:00<?, ? examples/s]Generating test split: 100%|##########| 4358/4358 [00:00<00:00, 435405.94 examples/s]
+Generating train split:   0%|          | 0/36718 [00:00<?, ? examples/s]Generating train split: 100%|##########| 36718/36718 [00:00<00:00, 1983366.87 examples/s]
+Generating validation split:   0%|          | 0/3760 [00:00<?, ? examples/s]Generating validation split: 100%|##########| 3760/3760 [00:00<00:00, 469768.05 examples/s]
+[none          ] refusal harmful 0.77  contrast 0.54  borderline 0.05  harmless 0.00  degenerate 0.00/0.00/0.00/0.00  ppl 19.92 (gain 0.000)  probe AUROC prompt 1.00 gen 0.78
+saved results\alignment\ref_qwen3_aligned.json (labels and scores only)

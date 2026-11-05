@@ -321,6 +321,19 @@ def test_end_to_end_tiny_run_writes_labels_only(tmp_path):
         run.main(["--tiny", "--name", "../../results/alignment/escape", "--private-dir", str(tmp_path / "p")])
 
 
+def test_layer_sweep_trains_the_probe_without_crashing(tmp_path):
+    """A1 regression: layer_sweep (run.py) must not wrap probe_report's training loop in
+    torch.no_grad(); activations() already runs the model forward pass under its own no_grad,
+    but fit_probe calls loss.backward() and needs autograd enabled."""
+    pytest.importorskip("transformers")
+    import run
+    rep = run.main(["--tiny", "--n-train", "32", "--n-eval", "8", "--batch", "4", "--max-new-tokens", "4",
+                    "--device", "cpu", "--name", "pytest_layer_sweep", "--arms", "none", "--layer-sweep"])
+    (ROOT / "results" / "alignment" / "pytest_layer_sweep.json").unlink(missing_ok=True)
+    assert rep["layer_sweep"]
+    assert all(0.0 <= row["auroc"] <= 1.0 and row["ece"] is not None for row in rep["layer_sweep"])
+
+
 def test_sweeps_report_matched_operating_points(tmp_path):
     """RV1.D1: swept arms are keyed by value and compared at a matched harmful-refusal rate."""
     pytest.importorskip("transformers")

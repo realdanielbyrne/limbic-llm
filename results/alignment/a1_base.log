@@ -1,0 +1,18 @@
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights:   5%|4         | 14/310 [00:00<00:02, 110.20it/s]Loading weights:  11%|#         | 34/310 [00:00<00:01, 140.99it/s]Loading weights:  20%|#9        | 61/310 [00:00<00:01, 168.64it/s]Loading weights:  27%|##7       | 84/310 [00:00<00:01, 184.49it/s]Loading weights:  33%|###3      | 103/310 [00:00<00:01, 172.55it/s]Loading weights:  39%|###9      | 121/310 [00:00<00:01, 107.41it/s]Loading weights: 100%|##########| 310/310 [00:01<00:00, 306.42it/s]
+  layer   0  AUROC 0.977  ECE 0.039
+  layer   2  AUROC 0.998  ECE 0.018
+  layer   4  AUROC 1.000  ECE 0.013
+  layer   6  AUROC 0.976  ECE 0.037
+  layer   8  AUROC 1.000  ECE 0.000
+  layer  10  AUROC 1.000  ECE 0.000
+  layer  12  AUROC 1.000  ECE 0.000
+  layer  14  AUROC 1.000  ECE 0.000
+  layer  16  AUROC 1.000  ECE 0.000
+  layer  18  AUROC 1.000  ECE 0.000
+  layer  20  AUROC 1.000  ECE 0.000
+  layer  22  AUROC 1.000  ECE 0.000
+  layer  24  AUROC 1.000  ECE 0.000
+  layer  26  AUROC 1.000  ECE 0.000
+probe at block 14: AUROC 1.000  ECE 0.000  cos(refusal, probe) +0.438
+[none          ] refusal harmful 0.05  contrast 0.02  borderline 0.00  harmless 0.00  degenerate 0.78/0.77/0.67/0.70  probe AUROC prompt 1.00 gen 0.61
+saved results\alignment\a1_base.json (labels and scores only)

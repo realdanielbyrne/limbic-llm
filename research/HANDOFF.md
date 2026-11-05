@@ -96,6 +96,12 @@ Daniel wants a working full-model side-channel module (register W18) and, from i
 - A W1s-style episodic memory over the conversation, possibly with a CA1-style comparator, would let the CA2 controller act on intent integrated over many tokens.
 - Both follow round 11. The alignment session should know they are coming; nothing is built yet.
 
+## Register IDs: allocate from the latest pull (5 Nov 2026)
+
+The round-11 session (on `feat/round1-side-memory`) and the alignment session (on `feat/alignment-a1-a6`, merged into `main` as PR #7) both used P59–P62 independently, and both added an A9 row for the same windowed-intent-memory idea. In PR #8 the alignment rows were renumbered **P77–P80** (round 11 had used P59–P67 first, on 4 Nov), with every reference updated and a note on each row. The two A9 rows were merged into one.
+- **Next free result ID: P81.** Before allocating IDs (P, DEC, W, A, RV), pull both `main` and `feat/round1-side-memory` and take the next free number across both.
+- Round 11's P59–P76 and DEC9–DEC14 are on `feat/round1-side-memory`; the alignment track's P77–P80 come from `main`.
+
 ## How to run a round
 
 Follow [`evolution_protocol.md`](evolution_protocol.md): the round loop, controls, the candidate interface, `experiments/evolve/queue.sh` (GPU job queue) and `experiments/evolve/sync.sh` (rebase-safe push), and the pitfalls met in rounds 0–5.
@@ -134,6 +140,32 @@ A Claude Science session reviewed the four research tracks against the literatur
 - **R6.** A repetition-regulated CoT gain.
 
 A8 and R6 need new modes in `steering.py`, and neither is built yet. The notebook reads `summary()`'s new keys (`s_gen_mean` replaces `s_mean`). **Do not commit this notebook with outputs from the alignment preset** (data rule): clear them with `jupyter nbconvert --clear-output --inplace`.
+
+## Alignment track status (5 Nov 2026)
+
+A1 (layer sweep, 3 models), the two references, and A6 (gain/cap sweep, 2 models) are **done**,
+single seed, at block 14 (`research/NOTEBOOK.md`, "Alignment track: A1 and A6 on Qwen3-1.7B";
+register P77–P80; `results/alignment/`). Run locally on an RTX 4070 SUPER, not geof — this
+particular session had no path to geof, so it ran the track on its own machine instead, with
+Daniel's approval. Headline: nothing restores refusal close to the aligned reference (peak 0.20 of
+0.77); the proposed `graded`/`conditional` controllers are safer than `static` addition but much
+weaker (A6.H2 not supported as built); the never-aligned base model's near-identical peak number is
+mostly degeneration noise, not real restoration (A6.H3 supported) — the sibling's refusal direction
+is nearly orthogonal to its own harm direction. Full mechanism write-up in the NOTEBOOK entry.
+
+Found and fixed a real bug along the way: `layer_sweep` (`run.py`) was wrapped in a `@torch.no_grad()`
+that broke its own probe-training loop, so `--layer-sweep` crashed every time (untested by the
+44-test suite; now 45). Also added `accelerate` to the `pretrained` extra (`pyproject.toml`) —
+newer `transformers`' `device_map="auto"` needs it; does not affect CI.
+
+Opened **A9** (REGISTER §4.4, NOTEBOOK proposal): a windowed, memory-based intent signal — reusing
+this repo's own side-channel modules (`HippocampalLoop`/CA3, `gated_delta.py`) rather than a new
+mechanism — as a candidate fix for the "controller cannot touch the prompt encoding without
+`static`'s instability" finding above. Explicitly **blocked on the round-11 (or later) side-memory
+track** landing a selection mechanism that generalizes past held-out names (P54, P55); not started.
+
+**Not started**: A2, A3, A4, A5, A7, A8, R6, S1/S9, J1, or any reasoning runner. Do not start these
+without Daniel's separate go-ahead, per the original scope.
 
 ## Earlier contents
 
