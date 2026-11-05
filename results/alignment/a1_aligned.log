@@ -1,0 +1,19 @@
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]Fetching 2 files:  50%|#####     | 1/2 [00:24<00:24, 24.60s/it]Fetching 2 files: 100%|##########| 2/2 [00:25<00:00, 10.83s/it]Fetching 2 files: 100%|##########| 2/2 [00:25<00:00, 12.90s/it]
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]Loading weights:   4%|3         | 12/311 [00:00<00:02, 115.34it/s]Loading weights:  15%|#5        | 48/311 [00:00<00:01, 234.46it/s]Loading weights:  24%|##4       | 75/311 [00:00<00:01, 195.24it/s]Loading weights:  43%|####3     | 134/311 [00:00<00:00, 318.11it/s]Loading weights:  54%|#####4    | 169/311 [00:00<00:00, 246.81it/s]Loading weights:  64%|######3   | 198/311 [00:00<00:00, 198.89it/s]Loading weights: 100%|##########| 311/311 [00:01<00:00, 310.30it/s]
+  layer   0  AUROC 0.977  ECE 0.020
+  layer   2  AUROC 1.000  ECE 0.004
+  layer   4  AUROC 1.000  ECE 0.008
+  layer   6  AUROC 1.000  ECE 0.019
+  layer   8  AUROC 1.000  ECE 0.000
+  layer  10  AUROC 1.000  ECE 0.000
+  layer  12  AUROC 1.000  ECE 0.000
+  layer  14  AUROC 1.000  ECE 0.000
+  layer  16  AUROC 1.000  ECE 0.000
+  layer  18  AUROC 1.000  ECE 0.000
+  layer  20  AUROC 1.000  ECE 0.000
+  layer  22  AUROC 1.000  ECE 0.000
+  layer  24  AUROC 1.000  ECE 0.000
+  layer  26  AUROC 1.000  ECE 0.000
+probe at block 14: AUROC 1.000  ECE 0.000  cos(refusal, probe) +0.703
+[none          ] refusal harmful 0.70  contrast 0.50  borderline 0.05  harmless 0.00  degenerate 0.00/0.00/0.00/0.00  probe AUROC prompt 1.00 gen 0.83
+saved results\alignment\a1_aligned.json (labels and scores only)

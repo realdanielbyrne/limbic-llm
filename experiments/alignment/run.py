@@ -125,9 +125,13 @@ def floats(spec: str | None) -> list[float]:
     return [float(x) for x in spec.split(",") if x.strip()] if spec else []
 
 
-@torch.no_grad()
 def layer_sweep(model, blocks, tok, harmful, harmless, args) -> list[dict]:
-    """A1 across depth: held-out probe AUROC and refusal-direction norm at every other block."""
+    """A1 across depth: held-out probe AUROC and refusal-direction norm at every other block.
+
+    Not itself wrapped in ``torch.no_grad()``: ``activations`` already runs the model forward
+    pass under its own ``@torch.no_grad()``, but ``probe_report`` trains the probe with
+    ``loss.backward()`` and needs autograd enabled.
+    """
     out = []
     toks = encode_all(tok, harmful + harmless, args.chat)
     y = torch.tensor([1] * len(harmful) + [0] * len(harmless))
