@@ -1491,3 +1491,5 @@ Seeds 0–4 (I1 and A2 reuse Stage A's seeds 1–2), 420 evaluations: the 18-cel
 - dropped: A3 (G0.3) and A9 (G0.7).
 
 Nothing in Stage A starts without Daniel's go-ahead.
+
+**[4 Nov 2026, later] Daniel's readings (DEC10).** G0.8 is read literally, so A1 (rope) runs beside A1b. A12 runs despite G0.1, starting at log β_align = 3.68, the sharpest start below the β ≤ 40 clamp. Updates, dc, RV4 §6 and the go-ahead for Stage A are still open.
