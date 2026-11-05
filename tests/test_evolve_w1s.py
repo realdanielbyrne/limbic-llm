@@ -807,3 +807,277 @@ def test_alignment_gradients_stay_finite_when_matches_underflow():
     y = m32(30 * torch.randn(2, 200, D))[0].pow(2).sum()
     y.backward()
     assert all(torch.isfinite(p.grad).all() for p in m32.parameters() if p.grad is not None)
+
+
+# ============================================================ A13: native keys (RV4.R3)
+# The slot key is the mean of layer L's pre-rotary K over the window head, the query the mean of its Q over the
+# last pool tokens, scored β_N cos. Here the captured activations are random tensors of their own width DN
+# (≠ D), as ``taps.TapLM`` would put them in extra; the TapLM path is tested at the end on a tiny Qwen3.
+NATIVE = ("--w1s-gate=point", "--no-w1s-centre", "--w1s-pre=0", "--w1s-key=native", "--w1s-taps=")   # I1 → A13
+NL, DN = 21, 24
+NATIVE_CFGS = {
+    "lex-align": [],
+    "learned-align": ["--w1s-align=learned"],
+    "noalign": ["--w1s-align=none"],
+    "supw": ["--w1s-recency-form=supw", "--w1s-sup-theta=0.2", "--w1s-sup-gamma=8"],
+    "keep": ["--w1s-keep=5", "--w1s-keep-by=value"],
+    "code": ["--w1s-code=learned", "--w1s-dc=8"],
+}
+
+
+def native_extra(B, T, dn=DN, seed=7, dtype=torch.float32, L=NL):
+    g = torch.Generator().manual_seed(seed)
+    return {("k", L): torch.randn(B, T, dn, generator=g, dtype=dtype),
+            ("q", L): torch.randn(B, T, dn, generator=g, dtype=dtype)}
+
+
+def native(*flags, d=D):
+    m = side(*NATIVE, *flags, d=d)
+    with torch.no_grad():
+        m.loop.gain_logit.fill_(2.0)
+    return m
+
+
+def test_native_defaults_change_nothing():
+    """Regression: with every default (and I1's flags) nothing of A13 exists: no attention taps, no β_N, the
+    null logit and the parameter list as before, so outputs and checkpoints are those of round 10/11."""
+    for flags in ([], list(I1), ["--w1s-out=reinstate"], ["--w1s-store=superposed"]):
+        m = side(*flags)
+        assert m.attn_taps == () and not m.loop.use_native and not hasattr(m.loop, "log_beta_native")
+        assert all("native" not in k for k in m.state_dict())
+    assert split_args([])[0].w1s_key == "both" and split_args([])[0].w1s_native_layer == 21
+    m = side()
+    assert m.loop.null_logit.item() == pytest.approx(0.3 * 40.0, abs=0)
+
+
+@pytest.mark.parametrize("cfg", list(NATIVE_CFGS))
+@pytest.mark.parametrize("gate", ["point", "oracle"])
+@pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
+def test_native_strictly_causal(cfg, gate, dtype):
+    """E1: perturbing h and the captured K and Q from t0 on leaves every output row before t0 bitwise
+    unchanged, for float32 and bf16-rounded input (K = 2: evictions); the native read is live."""
+    m = native(*NATIVE_CFGS[cfg], f"--w1s-gate={gate}", "--w1s-K=2")
+    T = 200
+    m.oracle_onsets = every(2, T, 13, 5)
+    torch.manual_seed(0)
+    h = torch.randn(2, T, D).to(dtype).float()
+    ex = {k: v.to(dtype).float() for k, v in native_extra(2, T).items()}
+    with torch.no_grad():
+        y = run(m, h, ex)
+        assert (m.loop.last_diag["retained"] >= 0).any()
+        live = {k: v.clone() for k, v in ex.items()}
+        live[("q", NL)][:, 100:] += 1.0                           # only the native query changes
+        assert not torch.equal(run(m, h, live)[:, 100:], y[:, 100:])
+        for t0 in (1, 23, 60, 131, 199):
+            h2, e2 = h.clone(), {k: v.clone() for k, v in ex.items()}
+            h2[:, t0:] += torch.randn_like(h2[:, t0:]).to(dtype).float()
+            for v in e2.values():
+                v[:, t0:] += torch.randn_like(v[:, t0:]).to(dtype).float()
+            y2 = run(m, h2, e2)
+            assert torch.equal(y[:, :t0], y2[:, :t0]), (cfg, t0)
+            assert not torch.equal(y, y2)
+
+
+@pytest.mark.parametrize("cfg", [*NATIVE_CFGS, "fallback"])
+@pytest.mark.parametrize("gate", ["point", "oracle"])
+def test_native_stream_equals_parallel(cfg, gate):
+    """E2: the parallel read equals the independent streaming store (K = 2, so slots are evicted): the read,
+    the slots held at every t and their read weights; ``fallback`` has no extra (K = Q = h)."""
+    m = native(*NATIVE_CFGS.get(cfg, []), "--w1s-K=2", f"--w1s-gate={gate}", d=16).double()
+    B, T = 2, 170
+    torch.manual_seed(1)
+    h = torch.randn(B, T, 16, dtype=torch.float64)
+    ex = None if cfg == "fallback" else native_extra(B, T, dtype=torch.float64)
+    oracle = every(B, T, 11, 3)
+    with torch.no_grad():
+        par = m.loop.read(h, ex, oracle)
+    d = m.loop.last_diag
+    ref = m.loop.stream(h, ex, oracle)
+    torch.testing.assert_close(par, ref["o"], atol=1e-6, rtol=1e-6)
+    assert ref["evictions"] > 0
+    for b in range(B):
+        for t in range(T):
+            held = {int(s) for s in d["retained"][b, t] if s >= 0}
+            assert held == ref["retained"][b][t], (b, t)
+            w = {int(s): float(a) for s, a in zip(d["retained"][b, t], d["read_w"][b, t]) if s >= 0}
+            for s, a in ref["read_w"][b][t].items():
+                assert abs((w[s] if s is not None else float(d["read_w"][b, t, -1])) - a) < 1e-6, (cfg, b, t, s)
+
+
+@pytest.mark.parametrize("cfg", ["lex-align", "noalign"])
+def test_native_state_is_independent_of_T_and_matches_the_analytic_count(cfg):
+    """E2: the streaming state (the ring now holds each position's K and Q, every slot its native key) has the
+    same size at T = 512 and 2048, and equals ``analytic_state`` at the captured width DN."""
+    m = native(*NATIVE_CFGS[cfg], "--w1s-K=2", d=16)
+    sizes = []
+    for T in (512, 2048):
+        torch.manual_seed(2)
+        ref = m.loop.stream(torch.randn(1, T, 16), native_extra(1, T))
+        assert ref["evictions"] > 0
+        sizes.append(ref["state_floats"])
+    assert sizes[0] == sizes[1], sizes
+    assert m.loop.native_dim == DN
+    assert ref["state_components"] == m.loop.analytic_state(16), (ref["state_components"], m.loop.analytic_state(16))
+    lex = 16 if cfg == "lex-align" else 0                         # the lexical alignment centres on lexical keys
+    assert ref["state_components"]["slot_keys"] == 2 * (lex + DN + 2)   # K = 2 slots; no learned key
+
+
+def test_native_budget_and_state_at_qwen_width():
+    """E3 at width 2048 with Qwen3-1.7B's K/Q width (8 KV heads × 128 = 1024): one parameter more than the
+    learned key's β and none of its 2048 × 128 map, so fewer parameters than I1; the full streaming state
+    (K = 16 slots of n = 24) stays within 1M floats and equals the analytic count."""
+    i1 = W1sSide(2048, ARGS, split_args(list(I1))[0])
+    m = side(*NATIVE, "--w1s-gate=oracle", d=2048)
+    n_par = sum(p.numel() for p in m.parameters())
+    assert n_par <= 4_400_000 and n_par < sum(p.numel() for p in i1.parameters())
+    assert sum(b.numel() for b in m.buffers()) <= 1_000_000
+    T = 200
+    torch.manual_seed(0)
+    ref = m.loop.stream(torch.randn(1, T, 2048), native_extra(1, T, dn=1024), every(1, T, 10, 2))
+    assert len(ref["retained"][0][-1]) == 16
+    rep = m.state_report()
+    assert ref["state_floats"] == rep["state_floats"] <= 1_000_000, (ref["state_floats"], rep)
+
+
+def test_native_key_has_no_learned_map_and_beta_gets_gradient():
+    """β_N (from log 10) is the native key's only parameter and is trained; the captured activations are detached;
+    W_k exists only for a learned alignment."""
+    m = native("--w1s-gate=oracle").train()
+    assert m.loop.wk is None and abs(m.loop.log_beta_native.item() - math.log(10.0)) < 1e-6
+    assert native("--w1s-align=learned").loop.wk is not None
+    m.oracle_onsets = every(2, 150, 9, 2)
+    ex = {k: v.requires_grad_() for k, v in native_extra(2, 150).items()}
+    m.extra = ex
+    m(torch.randn(2, 150, D))[0].pow(2).sum().backward()
+    assert m.loop.log_beta_native.grad is not None and m.loop.log_beta_native.grad.abs() > 0
+    assert all(v.grad is None for v in ex.values())
+
+
+def test_native_controls_empty_and_shuffle():
+    """--w1s-ctrl empty injects nothing; shuffle keys row b's slots by row b − 1's K (the query stays its own)."""
+    m = native("--w1s-ctrl=empty")
+    h, ex = torch.randn(2, 150, D), native_extra(2, 150)
+    with torch.no_grad():
+        y, stats = (setattr(m, "extra", ex), m(h))[1]
+    assert torch.equal(y, h) and stats.inj_ratio.abs().max() == 0
+    m = native("--w1s-gate=oracle")
+    m.oracle_onsets = every(3, 120, 10, 2)
+    h, ex = torch.randn(3, 120, D), native_extra(3, 120)
+    with torch.no_grad():
+        f, st = m.loop._run_store(m.loop.norm(h), h, ex, m.oracle_onsets)
+        m.loop.ctrl = "shuffle"
+        fs, sts = m.loop._run_store(m.loop.norm(h), h, ex, m.oracle_onsets)
+    assert torch.equal(sts["KN"], st["KN"].roll(1, 0)) and torch.equal(fs["qn"], f["qn"])
+
+
+def test_native_refusals_and_missing_activations():
+    """Native keys key the additive slot read only; time features act on the learned key; an extra without
+    layer L's K/Q is an error (a GPU run must not silently key on h); the side declares its attention tap."""
+    for flags in (["--w1s-store=superposed"], ["--w1s-out=reinstate", "--w1s-taps=3", "--w1s-key-taps=3"],
+                  ["--w1s-time-feat=rope"]):
+        with pytest.raises(ValueError):
+            side(*NATIVE, *flags)
+    m = native("--w1s-native-layer=9")
+    assert m.attn_taps == (9,) and m.taps == ()
+    with pytest.raises(ValueError, match="layer 9"):
+        run(m, torch.randn(1, 60, D), native_extra(1, 60))       # captured at 21, not 9
+    with pytest.raises(ValueError, match="same shape"):
+        run(m, torch.randn(1, 60, D), {("k", 9): torch.randn(1, 60, 8), ("q", 9): torch.randn(1, 60, 16)})
+
+
+@pytest.mark.parametrize("q", [0, 1, 2])
+def test_native_key_returns_the_queried_fact_through_the_module(q, monkeypatch):
+    """Mechanism, through the module's real path: with K = Q = a fixed random projection of the token (what a
+    frozen layer's shared projection would give), the oracle gate, 3 facts and 12 false windows, the native
+    key picks the queried fact's slot at the answer position (no fitted key: β_N, the null and ω at their
+    initial values), and the lexical alignment reads its next digit at each teacher-forced position. The
+    selection is soft at initialisation (0.35–0.5 here): the cosine is not centred, so the frame every fact
+    shares ("is", space) also scores the other facts; β_N is learned and can sharpen it."""
+    reads = spy_read(monkeypatch)
+    m = side(*TOY, "--w1s-key=native", "--w1s-align=lex", d=V, time=False)
+    x, o, facts, qpos = toy(q)
+    R = torch.randn(V, 48, generator=torch.Generator().manual_seed(3)) / 48 ** 0.5
+    m.oracle_onsets, m.extra = o, {3: x, ("k", NL): x @ R, ("q", NL): x @ R}
+    with torch.no_grad():
+        m(x)
+    d = m.loop.last_diag
+    (r, v), = reads
+    fact = facts[q]
+    t = qpos + 2                                                  # the space after "is": the answer position
+    slot = d["retained"][0, t][d["read_w"][0, t, :-1].argmax()]
+    w = d["read_w"][0, t, :-1]
+    assert slot == fact["d"][0] and w.max() > 0.3 and w.max() > 1.3 * w.topk(2).values[1], (slot, w)
+    assert d["align"][0, t] == fact["d"][0]
+    for k, t in enumerate(range(qpos + 2, qpos + 6)):            # space, d1, d2, d3 predict d1..d4 (where read)
+        i = int(d["read_w"][0, t].argmax())
+        if i < m.loop.K and d["retained"][0, t, i] == fact["d"][0]:
+            assert d["align"][0, t] == fact["d"][k], (t, d["align"][0, t])
+
+
+def _tiny_qwen3(dtype=torch.float32):
+    import transformers
+    torch.manual_seed(0)
+    cfg = transformers.Qwen3Config(
+        vocab_size=512, hidden_size=64, intermediate_size=128, num_hidden_layers=4, num_attention_heads=4,
+        num_key_value_heads=2, head_dim=16, max_position_embeddings=1024, bos_token_id=256, eos_token_id=256,
+        pad_token_id=256)
+    model = transformers.AutoModelForCausalLM.from_config(cfg, attn_implementation="sdpa").to(dtype).eval()
+    for p in model.parameters():
+        p.requires_grad_(False)
+    return model
+
+
+TINY = (*NATIVE, "--w1s-native-layer=2", "--w1s-win=8", "--w1s-nms=2", "--w1s-pool=4")   # main tap 2 = L
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
+def test_native_through_taplm_on_a_tiny_qwen3(dtype):
+    """End to end on a random 4-layer Qwen3 (GQA 4:2, head 16) with the main tap and L at block 2: the side gets
+    K and Q of width 2 × 16 in extra; the windowed control is byte-identical to HookedLM; E1 holds bitwise at
+    the LM level (bf16 too: the captured activations are bf16-rounded); and the parallel read on the captured
+    activations equals the streaming store."""
+    import pretrained_loop as pl
+    from evolve.taps import TapLM
+    W_, T_ = 8, 49
+    s = side(*TINY, d=64)
+    with torch.no_grad():
+        s.loop.gain_logit.fill_(2.0)
+    lm = TapLM(_tiny_qwen3(dtype), s, 2, W_, "block", "all", 1, pad_id=256)
+    base = pl.HookedLM(_tiny_qwen3(dtype), s, 2, W_, "block", "all", 1, pad_id=256)
+    g = torch.Generator().manual_seed(0)
+    ids = torch.randint(0, 256, (2, T_), generator=g)
+    ids[:, 0] = 256
+    seen = []
+    real = s.loop.forward
+    s.loop.forward = lambda h, extra=None, oracle=None: (seen.append((h.clone(), dict(extra))),
+                                                         real(h, extra, oracle))[1]
+    with torch.no_grad():
+        for window in (W_, 0):
+            with base.condition(window, False), lm.condition(window, False):
+                assert torch.equal(base(ids), lm(ids))
+        assert seen == []
+        with lm.condition(W_, True):
+            ref = lm(ids)
+            h, ex = seen[-1]
+            assert ex[("k", 2)].shape == ex[("q", 2)].shape == (2, T_ - 1, 32) and ex[("k", 2)].dtype == torch.float32
+            assert s.loop.native_dim == 32 and s.extra is None
+            for t0 in (1, 9, 30, 48):
+                x = ids.clone()
+                x[:, t0:] = torch.randint(0, 256, x[:, t0:].shape, generator=torch.Generator().manual_seed(t0))
+                assert torch.equal(lm(x)[:, :t0], ref[:, :t0]), t0
+    s.loop.forward = real
+    m = s.double()
+    hd, exd = h.double(), {k: v.double() for k, v in ex.items() if isinstance(k, tuple)}
+    with torch.no_grad():
+        par = m.loop.read(hd, exd)
+    torch.testing.assert_close(par, m.loop.stream(hd, exd)["o"], atol=1e-6, rtol=1e-6)
+
+
+def test_native_state_report_is_marked_provisional_before_the_width_is_seen():
+    """Review R0: before a forward with captured K/Q, the native key's width is unknown and the state report
+    (an overcount at the model width) says so; once the width is seen, the mark goes."""
+    m = W1sSide(64, ARGS, split_args([*I1[:-1], "--w1s-key=native", "--w1s-taps="])[0])
+    assert "provisional" in m.state_report()
+    m.loop.native_dim = 32
+    rep = m.state_report()
+    assert "provisional" not in rep and rep["state_floats"] > 0

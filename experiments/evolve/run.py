@@ -25,9 +25,16 @@ Runs ``pretrained_loop.main`` unchanged, with three additions:
                 digits) as ``side.oracle_onsets``. Diagnostic only: it breaks rule E4. A candidate
                 flag ``--<prefix>-keep-by external`` (eval-time keep oracles) is refused here.
   state         A side with ``state_report()`` has its streaming state size recorded as ``w1s_state``.
+  teachers      Round-11 arms trained against the frozen model's own full-attention pass (training only;
+                ``experiments/evolve/teacher.py``), both off by default: ``--distill-frac F`` (A14) puts a
+                share F of the steps on general text with the loss T²·KL(full ‖ windowed+side) over the last
+                ``--distill-positions`` positions; ``--admit-target teacher`` (A15, W1s, scattered layout)
+                adds λ·KL(full attention's mass per candidate window ‖ the gate's p). ``train`` below
+                installs them around ``pl.train``; the result JSON records ``distill`` / ``admit``.
 
 The task variants that ``eval_by_query.py`` evaluates live here too: ``UpdateNeedleTask`` (forms
-same/now/new/changed/nowold, ``k`` restatements, decoys) and ``OrderNeedleTask`` (before/next/first/last).
+same/now/new/changed/nowold, ``k`` restatements, decoys), ``OrderNeedleTask`` (before/next/first/last) and
+the paraphrased queries (``PARAPHRASE_QUERIES``, the ``query`` template of the scattered tasks).
 
     python experiments/evolve/run.py --model Qwen/Qwen3-1.7B-Base --dtype bfloat16 --device cuda \
         --task needle --kernel exp --rho 0.95 --tau 32 --steps 3000 --out results/evolve/round1/x.json
@@ -38,6 +45,7 @@ from __future__ import annotations
 import argparse
 import importlib
 import json
+import random
 import sys
 from pathlib import Path
 
@@ -45,6 +53,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import pretrained_loop as pl  # noqa: E402
+from evolve import teacher  # noqa: E402
 
 _last_lm = None
 _evaluate = pl.evaluate
@@ -73,6 +82,10 @@ UPDATE_STEMS = {"same": PLAIN, "now": " The code for {n} is now", "new": " The n
 UPDATE_TAILS = {"nowold": " (it used to be {old})."}               # the others end with "."
 ORDER_QUERIES = {"before": " The code stated just before {n}'s is", "next": " The code stated just after {n}'s is",
                  "first": " The first code stated is", "last": " The last code stated is"}
+# paraphrased queries (RV4.E3, eval_by_query.py --paraphrase K): the facts keep PLAIN, the query takes one of these, and
+# the answer stays " DDDD". Only 1 does not end in " is" (the token the offset read lines up with the stored " is")
+PARAPHRASE_QUERIES = {1: " Q: What is the code for {n}? A:", 2: " {n}'s code is", 3: " Remember the code for {n}. It is",
+                      4: " The number assigned to {n} is"}
 TRAIN_NAMES = pl.NAMES[:20]                                        # --needle-names train
 OVERFLOW_POOL = 2000                                               # syllable_pool(2000, 0): the name rule's extra names
 
@@ -106,20 +119,33 @@ class ScatterNeedleTask(pl.NeedleTask):
     Name rule: with more distinct names in a sequence than ``names`` holds (e.g. 32 codes on the
     20 training names), the queried name still comes from ``names`` and the other statements draw
     from ``names`` ∪ ``syllable_pool(2000, 0)`` minus it (``names_rule`` says so; None otherwise).
+
+    ``query`` (eval_by_query.py ``--paraphrase``, RV4.E3) is the query's template, with ``{n}`` for the
+    name (default ``PLAIN``, the facts' own prefix); the facts and the answer " DDDD" are unchanged.
+    The sequence is laid out with the plain query and then re-queried (``_requery``), so it is the
+    plain cell's sequence, draw for draw, except the end of the last filler: a query d tokens longer
+    takes d filler tokens before it, a shorter one adds them (natural filler continues the corpus;
+    random filler draws from a generator of its own). value_at, spans, the gap and the distance from
+    the last fact to the answer are those of the plain cell; the filler between the last fact and
+    the query is ``tail`` − d at the least.
     """
 
     def __init__(self, *a, min_gap: int = 8, tail: int = 256, block: int = 0, mix: float = 1.0,
                  curriculum: list[tuple[int, int]] | None = None, names: list[str] | None = None,
-                 jitter: bool = False, decoys: int = 0, **kw) -> None:
+                 jitter: bool = False, decoys: int = 0, query: str | None = None, **kw) -> None:
         super().__init__(*a, **kw)
         if block and tail <= block:
             raise ValueError(f"--needle-tail {tail} must exceed the window {block} (else the base reads the last fact)")
         if decoys < 0:
             raise ValueError(decoys)
+        if query is not None and "{n}" not in query:
+            raise ValueError(f"a query template needs {{n}} for the name: {query!r}")
         self.min_gap, self.tail, self.block, self.mix = min_gap, tail, block, mix
         self.curriculum, self._active, self._calls = curriculum or [], False, 0
         self.names, self.jitter, self._rows = names or pl.NAMES, jitter, None
         self.decoys, self._extra = decoys, None
+        self.query = query or PLAIN
+        self._pad_rng, self._fill_end = random.Random(0), None          # _requery's own draws (never the task's rng)
         if self.corpus and mix < 1.0 and self.pool is None:              # random filler for the mixed case
             self.pool = self.tok.filler_pool()
 
@@ -168,10 +194,35 @@ class ScatterNeedleTask(pl.NeedleTask):
         r = order.index(j)
         query, answer = enc(PLAIN.format(n=names[j])), enc(f" {values[j]}")
         ids, value_at, natural = self._place(rng, facts, heads, query, answer)
+        ids, q_len = self._requery(ids, query, answer, names[j], natural)
         gap = (len(ids) - len(answer)) - value_at[r]
         self.last_decoy_ranks = [r_ for r_, i in enumerate(order) if i >= self.pairs]
-        self._record(r, value_at, natural, heads, len(query), facts)
+        self._record(r, value_at, natural, heads, q_len, facts)
         return ids, len(answer), gap
+
+    def _requery(self, ids: list[int], query: list[int], answer: list[int], name: str,
+                 natural: bool) -> tuple[list[int], int]:
+        """``ids`` (laid out with the plain ``query``) with ``self.query`` in its place: (ids, query length).
+
+        The plain template returns ``ids`` untouched and draws nothing. Otherwise the last filler loses
+        (or gains) the length difference just before the query, so nothing before it moves and the
+        task's rng is never drawn from: the next sample is the plain cell's next sample."""
+        if self.query == PLAIN:
+            return ids, len(query)
+        para = self.tok.encode(self.query.format(n=name))
+        d = len(para) - len(query)
+        if d >= self.tail or (self.block and self.tail - d <= self.block):   # the last fact stays out of reach
+            raise ValueError(f"the paraphrased query is {d} tokens longer than the plain one: --needle-tail "
+                             f"{self.tail} leaves {self.tail - d} filler tokens, not more than the window {self.block}")
+        head = ids[:len(ids) - len(query) - len(answer)]
+        if d > 0:
+            head = head[:-d]
+        elif d < 0:
+            if natural:                                                  # the corpus is whole repeats: wrap around
+                head = head + [self.corpus[(self._fill_end + i) % len(self.corpus)] for i in range(-d)]
+            else:
+                head = head + [self.pool[self._pad_rng.randrange(len(self.pool))] for _ in range(-d)]
+        return head + para + answer, len(para)
 
     def _place(self, rng, facts: list[list[int]], heads: list[int], query: list[int],
                answer: list[int]) -> tuple[list[int], list[int], bool]:
@@ -193,6 +244,7 @@ class ScatterNeedleTask(pl.NeedleTask):
         def fill(k):
             if natural:
                 o = rng.randrange(len(self.corpus) - k)
+                self._fill_end = o + k                                     # where the last filler stops (_requery)
                 return self.corpus[o:o + k]
             return [self.pool[rng.randrange(len(self.pool))] for _ in range(k)]
         ids, value_at = [self.bos] * self.sink, []
@@ -271,7 +323,8 @@ class UpdateNeedleTask(ScatterNeedleTask):
 
     ``k`` (``--update-k``) restates U k times, each code's digit 1 differing from the previous
     code's; the last wins. ``k = 1`` with no decoys and the forms same/now/new draws the same random
-    numbers as before these options existed.
+    numbers as before these options existed. A ``query`` template (``--paraphrase``) phrases the query
+    as in the scattered task; the stale answer is scored on the same paraphrased query.
     """
 
     def __init__(self, *a, form: str = "same", k: int = 1, **kw) -> None:
@@ -313,11 +366,12 @@ class UpdateNeedleTask(ScatterNeedleTask):
         heads = [len(enc(h)) for _, _, h, _ in stmts]
         query, answer = enc(PLAIN.format(n=names[u])), enc(f" {news[-1]}")
         ids, value_at, natural = self._place(rng, facts, heads, query, answer)
+        ids, q_len = self._requery(ids, query, answer, names[u], natural)
         gap = (len(ids) - len(answer)) - value_at[ranks[-1]]
         self.last_old_rank, self.last_old_answer = ranks[-2], enc(f" {olds[-2]}")
         self.last_update_ranks = ranks
         self.last_decoy_ranks = [r_ for r_, st in enumerate(stmts) if st[0] >= self.pairs]
-        self._record(ranks[-1], value_at, natural, heads, len(query), facts)
+        self._record(ranks[-1], value_at, natural, heads, q_len, facts)
         return ids, len(answer), gap
 
 
@@ -337,6 +391,8 @@ class OrderNeedleTask(ScatterNeedleTask):
         super().__init__(*a, **kw)
         if kind not in ORDER_QUERIES:
             raise ValueError(kind)
+        if self.query != PLAIN:
+            raise ValueError("the order task has its own queries: no paraphrased query template")
         if self.decoys:
             raise ValueError("the order task has no decoys: every statement can be the answer")
         if kind in ("before", "next") and self.pairs < 2:
@@ -369,13 +425,27 @@ class OrderNeedleTask(ScatterNeedleTask):
 
 
 _train = pl.train
+_teacher_ns = None                                                 # teacher.split_args namespace (set by main)
+_teacher_stats = None                                              # what teacher.training recorded
 
 
 def train(lm, task, args):
-    """Activate a task curriculum for the duration of training only."""
+    """Activate a task curriculum for the duration of training only. With an A14/A15 flag on, train
+    through ``teacher.training`` (a task proxy and a patched ``pl.scores``); with both off, exactly as
+    before: ``pl.train`` gets the task itself and the unpatched ``pl.scores``."""
+    global _teacher_stats
     task._active = bool(getattr(task, "curriculum", None))
     try:
-        return _train(lm, task, args)
+        if _teacher_ns is None or not teacher.active(_teacher_ns):
+            return _train(lm, task, args)
+        with teacher.training(lm, task, args, _teacher_ns) as (proxy, stats):
+            _teacher_stats = stats
+            curve = _train(lm, proxy, args)
+            kinds = stats.get("kinds") or []
+            for c in curve if isinstance(curve, list) else []:   # "d": KL / agreement; "n": needle CE / accuracy
+                if isinstance(c, dict) and "step" in c and 0 < c["step"] <= len(kinds):
+                    c["kind"] = kinds[c["step"] - 1]
+            return curve
     finally:
         task._active = False
 
@@ -443,6 +513,10 @@ def main(argv=None):
         if cand_ns is not None and any(k.endswith("_keep_by") and v == "external" for k, v in vars(cand_ns).items()):
             raise SystemExit("--w1s-keep-by external is an evaluation-time diagnostic (eval_by_query.py "
                              "--keep-oracle); training must not use it")
+    global _teacher_ns, _teacher_stats
+    tns, rest = teacher.split_args(rest)                           # A14 / A15 (default off)
+    teacher.check(tns, pl.parse_args(rest), own.needle_scatter, cand_ns)
+    _teacher_ns, _teacher_stats = (tns if teacher.active(tns) else None), None
     if own.needle_names != "all" and not own.needle_scatter:
         raise SystemExit("--needle-names needs --needle-scatter")
     if own.needle_tail != 256 and not own.needle_scatter:
@@ -481,7 +555,8 @@ def main(argv=None):
     out = Path(args.out or f"results/pretrained/pretrained_loop_{args.task}.json")
     side = _last_lm.side if _last_lm is not None else None
     state = side.state_report() if hasattr(side, "state_report") else None
-    if own.candidate or own.needle_scatter:
+    teach = teacher.active(tns)
+    if own.candidate or own.needle_scatter or teach:
         rec = json.loads(out.read_text())
     if own.candidate:                                             # record the candidate and its flags
         rec["candidate"] = {"class": own.candidate, "args": vars(cand_ns) if cand_ns else {}}
@@ -496,7 +571,9 @@ def main(argv=None):
             rec["needle_names"] = own.needle_names
         if own.needle_names == "pool":
             rec["needle_name_pool"] = own.needle_name_pool
-    if own.candidate or own.needle_scatter:
+    if teach:                                                     # settings and mean losses of A14 / A15
+        rec.update(teacher.summary(tns, _teacher_stats))
+    if own.candidate or own.needle_scatter or teach:
         out.write_text(json.dumps(rec, indent=2))
     if _last_lm is not None:
         torch.save({k: v.cpu() for k, v in _last_lm.side.state_dict().items()}, out.with_suffix(".pt"))

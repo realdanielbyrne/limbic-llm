@@ -29,11 +29,23 @@ Variants of the task test generalisation (all need a scattered-layout run):
   --order KIND     before / next / first / last: the code stated just before or after a named
                    fact, or the first or last code stated (``run.OrderNeedleTask``)
   --heldout-names  names from a list disjoint from ``pl.NAMES`` (never seen in training)
+  --paraphrase K   the query in another phrasing (RV4.E3; ``run.PARAPHRASE_QUERIES``): 1 " Q: What is the
+                   code for NAME? A:", 2 " NAME's code is", 3 " Remember the code for NAME. It is",
+                   4 " The number assigned to NAME is"; the facts and the answer " DDDD" are unchanged.
+                   The same seed gives the plain cell's sequences up to the end of the last filler, so
+                   per_sequence pairs row by row with the plain cell. Combines with --update,
+                   --heldout-names, --jitter and --decoys (not --order). The cell counts only where full
+                   attention scores ≥ 0.8 (read from "controls"; nothing here gates on it)
   --w1s-ctrl       W1s controls: ``empty`` forces the store empty (must score 0.00), ``shuffle``
                    permutes the retained slots across the batch's rows (about chance; additive
                    output only, and --batch ≥ 2)
   --ctrl-conds     both W1s controls as extra conditions of the same pass (``side_empty``,
                    ``side_shuffle``, in "controls"); the slot diagnostics stay those of windowed+side
+
+Every condition is also split by whether the queried code repeats a digit (RV4.E12; 49.6% of codes do):
+``exact_by_repeat`` and ``digit1_by_repeat`` ({repeat, no_repeat, n_repeat, n_no_repeat}; an empty group is
+null) at the top level for windowed+side and in each control. The code is read from the answer tokens, and
+``per_sequence_repeat`` (parallel to ``per_sequence``, whose 4-tuples are unchanged) holds it per sequence.
 
 With more statements than names (e.g. 32 codes on the 20 training names) the queried name still
 comes from the run's list and the others from the list ∪ ``names.syllable_pool(2000, 0)``; the
@@ -77,8 +89,8 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import pretrained_loop as pl  # noqa: E402
 from evolve.names import HELDOUT_NAMES  # noqa: E402,F401  (re-exported: it used to live here)
-from evolve.run import (TRAIN_NAMES, UPDATE_STEMS, OrderNeedleTask, ScatterNeedleTask, UpdateNeedleTask,  # noqa: E402
-                        oracle_gate, oracle_onsets)
+from evolve.run import (PARAPHRASE_QUERIES, TRAIN_NAMES, UPDATE_STEMS, OrderNeedleTask, ScatterNeedleTask,  # noqa: E402
+                        UpdateNeedleTask, oracle_gate, oracle_onsets)
 
 CTRL_CONDS = {"side_empty": "empty", "side_shuffle": "shuffle"}   # --ctrl-conds: condition → side.ctrl
 LONG = 2048                                                        # above this, --batch must be explicit
@@ -91,8 +103,37 @@ def _score(lg: torch.Tensor, ids: torch.Tensor, n_ans: int) -> list[list[bool]]:
     return [[pred[i, k].item() == ids[i, T - n_ans + k].item() for k in range(n_ans)] for i in range(len(ids))]
 
 
-def _summarise(per_seq: list, P: int, edges: list[int]) -> dict:
-    """Accuracy by queried rank and by gap bin from (rank, gap, digit-1 ok, exact ok) tuples."""
+def answer_code(tok, answer: list[int]) -> str:
+    """The digits of an answer, from its tokens (" 1203" → "1203")."""
+    code = "".join(ch for ch in tok.decode(answer) if ch.isdigit())
+    if not code:
+        raise ValueError(f"no digits in the answer tokens {answer}")
+    return code
+
+
+def has_repeat(code: str) -> bool:
+    """True if a digit occurs twice in the code (RV4.E12: two candidates for an offset read)."""
+    return len(set(code)) < len(code)
+
+
+def _by_repeat(per_seq: list, repeat: list[bool]) -> dict:
+    """digit-1 and exact accuracy split by whether the queried code repeats a digit; ``repeat`` is parallel
+    to ``per_seq``. An empty group's accuracy is None."""
+    if len(repeat) != len(per_seq):
+        raise ValueError(f"{len(repeat)} repeat flags for {len(per_seq)} sequences")
+    out = {}
+    for name, i in (("digit1", 2), ("exact", 3)):
+        rep = [r[i] for r, f in zip(per_seq, repeat) if f]
+        no = [r[i] for r, f in zip(per_seq, repeat) if not f]
+        out[f"{name}_by_repeat"] = {"repeat": sum(rep) / len(rep) if rep else None,
+                                    "no_repeat": sum(no) / len(no) if no else None,
+                                    "n_repeat": len(rep), "n_no_repeat": len(no)}
+    return out
+
+
+def _summarise(per_seq: list, P: int, edges: list[int], repeat: list[bool] | None = None) -> dict:
+    """Accuracy by queried rank and by gap bin from (rank, gap, digit-1 ok, exact ok) tuples; with ``repeat``
+    (one flag per tuple) also split by whether the queried code repeats a digit."""
     by_rank = {"digit1": [], "exact": [], "n": []}
     for k in range(P):
         sel = [r for r in per_seq if r[0] == k]
@@ -110,9 +151,12 @@ def _summarise(per_seq: list, P: int, edges: list[int]) -> dict:
                                               "exact": sum(r[3] for r in sel if r[0] == k)
                                               / max(1, sum(1 for r in sel if r[0] == k))} for k in range(P)}}
     n = max(1, len(per_seq))
-    return {"digit1": sum(r[2] for r in per_seq) / n, "exact": sum(r[3] for r in per_seq) / n,
-            "digit1_by_queried_rank": by_rank["digit1"], "exact_by_queried_rank": by_rank["exact"],
-            "count_by_queried_rank": by_rank["n"], "by_gap": bins}
+    out = {"digit1": sum(r[2] for r in per_seq) / n, "exact": sum(r[3] for r in per_seq) / n,
+           "digit1_by_queried_rank": by_rank["digit1"], "exact_by_queried_rank": by_rank["exact"],
+           "count_by_queried_rank": by_rank["n"], "by_gap": bins}
+    if repeat is not None:
+        out.update(_by_repeat(per_seq, repeat))
+    return out
 
 
 def _auc(pos: torch.Tensor, neg: torch.Tensor) -> float:
@@ -340,6 +384,8 @@ def main(argv=None):
     ap.add_argument("--order", choices=["before", "next", "first", "last"], default=None,
                     help="order queries: the code stated just before/after a name's, or the first/last code")
     ap.add_argument("--heldout-names", action="store_true", help="names never used in training (not in pl.NAMES)")
+    ap.add_argument("--paraphrase", type=int, choices=sorted(PARAPHRASE_QUERIES), default=None, metavar="K",
+                    help="query in paraphrase template K (1-4, run.PARAPHRASE_QUERIES); facts and answer unchanged")
     ap.add_argument("--w1s-ctrl", choices=["none", "empty", "shuffle"], default="none",
                     help="W1s control: an empty store, or retained slots shuffled across rows")
     ap.add_argument("--ctrl-conds", action="store_true",
@@ -467,20 +513,24 @@ def main(argv=None):
         corpus = tok.encode(Path(text_file).read_text(encoding="utf-8", errors="replace"))
     scatter = rec.get("needle_scatter", 0)
     variants = (args.jitter or args.update or args.heldout_names or oracle or args.order or args.decoys
-                or args.keep_oracle == "offsets" or args.needle_tail is not None)
+                or args.keep_oracle == "offsets" or args.needle_tail is not None or args.paraphrase)
     if variants and not scatter:
-        raise SystemExit("--jitter, --update, --order, --decoys, --needle-tail, --heldout-names, --keep-oracle "
-                         "offsets and an oracle gate need a scattered-layout run")
+        raise SystemExit("--jitter, --update, --order, --decoys, --needle-tail, --heldout-names, --paraphrase, "
+                         "--keep-oracle offsets and an oracle gate need a scattered-layout run")
     if args.jitter and args.update:
         raise SystemExit("--jitter and --update are separate tests")
     if args.order and (args.update or args.jitter or args.decoys):
         raise SystemExit("--order is a separate test (no --update, --jitter or --decoys)")
     if args.update_k != 1 and not args.update:
         raise SystemExit("--update-k needs --update")
+    if args.paraphrase and args.order:
+        raise SystemExit("--order has its own queries: no --paraphrase")
     tail = args.needle_tail or rec.get("needle_tail", 256)
     pool = (HELDOUT_NAMES if args.heldout_names
             else TRAIN_NAMES if rec.get("needle_names") in ("train", "pool") else None)   # pool: training only
     kw = dict(min_gap=scatter, tail=tail, block=W, names=pool, decoys=args.decoys)
+    if args.paraphrase:                                            # the query template (facts and answer unchanged)
+        kw["query"] = PARAPHRASE_QUERIES[args.paraphrase]
     try:
         if args.update:
             task = UpdateNeedleTask(tok, L, P, 1, corpus, form=args.update, k=args.update_k, **kw)
@@ -535,6 +585,7 @@ def main(argv=None):
 
     rng = random.Random(args.seed)
     per_seq = {c: [] for c in conds}                               # (rank, gap, digit-1 ok, exact ok)
+    repeats = []                                                   # parallel to every per_seq[c]: code repeats a digit
     upd = {c: [] for c in conds}                                   # (new digit 1, old digit 1, new exact, old exact)
     eps_all, eps_d1 = [], []
     slots = {"seq": [], "align_within1": [], "null_weight": [], "p_d1": [], "p_fill": [], "onset_in_fact": [],
@@ -546,6 +597,7 @@ def main(argv=None):
         for _ in range(batch):
             ids, n_ans, gap = task.sample(rng)
             gaps.append(gap)
+            repeats.append(has_repeat(answer_code(tok, ids[-n_ans:])))   # the queried code, from its tokens
             if scatter:
                 j, vat = task.last_queried, task.last_value_at
                 spans.append(task.last_spans), qlens.append(task.last_query_len)
@@ -610,7 +662,7 @@ def main(argv=None):
                 eps_d1.append(torch.stack([eps[i, :, d1[i]].mean() for i in range(len(d1))]).mean().item())
     if args.keep_oracle:
         side.keep_scores = side.keep_pair = None
-    main_ = _summarise(per_seq["windowed+side"], R, edges)
+    main_ = _summarise(per_seq["windowed+side"], R, edges, repeats)
     out = {"result": args.result, "pairs": P, "seq_len": L, "text_file": text_file, "scatter": scatter,
            "n": len(per_seq["windowed+side"]),
            # the side-channel model (kept at the top level, as in earlier rounds)
@@ -618,10 +670,12 @@ def main(argv=None):
            "exact_by_queried_rank": main_["exact_by_queried_rank"],
            "count_by_queried_rank": main_["count_by_queried_rank"],
            "digit1": main_["digit1"], "exact": main_["exact"], "by_gap": main_["by_gap"],
-           "controls": {c: _summarise(per_seq[c], R, edges) for c in conds if c != "windowed+side"},
+           "exact_by_repeat": main_["exact_by_repeat"], "digit1_by_repeat": main_["digit1_by_repeat"],
+           "controls": {c: _summarise(per_seq[c], R, edges, repeats) for c in conds if c != "windowed+side"},
            "per_sequence": per_seq["windowed+side"],
+           "per_sequence_repeat": repeats,                         # parallel to per_sequence (RV4.E12)
            "missing_keys": list(missing), "unexpected_keys": list(unexpected)}
-    nondefault = args.update_k != 1 or args.decoys or args.order
+    nondefault = args.update_k != 1 or args.decoys or args.order or args.paraphrase
     if args.jitter or args.update or pool or nondefault:
         out["task"] = {"jitter": args.jitter, "update": args.update,
                        "names": "heldout" if args.heldout_names else "train" if pool else "all"}
@@ -633,6 +687,9 @@ def main(argv=None):
             out["task"]["decoys"] = args.decoys
         if args.order:
             out["task"]["order"] = args.order
+        if args.paraphrase:
+            out["task"]["paraphrase"] = args.paraphrase
+            out["task"]["query_template"] = PARAPHRASE_QUERIES[args.paraphrase]
     if tail != 256:
         out["needle_tail"] = tail
     rule = getattr(task, "names_rule", None)
@@ -669,6 +726,7 @@ def main(argv=None):
     upd_name = f"update-{args.update}" + (f"-k{args.update_k}" if args.update_k != 1 else "")
     variant = "".join(f".{name}" for name, on in (("jitter", args.jitter), (upd_name, args.update),
                                                     ("heldout", args.heldout_names),
+                                                    (f"para{args.paraphrase}", args.paraphrase),
                                                     (f"ctrl-{args.w1s_ctrl}", args.w1s_ctrl != "none"),
                                                     (f"order-{args.order}", args.order),
                                                     (f"decoys{args.decoys}", args.decoys),

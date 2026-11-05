@@ -25,6 +25,12 @@ whole window in a slot of its own, in order, and reads it by offset:
     keys     lex      mean of LN(h³) over the window's first 8 entries; the query is the mean over the
                       last 8 tokens; centred cosine, centred on the retained keys (no fitted parameters)
              learned  W_k [LN(h³); LN(h²¹)] → 128, one map for keys and queries
+             native   (round 11, A13, RV4.R3) the frozen model's own attention states at one layer L
+                      (``--w1s-native-layer``, default 21), read in the same windowed pass by
+                      ``taps.TapLM`` (``attn_taps``): the key is the mean of K_L (after k_proj, k_norm,
+                      before rotary) over the window's first 8 entries, the query the mean of Q_L (query
+                      heads averaged per KV head) over the last 8 tokens, scored β_N·cos (β_N from 10).
+                      No learned key map; activations only, never the projections (E3)
     read     a_t = softmax over the retained slots + null of β_lex·ĉos_lex + β_L·cos_L + log p_k − ω·age_k
              (β learned, from 30 and 10). Inside slot k, α = softmax_j β_a cos(z_t, z_j) aligns the
              current token with a stored one, and the value read is the one stored at j + 1
@@ -54,7 +60,9 @@ max(P, r) + 1) and the gate's scalars, whatever T (``stream`` returns its size: 
 Taps: ``W1sSide.taps`` (block indices, default 3) are read by ``taps.TapLM``, which sets
 ``side.extra = {i: h_i}`` before each call. Without ``extra`` (unit tests, the CPU suite) every tap
 falls back to h. ``--w1s-key-taps`` lists the streams of the gate and the learned key: tap indices,
-plus any other index (21) for the main tap h; the lexical key uses the lowest.
+plus any other index (21) for the main tap h; the lexical key uses the lowest. With ``--w1s-key native``
+``W1sSide.attn_taps = (L,)`` and ``extra`` also holds ``("k", L)`` and ``("q", L)`` (B, T, H_kv·d); without
+``extra`` both fall back to h (a stand-in so the module runs); an ``extra`` that lacks them is an error.
 
 Run with ``experiments/evolve/run.py --candidate evolve.w1s_slots:W1sSide``; flags below.
 """
@@ -139,7 +147,10 @@ def split_args(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
     ap.add_argument("--w1s-store", choices=["slots", "superposed"], default="slots")
     ap.add_argument("--w1s-K", type=int, default=16, help="slots")
     ap.add_argument("--w1s-delta", type=float, default=0.0, help="δ in π_s = log p_s + δ·s (large = FIFO)")
-    ap.add_argument("--w1s-key", choices=["lex", "learned", "both"], default="both")
+    ap.add_argument("--w1s-key", choices=["lex", "learned", "both", "native"], default="both",
+                    help="native (A13): the frozen model's own pre-rotary K/Q at --w1s-native-layer")
+    ap.add_argument("--w1s-native-layer", type=int, default=21,
+                    help="native keys: the attention layer whose K/Q are read (≤ the main tap --layer)")
     ap.add_argument("--w1s-key-taps", default=None,
                     help="streams of the gate and learned key (default: the taps, plus 21 = h when additive)")
     ap.add_argument("--w1s-pool", type=int, default=8, help="entries pooled into a key, and tokens into a query")
@@ -340,6 +351,7 @@ class SlotLoop(GDNLoop):
         self.K, self.delta, self.pool = w.w1s_K, w.w1s_delta, min(w.w1s_pool, w.w1s_win)
         self.key, self.align, self.out, self.ctrl = w.w1s_key, w.w1s_align, w.w1s_out, w.w1s_ctrl
         self.use_lex, self.use_learned = self.key in ("lex", "both"), self.key in ("learned", "both")
+        self.use_native = self.key == "native"
         self.thresholds = tuple(w.w1s_schmitt)
         M, rho = len(streams), w.w1s_density
         c = w.w1s_latch if self.gate == "hyst" else 0.0
@@ -371,7 +383,9 @@ class SlotLoop(GDNLoop):
         # oracle onsets, 3 facts + 12 false windows) the queried fact's window scores 0.53 on average
         # (10th percentile 0.43) and the best other window 0.45: a higher null would win at initialisation.
         # It scales with the initial β_lex, so a lexical key started near off (--w1s-lex-init) is not outvoted.
-        self.null_logit = nn.Parameter(torch.tensor(0.3 * (lex0 * self.use_lex + 10.0 * self.use_learned)))
+        # A native key (from β_N = 10) adds what a learned one does: its null threshold is a cosine of 0.3 too
+        self.null_logit = nn.Parameter(torch.tensor(0.3 * (lex0 * self.use_lex + 10.0 * self.use_learned
+                                                           + 10.0 * self.use_native)))
         self.log_omega = nn.Parameter(torch.tensor(math.log(w.w1s_recency))) if w.w1s_recency > 0 else None
         if self.out == "additive":
             self.wa = nn.Linear(d_model, w.w1s_dv, bias=False)    # v = A LN(h²¹)
@@ -402,8 +416,13 @@ class SlotLoop(GDNLoop):
             raise ValueError(f"--w1s-keep-by {self.keep_by} needs --w1s-keep M > 0")
         if tf != "none" and not self.use_learned:
             raise ValueError("--w1s-time-feat acts on the learned key: needs --w1s-key learned or both")
-        if rf == "supw" and not (self.use_learned or self.use_lex):
+        if rf == "supw" and not (self.use_learned or self.use_lex or self.use_native):
             raise ValueError("supw needs keys")
+        self.native_layer, self.native_dim = int(_opt(w, "w1s_native_layer", 21)), None
+        if self.use_native and not slots_add:                     # A13 (RV4.R3)
+            raise ValueError("--w1s-key native keys the additive slot read (--w1s-store slots --w1s-out additive): "
+                             "the superposed store has no slot keys, and the reinstatement bias is computed from "
+                             "the taps before layer 21's attention runs")
         if self.code == "learned" and not (slots_add and self.align == "lex"):
             raise ValueError("--w1s-code learned replaces the lexical alignment code of additive slots "
                              "(--w1s-store slots --w1s-out additive --w1s-align lex)")
@@ -436,6 +455,8 @@ class SlotLoop(GDNLoop):
             with torch.no_grad():
                 self.keep_w.weight.normal_(0, 0.02)
                 self.keep_w.bias.fill_(0.0)
+        if self.use_native:                                       # the only parameter of the native key
+            self.log_beta_native = nn.Parameter(torch.tensor(math.log(10.0)))
         # the lexical stream is kept (ring, slot keys, centring) only where something lexical reads it
         self.need_x = self.use_lex or (self.align == "lex" and self.code == "lex") or self.store == "superposed"
 
@@ -449,6 +470,23 @@ class SlotLoop(GDNLoop):
                 raise ValueError(f"tap {m} is missing from extra")
             xs[m] = F.layer_norm(src, src.shape[-1:])
         return xs
+
+    def _native(self, h, extra) -> tuple[torch.Tensor, torch.Tensor]:
+        """The native key and query streams (B, T, dn): layer L's pre-rotary K and Q from ``extra``
+        (``taps.TapLM``), detached (frozen-model activations, nothing fitted). Without ``extra`` (unit
+        tests, the CPU suite) both are h, a stand-in so the module runs; an ``extra`` without them is an
+        error, so a GPU run cannot silently key on h. Records ``native_dim`` for ``state_report``."""
+        L = self.native_layer
+        if extra is None:
+            k = q = h
+        else:
+            k, q = extra.get(("k", L)), extra.get(("q", L))
+            if k is None or q is None:
+                raise ValueError(f"--w1s-key native: extra lacks layer {L}'s attention states (TapLM attn_taps)")
+        if k.shape != q.shape:
+            raise ValueError(f"native K {tuple(k.shape)} and Q {tuple(q.shape)} must have the same shape")
+        self.native_dim = k.shape[-1]
+        return k.detach(), q.detach()
 
     def _gate(self, xs: dict, oracle) -> tuple[torch.Tensor, torch.Tensor]:
         """Onset strength p and on-state g, (B, T) each."""
@@ -485,6 +523,8 @@ class SlotLoop(GDNLoop):
         f["y"] = sum(lin(xs[m]) for lin, m in zip(self.wk, self.streams)) if self.wk is not None else None
         f["v"] = self.wa(x) if x is not None and self.out == "additive" else None
         f["p"], f["g"] = self._gate(xs, oracle)
+        if self.use_native:                                       # layer L's K (store side) and Q (read side)
+            f["kn"], f["qn"] = self._native(h, extra)
         if self.code == "learned":                                # z = W_z x, the alignment code
             f["z"] = self.wz(f["x"])
         if self.keep:                                             # each transition j → j+1's keep score
@@ -542,12 +582,19 @@ class SlotLoop(GDNLoop):
             st["K"] = _rows(window_mean(x, -self.P, self.pool), s)        # (B, N, D) lexical keys (0 if clipped away)
         if self.wk is not None:
             st["KL"] = _rows(window_mean(f["y"], -self.P, self.pool), s)  # (B, N, dk) learned keys
+        if self.use_native:
+            st["KN"] = _rows(window_mean(f["kn"], -self.P, self.pool), s)  # (B, N, dn) native keys (layer-L K)
         if self.rform == "supw":                                  # S[i, j]: newer candidate j matches i
-            Kc = F.normalize(st["KL"] if self.use_learned else st["K"], dim=-1)
+            Kc = F.normalize(self._slot_key(st), dim=-1)
             later = valid[:, None, :] & valid[:, :, None] & (s[:, None, :] > s[:, :, None])
             S = torch.sigmoid(self.log_sup_gamma.exp() * (Kc @ Kc.transpose(1, 2) - self.sup_theta)) * later
             st["sup"] = closed.to(S.dtype) @ S.transpose(1, 2)   # (B, T, N): tags from candidates closed by t
         return st
+
+    def _slot_key(self, q: dict):
+        """The key that supersession tags and diagnostics compare: native, else learned, else lexical. ``q``
+        is the parallel store (keys (B, N, ·)) or one streaming slot."""
+        return q["KN"] if self.use_native else q["KL"] if self.use_learned else q["K"]
 
     def _keep_mask(self, f: dict, s, w0, w1, mem) -> torch.Tensor:
         """(B, N, T) bool: the M transitions kept in each window. ``first``: the first M; otherwise the top M
@@ -604,6 +651,9 @@ class SlotLoop(GDNLoop):
                 rank = newer_sum(ret.to(torch.long)).clamp_max(self.K - 1)
                 U = self.ord_u(q) @ self.ord_E.T                  # (B, T, K)
                 logit = logit + U.gather(-1, rank)
+        if self.use_native:                                       # β_N cos(mean Q over the last pool, the slot's K)
+            qn = F.normalize(window_mean(f["qn"], 1 - self.pool, self.pool), dim=-1)
+            logit = logit + self.log_beta_native.exp() * (qn @ F.normalize(st["KN"], dim=-1).transpose(1, 2))
         if self.log_omega is not None and self.rform == "linear":
             age = torch.arange(T, device=s.device).view(1, T, 1) - s[:, None, :]
             logit = logit - self.log_omega.exp() * age.to(logit.dtype)
@@ -772,9 +822,9 @@ class SlotLoop(GDNLoop):
             held = F.pad(held, (0, self.K - N), value=-1)
         top = held.topk(self.K, -1)
         d = dict(p=st["p"].detach(), g=st["g"].detach(), onsets=st["onsets"], retained=top.values)
-        if "KL" in st or "K" in st:                               # candidates' keys (supw fire diagnostics, G0.3)
+        if "KL" in st or "K" in st or "KN" in st:                 # candidates' keys (supw fire diagnostics, G0.3)
             d["cand_s"] = s.where(st["valid"], torch.full_like(s, -1))
-            d["cand_key"] = F.normalize((st["KL"] if self.use_learned else st["K"]).detach(), dim=-1)
+            d["cand_key"] = F.normalize(self._slot_key(st).detach(), dim=-1)
         if "a" not in st:                                         # superposed: no slot read
             d["read_w"] = torch.zeros(B, T, self.K + 1, device=s.device)
             d["align"] = torch.full((B, T), -1, device=s.device, dtype=torch.long)
@@ -815,6 +865,8 @@ class SlotLoop(GDNLoop):
         x0 = xs[self.lex]
         (B, T, D), dt = x0.shape, x0.dtype
         xn = self.norm(h) if self.out == "additive" else None
+        kn_all, qn_all = self._native(h, extra) if self.use_native else (None, None)   # layer-L K, Q (B, T, dn)
+        skey = lambda q: q["KN"] if self.use_native else q["KL"] if self.use_learned else q["K"]   # supw's key
         P, n, r, delay, pool = self.P, self.n, self.r, self.delay, self.pool
         ring_len = max(delay + P + 1, delay + r + 1, pool)
         lin = lambda mods, t, b: sum(m_(xs[k][b, t]) for m_, k in zip(mods, self.streams))
@@ -846,6 +898,8 @@ class SlotLoop(GDNLoop):
                     e["zc"], e["mq"] = F.normalize(x - xsum / (t + 1), dim=-1), xsum / (t + 1)
                 e["y"] = lin(self.wk, t, b) if self.wk is not None else None
                 e["v"] = self.wa(xn[b, t]) if xn is not None else None
+                if self.use_native:                               # this position's K (for keys) and Q (for queries)
+                    e["kn"], e["qn"] = kn_all[b, t], qn_all[b, t]
                 if self.code == "learned":
                     e["z"] = self.wz(x)
                 if self.keep and self.keep_by == "value":         # this position's score as a successor
@@ -896,16 +950,17 @@ class SlotLoop(GDNLoop):
                                            else torch.zeros_like(e[k]))
                         slot = dict(s=s, w0=w0, w1=w1, pi=lp + self.delta * s, lp=lp, ps=ps, ent=ent, wgt=wgt,
                                     K=hmean("x") if keyed_x or self.store == "superposed" else None,
-                                    KL=hmean("y") if self.wk is not None else None, sup=0.0)
+                                    KL=hmean("y") if self.wk is not None else None,
+                                    KN=hmean("kn") if self.use_native else None, sup=0.0)
                         slot["trans"] = self._stream_transitions(slot, t, b, kscores, kpair)
                         if self.store == "superposed":
                             if self.ctrl != "empty":
                                 S = self._stream_write(S, slot, e)
                         elif self.ctrl != "empty":
                             if self.rform == "supw":              # tag every held (older) slot this one matches
-                                kn = slot["KL"] if self.use_learned else slot["K"]
+                                kn = skey(slot)
                                 for q in slots:
-                                    ko = q["KL"] if self.use_learned else q["K"]
+                                    ko = skey(q)
                                     q["sup"] = q["sup"] + torch.sigmoid(
                                         self.log_sup_gamma.exp() * (cosine(ko, kn) - self.sup_theta))
                             slots.append(slot)
@@ -916,6 +971,7 @@ class SlotLoop(GDNLoop):
                 win = list(ring)[-pool:]
                 q_lex = torch.stack([q["x"] for q in win]).mean(0) if self.need_x else None
                 q_l = torch.stack([q["y"] for q in win]).mean(0) if self.wk is not None else None
+                q_n = torch.stack([q["qn"] for q in win]).mean(0) if self.use_native else None
                 if self.store == "superposed":
                     rvec = self._stream_read(S, e, q_lex, q_l)
                     res["retained"][b][t], res["read_w"][b][t] = set(), {None: 0.0}
@@ -942,6 +998,8 @@ class SlotLoop(GDNLoop):
                             if self.time_feat == "ordinal":
                                 rank = min(len(slots) - 1 - i, self.K - 1)       # slots are in time order
                                 lg = lg + self.ord_u(F.normalize(q_l, dim=-1)) @ self.ord_E[rank]
+                        if self.use_native:
+                            lg = lg + self.log_beta_native.exp() * cosine(q_n, q["KN"])
                         if self.log_omega is not None and self.rform == "linear":
                             lg = lg - self.log_omega.exp() * (t - q["s"])
                         elif self.log_omega is not None and self.rform == "log":
@@ -1072,7 +1130,7 @@ class SlotLoop(GDNLoop):
         c = dict(ring=sum(numel(v) for q in ring for k, v in q.items() if k != "t"),
                  slot_keys=0, slot_codes=0, slot_values=0, slot_weights=0, sup_tags=0, superposed=0, gate=0)
         for q in slots:                                           # keys, then per entry: code, value, weight
-            c["slot_keys"] += numel(q["K"]) + numel(q["KL"]) + 2
+            c["slot_keys"] += numel(q["K"]) + numel(q["KL"]) + numel(q["KN"]) + 2
             c["sup_tags"] += 1 if self.rform == "supw" else 0
             if self.keep:                                         # per kept transition: code, value, offset
                 for _, code, val in q["trans"]:
@@ -1101,9 +1159,10 @@ class SlotLoop(GDNLoop):
         dk = self.wk[0].out_features if self.wk is not None else 0
         dv = self.wa.out_features if self.out == "additive" else 0
         dc = self.wz.out_features if self.code == "learned" else 0
+        dn = (self.native_dim or D) if self.use_native else 0     # native K/Q width (as last seen; h's stand-in)
         ring_len = max(self.delay + self.P + 1, self.delay + self.r + 1, self.pool)
         per = (D * self.need_x + dk + dv + dc + 2 + (self.keep > 0 and self.keep_by in ("value", "learned"))
-               + 2 * D * (self.store == "superposed"))
+               + 2 * D * (self.store == "superposed") + 2 * dn)
         keyed_x = self.use_lex or (self.align == "lex" and self.code == "lex")
         code = dc if self.code == "learned" else D if self.align == "lex" else dk if self.align == "learned" else 0
         c = dict(ring=ring_len * per, slot_keys=0, slot_codes=0, slot_values=0, slot_weights=0, sup_tags=0,
@@ -1113,7 +1172,7 @@ class SlotLoop(GDNLoop):
             c["superposed"] = dv * kdim
             return c
         m = self.keep if self.keep else self.n                    # entries (or kept transitions) per slot
-        c["slot_keys"] = self.K * (D * keyed_x + dk + 2)
+        c["slot_keys"] = self.K * (D * keyed_x + dk + dn + 2)
         c["slot_codes"] = self.K * m * code
         c["slot_values"] = self.K * m * dv
         c["slot_weights"] = self.K * m
@@ -1125,8 +1184,9 @@ class SlotLoop(GDNLoop):
 class W1sSide(nn.Module):
     """TimeChannel then SlotLoop; the ``SideChannels`` interface used by ``pretrained_loop``, with taps.
 
-    ``extra`` ({block: (B, T, D) float32, sink stripped}) and ``oracle_onsets`` ((B, T) bool, side
-    coordinates) are set by the caller before each forward. In reinstate mode the forward returns h
+    ``extra`` ({block: (B, T, D) float32, sink stripped}, plus {("k", L), ("q", L): (B, T, H_kv·d)} for the
+    native key's ``attn_taps``) and ``oracle_onsets`` ((B, T) bool, side coordinates) are set by the caller
+    before each forward. In reinstate mode the forward returns h
     unchanged and the read happens in ``reinstate_bias``, called by ``taps.TapLM`` once the taps ran.
     """
 
@@ -1134,6 +1194,8 @@ class W1sSide(nn.Module):
         super().__init__()
         w = w or split_args([])[0]
         self.taps = _ints(w.w1s_taps)
+        # A13: the attention layer whose pre-rotary K/Q ``taps.TapLM`` captures into extra (empty: none)
+        self.attn_taps = (int(_opt(w, "w1s_native_layer", 21)),) if w.w1s_key == "native" else ()
         self.out_mode, self.reinstate_L = w.w1s_out, w.w1s_L
         self.extra: dict | None = None
         self.oracle_onsets: torch.Tensor | None = None
@@ -1190,11 +1252,15 @@ class W1sSide(nn.Module):
         self.loop.keep_pair = value
 
     def state_report(self) -> dict:
-        """The streaming state at full occupancy (T-independent, rule E2) by part, and the trainable parameters."""
+        """The streaming state at full occupancy (T-independent, rule E2) by part, and the trainable parameters.
+        Native keys count their K/Q width as last seen (``loop.native_dim``), or the model width before any call."""
         comp = self.loop.analytic_state(self.loop.wb.out_features if self.out_mode == "additive"
                                         else self.loop.gate_w[0].in_features)
-        return dict(state_floats=sum(comp.values()), state_components=comp,
-                    params=sum(p.numel() for p in self.parameters() if p.requires_grad))
+        out = dict(state_floats=sum(comp.values()), state_components=comp,
+                   params=sum(p.numel() for p in self.parameters() if p.requires_grad))
+        if self.loop.use_native and self.loop.native_dim is None:  # K/Q width not seen yet: an overcount (review R0)
+            out["provisional"] = "native K/Q width unknown before a forward with captured activations"
+        return out
 
     def forward(self, h: torch.Tensor) -> tuple[torch.Tensor, LoopStats]:
         if self.out_mode == "reinstate":                          # the read went into attention

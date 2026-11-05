@@ -4,6 +4,7 @@ the slot diagnostics. Uses the tiny byte-tokenizer model only (CPU, no downloads
 
 import json
 import random
+import re
 import sys
 import types
 from pathlib import Path
@@ -916,3 +917,232 @@ def test_overrides_that_would_mislead_are_refused(w1s_run):
                                             "--out", str(out.with_suffix(".rnd.json"))])
     rec = json.loads(out.with_suffix(".rnd.json").read_text())
     assert rec["eval"]["seed"] == 7 and rec["eval"]["allow_random_code"]
+
+
+# ------------------------------------- round 11 eval cells: paraphrased queries (RV4.E3), repeated digits (E12)
+class _QwenLikeTok:
+    """A word-level stand-in for Qwen's tokenizer (no downloads): its pre-tokenizer split, approximately (a word
+    takes its leading space, contractions such as "'s" and runs of punctuation are tokens of their own, and every
+    digit is one token), with ids handed out on first sight. 0 is BOS/EOS."""
+
+    SPLIT = re.compile(r"'s|'t|'re|'ve|'m|'ll|'d|[^\r\nA-Za-z0-9]?[A-Za-z]+|[0-9]| ?[^\sA-Za-z0-9]+|\s+(?!\S)|\s+")
+    WORDS = " the a of and to in was by on at it his her they then over under after night river stone"
+
+    def __init__(self) -> None:
+        self.bos_token_id = self.eos_token_id = 0
+        self.ids, self.pieces = {}, ["<|endoftext|>"]
+        self._pool = self.encode(self.WORDS)
+
+    def encode(self, text: str) -> list[int]:
+        out = []
+        for p in self.SPLIT.findall(text):
+            if p not in self.ids:
+                self.ids[p] = len(self.pieces)
+                self.pieces.append(p)
+            out.append(self.ids[p])
+        return out
+
+    def decode(self, ids) -> str:
+        return "".join(self.pieces[int(i)] for i in ids if int(i))
+
+    def filler_pool(self) -> list[int]:
+        return list(self._pool)
+
+
+def test_qwen_like_tokenizer_splits_like_qwen():
+    q = _QwenLikeTok()
+    pieces = lambda s: [q.pieces[i] for i in q.encode(s)]          # noqa: E731
+    assert pieces(" The code for Alice is") == [" The", " code", " for", " Alice", " is"]
+    assert pieces(" 4071") == [" ", "4", "0", "7", "1"]              # an answer: the space, then one token per digit
+    assert pieces(" Q: What is the code for Alice? A:") == [" Q", ":", " What", " is", " the", " code", " for",
+                                                              " Alice", "?", " A", ":"]
+    assert pieces(" Alice's code is") == [" Alice", "'s", " code", " is"]
+
+
+def _queried(tok_, ids, task):
+    """The queried statement's name and the value tokens at its value_at."""
+    r = task.last_queried
+    (lo, _), v = task.last_spans[r], task.last_value_at[r]
+    return tok_.decode(ids[lo:v]).split()[3], ids[v:v + 5]          # " The code for NAME is [now]"
+
+
+@pytest.mark.parametrize("k", sorted(evolve_run.PARAPHRASE_QUERIES))
+@pytest.mark.parametrize("cls,kw", [(evolve_run.ScatterNeedleTask, {}), (evolve_run.UpdateNeedleTask, {"form": "now"}),
+                                    (evolve_run.ScatterNeedleTask, {"names": "heldout"})])
+def test_paraphrased_query_renders_answers_and_pairs_with_the_plain_cell(k, cls, kw):
+    """--paraphrase K on a Qwen-like tokenizer: the query is the template with the queried name, the answer is that
+    fact's " DDDD" (5 tokens), and the sequence is the plain cell's, draw for draw, up to the end of the last filler:
+    same facts, value_at, spans, queried rank and gap, the same distance from the last fact to the answer, and the
+    generator in step (so the next sample pairs too)."""
+    q = _QwenLikeTok()
+    kw = dict(kw)
+    if kw.get("names") == "heldout":
+        kw["names"] = eval_by_query.HELDOUT_NAMES
+    tpl = evolve_run.PARAPHRASE_QUERIES[k]
+    para = cls(q, 512, 3, 1, min_gap=8, block=64, query=tpl, **kw)
+    plain = cls(q, 512, 3, 1, min_gap=8, block=64, **kw)
+    a, b = random.Random(k), random.Random(k)
+    for _ in range(30):
+        ids, n_ans, gap = para.sample(a)
+        ids0, n_ans0, gap0 = plain.sample(b)
+        assert len(ids) == len(ids0) == 513 and n_ans == n_ans0 == 5 and gap == gap0
+        for key in ("last_queried", "last_value_at", "last_spans", "last_heads", "last_old_rank", "last_old_answer"):
+            assert getattr(para, key, None) == getattr(plain, key, None), key
+        name, value = _queried(q, ids, para)
+        ql, ql0 = para.last_query_len, plain.last_query_len
+        assert q.decode(ids[-(ql + n_ans):-n_ans]) == tpl.format(n=name)
+        assert q.decode(ids0[-(ql0 + n_ans):-n_ans]) == evolve_run.PLAIN.format(n=name)
+        assert ids[-n_ans:] == value == ids0[-n_ans:] and re.fullmatch(r" \d{4}", q.decode(value))
+        cut = len(ids) - n_ans - max(ql, ql0)
+        assert ids[:cut] == ids0[:cut]                              # everything before the longer query
+        end = max(hi for _, hi in para.last_spans)                  # the last fact's last token
+        assert len(ids) - ql - n_ans - (end + 1) >= para.tail - max(0, ql - ql0)
+        if kw.get("names"):
+            assert name in eval_by_query.HELDOUT_NAMES
+        assert a.getstate() == b.getstate()
+
+
+def test_paraphrase_shorter_query_continues_natural_filler():
+    """Template 2 is shorter than the plain query (bytes): the filler gains the difference, continuing the corpus
+    where the last filler stopped (no seam in natural text), and the generator stays in step with the plain cell."""
+    t = tok()
+    c = t.encode(CORPUS)
+    para = evolve_run.ScatterNeedleTask(t, 512, 3, 1, c, min_gap=8, block=64, query=evolve_run.PARAPHRASE_QUERIES[2])
+    plain = evolve_run.ScatterNeedleTask(t, 512, 3, 1, c, min_gap=8, block=64)
+    a, b = random.Random(11), random.Random(11)
+    for _ in range(20):
+        ids, n_ans, _ = para.sample(a)
+        ids0, _, _ = plain.sample(b)
+        ql, ql0 = para.last_query_len, plain.last_query_len
+        assert ql < ql0
+        end = para.last_spans[-1][1]
+        tail = text(ids[end + 1:len(ids) - n_ans - ql])
+        assert tail.startswith(text(ids0[end + 1:len(ids0) - n_ans - ql0])) and tail in CORPUS * 3
+    assert a.getstate() == b.getstate()
+
+
+def test_paraphrase_refusals():
+    t = tok()
+    with pytest.raises(ValueError, match="own queries"):
+        evolve_run.OrderNeedleTask(t, 512, 3, 1, min_gap=8, block=64, kind="before",
+                                   query=evolve_run.PARAPHRASE_QUERIES[1])
+    with pytest.raises(ValueError, match="{n}"):
+        evolve_run.ScatterNeedleTask(t, 512, 3, 1, min_gap=8, block=64, query=" What is the code?")
+    long_q = evolve_run.ScatterNeedleTask(t, 512, 3, 1, min_gap=8, tail=10, query=" Please tell me the code for {n} now")
+    with pytest.raises(ValueError, match="needle-tail"):           # 17 bytes longer than the plain query, tail 10
+        long_q.sample(random.Random(0))
+
+
+def test_plain_query_template_keeps_the_golden_sequences():
+    """query=PLAIN given explicitly is the default: the pre-round-11 golden digests still hold."""
+    t = tok()
+    assert _digest(evolve_run.ScatterNeedleTask(t, 512, 3, 1, min_gap=8, block=64, query=evolve_run.PLAIN)) \
+        == GOLDEN["scatter_p3"]
+    assert _digest(evolve_run.UpdateNeedleTask(t, 512, 3, 1, min_gap=8, block=64, form="now", query=evolve_run.PLAIN)) \
+        == GOLDEN["update_now"]
+
+
+@pytest.mark.parametrize("make", [tok, _QwenLikeTok])
+def test_answer_code_and_repeat_flag_on_constructed_sequences(make):
+    t = make()
+    for code, want in (("1123", True), ("1234", False), ("9090", True), ("0000", True), ("5072", False)):
+        ids = [t.bos_token_id] + t.encode(" the cat sat The code for Bob is") + t.encode(f" {code}")
+        got = eval_by_query.answer_code(t, ids[-5:])
+        assert got == code and eval_by_query.has_repeat(got) is want
+    with pytest.raises(ValueError, match="digits"):
+        eval_by_query.answer_code(t, t.encode(" is"))
+
+
+def test_repeat_split_counts_and_accuracies():
+    """_summarise with repeat flags: digit 1 and exact split by "the code repeats a digit", with the counts; an
+    empty group is None; without flags the summary is as before (no new keys)."""
+    per_seq = [(0, 300, 1.0, 1.0), (1, 310, 0.0, 0.0), (2, 320, 1.0, 0.0), (0, 330, 1.0, 1.0), (1, 340, 0.0, 0.0)]
+    rep = [True, True, False, False, False]
+    s = eval_by_query._summarise(per_seq, 3, [-1, 10 ** 9], rep)
+    assert s["exact_by_repeat"] == {"repeat": 0.5, "no_repeat": pytest.approx(1 / 3), "n_repeat": 2, "n_no_repeat": 3}
+    assert s["digit1_by_repeat"] == {"repeat": 0.5, "no_repeat": pytest.approx(2 / 3), "n_repeat": 2, "n_no_repeat": 3}
+    s = eval_by_query._summarise(per_seq, 3, [-1, 10 ** 9], [True] * 5)
+    assert s["exact_by_repeat"]["no_repeat"] is None and s["exact_by_repeat"]["n_no_repeat"] == 0
+    plain = eval_by_query._summarise(per_seq, 3, [-1, 10 ** 9])
+    assert set(plain) == {"digit1", "exact", "digit1_by_queried_rank", "exact_by_queried_rank",
+                          "count_by_queried_rank", "by_gap"}
+    with pytest.raises(ValueError, match="repeat flags"):
+        eval_by_query._summarise(per_seq, 3, [-1, 10 ** 9], rep[:4])
+
+
+def test_repeat_share_of_sampled_codes_is_about_half():
+    """1 − 10·9·8·7 / 10⁴ = 0.496 of 4-digit codes repeat a digit; read from sampled sequences' answer tokens."""
+    t = tok()
+    task = evolve_run.ScatterNeedleTask(t, 512, 3, 1, min_gap=8, block=64)
+    rng = random.Random(12)
+    flags = []
+    for _ in range(3000):
+        ids, n_ans, _ = task.sample(rng)
+        flags.append(eval_by_query.has_repeat(eval_by_query.answer_code(t, ids[-n_ans:])))
+    assert abs(sum(flags) / len(flags) - 0.496) < 0.03
+
+
+PRE_E12_KEYS = {"result", "pairs", "seq_len", "text_file", "scatter", "n", "digit1_acc_by_queried_rank",
+                "exact_by_queried_rank", "count_by_queried_rank", "digit1", "exact", "by_gap", "controls",
+                "per_sequence", "missing_keys", "unexpected_keys", "w1s_state", "w1s", "eval"}
+PRE_E12_CONTROL_KEYS = {"digit1", "exact", "digit1_by_queried_rank", "exact_by_queried_rank", "count_by_queried_rank",
+                        "by_gap"}
+E12_KEYS = {"exact_by_repeat", "digit1_by_repeat"}
+
+
+def _check_repeat_split(res):
+    """The repeat split in the main output and every control agrees with per_sequence + per_sequence_repeat."""
+    rep = res["per_sequence_repeat"]
+    assert len(rep) == len(res["per_sequence"]) == res["n"] and all(len(r) == 4 for r in res["per_sequence"])
+    for name in ("digit1", "exact"):
+        want = eval_by_query._by_repeat(res["per_sequence"], rep)[f"{name}_by_repeat"]
+        assert res[f"{name}_by_repeat"] == want
+        assert want["n_repeat"] + want["n_no_repeat"] == res["n"]
+    for c in res["controls"].values():
+        assert E12_KEYS <= set(c) and c["exact_by_repeat"]["n_repeat"] == sum(rep)
+
+
+def test_default_eval_output_only_adds_the_repeat_split(w1s_run):
+    """With default flags the output keeps every key it had (no "task"), and adds only the E12 split: the top-level
+    exact/digit1_by_repeat and per_sequence_repeat, and the two splits in each control."""
+    out = w1s_run
+    eval_by_query.main([str(out), "--n", "8", "--batch", "4"])
+    res = json.loads(out.with_suffix(".by_query.json").read_text())
+    assert set(res) == PRE_E12_KEYS | E12_KEYS | {"per_sequence_repeat"}
+    assert set(res["controls"]) == {"windowed", "full"}
+    assert all(set(c) == PRE_E12_CONTROL_KEYS | E12_KEYS for c in res["controls"].values())
+    _check_repeat_split(res)
+
+
+@pytest.mark.parametrize("k,extra,suffix", [(1, ["--heldout-names", "--update", "now"], ".update-now.heldout.para1"),
+                                            (2, ["--ctrl-conds"], ".para2")])
+def test_paraphrase_end_to_end_on_w1s(w1s_run, k, extra, suffix):
+    """eval_by_query.py --paraphrase on the tiny W1s run: its own file, the template recorded, the repeat split in
+    every condition (side controls too), windowed at 0, and per_sequence paired row by row with the plain cell."""
+    out = w1s_run
+    base = [str(out), "--n", "8", "--batch", "4"] + extra
+    eval_by_query.main(base + ["--paraphrase", str(k)])
+    res = json.loads(out.with_suffix(f".by_query{suffix}.json").read_text())
+    assert res["task"]["paraphrase"] == k and res["task"]["query_template"] == evolve_run.PARAPHRASE_QUERIES[k]
+    assert res["controls"]["windowed"]["exact"] == 0.0
+    _check_repeat_split(res)
+    if "--update" in extra:
+        assert res["task"]["names"] == "heldout" and res["task"]["update"] == "now"
+        assert set(res["update"]) == {"windowed+side", "windowed", "full"}
+    else:
+        assert {"side_empty", "side_shuffle"} <= set(res["controls"])
+    eval_by_query.main(base + ["--out", str(out.with_suffix(".plain.json"))])
+    plain = json.loads(out.with_suffix(".plain.json").read_text())
+    assert [r[:2] for r in plain["per_sequence"]] == [r[:2] for r in res["per_sequence"]]   # rank and gap
+    assert plain["per_sequence_repeat"] == res["per_sequence_repeat"]
+    with pytest.raises(SystemExit, match="paraphrase"):
+        eval_by_query.main([str(out), "--n", "4", "--batch", "2", "--order", "before", "--paraphrase", "1"])
+
+
+def test_paraphrase_keeps_the_last_fact_beyond_the_window():
+    """Review R7: a paraphrased query that eats the tail filler down to the window or less is refused."""
+    t = tok()
+    q = " Remember, as stated much earlier in this long text, the code for {n}. It is"
+    task = evolve_run.ScatterNeedleTask(t, 512, 3, 1, min_gap=8, block=64, tail=70, query=q)
+    with pytest.raises(ValueError, match="window"):
+        task.sample(random.Random(0))
