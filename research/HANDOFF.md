@@ -88,6 +88,13 @@ A Claude Science session reviewed rounds 1–10 of the side-memory track against
 
 It added 25 bibliography entries (16 new, 9 promoted from RV2's `new_refs.bib`) to `docs/references.bib` and REFERENCES.md.
 
+## Side channels for the alignment track (Daniel, 4 Nov 2026)
+
+Daniel wants a working full-model side-channel module (register W18) and, from it, a windowed intent memory for the alignment track (register A9).
+- The alignment probes now read single-token snapshots, which miss jailbreaks that talk around a harmful topic.
+- A W1s-style episodic memory over the conversation, possibly with a CA1-style comparator, would let the CA2 controller act on intent integrated over many tokens.
+- Both follow round 11. The alignment session should know they are coming; nothing is built yet.
+
 ## How to run a round
 
 Follow [`evolution_protocol.md`](evolution_protocol.md): the round loop, controls, the candidate interface, `experiments/evolve/queue.sh` (GPU job queue) and `experiments/evolve/sync.sh` (rebase-safe push), and the pitfalls met in rounds 0–5.
