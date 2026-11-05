@@ -1,0 +1,307 @@
+{
+  "args": {
+    "model": "Qwen/Qwen3-1.7B-Base",
+    "tiny": false,
+    "tiny_arch": "gpt2",
+    "dtype": "bfloat16",
+    "device": "cuda",
+    "attn_impl": "sdpa",
+    "grad_checkpointing": false,
+    "layer": 21,
+    "window": 64,
+    "window_mode": "block",
+    "window_layers": "all",
+    "sink": true,
+    "memory": true,
+    "time": true,
+    "kernel": "osc",
+    "rho": 0.7,
+    "tau": 16,
+    "amp": 1.0,
+    "loop": "open",
+    "ca1_control": true,
+    "contrast": true,
+    "dg_keys": false,
+    "d_key": 32,
+    "loop_arg": [],
+    "init_gain": null,
+    "task": "needle",
+    "text_file": "/home/realdanielbyrne/limbic-data/wikitext103_train.txt",
+    "dataset": null,
+    "max_chars": 5000000,
+    "pairs": 3,
+    "seq_len": 512,
+    "steps": 6000,
+    "lr": 0.001,
+    "batch": 8,
+    "eval_n": 128,
+    "log_every": 0,
+    "seed": 4,
+    "out": "results/evolve/round11/r11_A14_s4.json"
+  },
+  "model": {
+    "blocks": 28,
+    "linear_layers": 0,
+    "tap_layer": 21,
+    "windowed_layers": 28,
+    "reach": 63,
+    "window_check": "ok (block 0: far 0.0e+00 vs near 1.2e+01)",
+    "trainable_params": 450569,
+    "base_params": 1720574976,
+    "transformers": "5.22.1",
+    "gap_range": [
+      267,
+      501
+    ]
+  },
+  "curve": [
+    {
+      "step": 600,
+      "loss": 0.009137151762843132,
+      "token_acc": 1.0,
+      "inj_ratio": 0.2582629919052124,
+      "kind": "n"
+    },
+    {
+      "step": 1200,
+      "loss": 0.0036803395487368107,
+      "token_acc": 1.0,
+      "inj_ratio": 0.2726602554321289,
+      "kind": "n"
+    },
+    {
+      "step": 1800,
+      "loss": 0.0020469934679567814,
+      "token_acc": 1.0,
+      "inj_ratio": 0.28963229060173035,
+      "kind": "n"
+    },
+    {
+      "step": 2400,
+      "loss": 0.3801523745059967,
+      "token_acc": 0.9750000238418579,
+      "inj_ratio": 0.3093787133693695,
+      "kind": "n"
+    },
+    {
+      "step": 3000,
+      "loss": 0.8251028656959534,
+      "token_acc": 0.63623046875,
+      "inj_ratio": 0.3197362422943115,
+      "kind": "d"
+    },
+    {
+      "step": 3600,
+      "loss": 0.706390917301178,
+      "token_acc": 0.67626953125,
+      "inj_ratio": 0.3374788761138916,
+      "kind": "d"
+    },
+    {
+      "step": 4200,
+      "loss": 0.7225414514541626,
+      "token_acc": 0.6513671875,
+      "inj_ratio": 0.34080684185028076,
+      "kind": "d"
+    },
+    {
+      "step": 4800,
+      "loss": 0.8475679159164429,
+      "token_acc": 0.642578125,
+      "inj_ratio": 0.3454139232635498,
+      "kind": "d"
+    },
+    {
+      "step": 5400,
+      "loss": 0.0902678444981575,
+      "token_acc": 0.949999988079071,
+      "inj_ratio": 0.3469739258289337,
+      "kind": "n"
+    },
+    {
+      "step": 6000,
+      "loss": 0.7696042060852051,
+      "token_acc": 0.65087890625,
+      "inj_ratio": 0.3405051827430725,
+      "kind": "d"
+    }
+  ],
+  "results": {
+    "windowed": {
+      "loss": 2.77082222700119,
+      "token_acc": 0.15625,
+      "exact": 0.0,
+      "per_pos": [
+        {
+          "loss": 2.817532539367676,
+          "acc": 0.5
+        },
+        {
+          "loss": 2.538362979888916,
+          "acc": 0.1015625
+        },
+        {
+          "loss": 2.762453079223633,
+          "acc": 0.0703125
+        },
+        {
+          "loss": 2.750749349594116,
+          "acc": 0.078125
+        },
+        {
+          "loss": 2.985013484954834,
+          "acc": 0.03125
+        }
+      ]
+    },
+    "windowed+side": {
+      "loss": 0.08066048173350282,
+      "token_acc": 0.978125,
+      "exact": 0.953125,
+      "inj_ratio": 0.33627104200422764,
+      "per_pos": [
+        {
+          "loss": 0.0002282551140524447,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.2382429540157318,
+          "acc": 0.953125
+        },
+        {
+          "loss": 0.0836334154009819,
+          "acc": 0.96875
+        },
+        {
+          "loss": 0.052427228540182114,
+          "acc": 0.9765625
+        },
+        {
+          "loss": 0.028770560398697853,
+          "acc": 0.9921875
+        }
+      ]
+    },
+    "full": {
+      "loss": 0.1248240765184164,
+      "token_acc": 0.9984375,
+      "exact": 0.9921875,
+      "per_pos": [
+        {
+          "loss": 0.010480188764631748,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.37925851345062256,
+          "acc": 0.9921875
+        },
+        {
+          "loss": 0.13285735249519348,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.05121130496263504,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.05031301826238632,
+          "acc": 1.0
+        }
+      ]
+    },
+    "gain": 0.39217597246170044
+  },
+  "seconds": 1496.258014678955,
+  "candidate": {
+    "class": "evolve.w1s_slots:W1sSide",
+    "args": {
+      "w1s_taps": "",
+      "w1s_gate": "point",
+      "w1s_centre": false,
+      "w1s_density": 0.12,
+      "w1s_lam": 0.8,
+      "w1s_latch": 6.0,
+      "w1s_schmitt": [
+        1.2,
+        0.8
+      ],
+      "w1s_pre": 0,
+      "w1s_win": 24,
+      "w1s_nms": 8,
+      "w1s_store": "slots",
+      "w1s_K": 16,
+      "w1s_delta": 0.0,
+      "w1s_key": "learned",
+      "w1s_native_layer": 21,
+      "w1s_key_taps": null,
+      "w1s_pool": 8,
+      "w1s_dk": 128,
+      "w1s_dv": 32,
+      "w1s_align": "lex",
+      "w1s_recency": 0.002,
+      "w1s_out": "additive",
+      "w1s_L": 4,
+      "w1s_ctrl": "none",
+      "w1s_recency_form": "linear",
+      "w1s_time_feat": "none",
+      "w1s_rope_dims": 32,
+      "w1s_rope_periods": "64,65536",
+      "w1s_ord_dim": 16,
+      "w1s_sup_w": 3.0,
+      "w1s_sup_gamma": 40.0,
+      "w1s_sup_theta": 0.9,
+      "w1s_sup_omega": 3.0,
+      "w1s_lex_init": null,
+      "w1s_align_init": null,
+      "w1s_code": "lex",
+      "w1s_dc": 64,
+      "w1s_keep": 0,
+      "w1s_keep_by": "first",
+      "w1s_keep_init": "zero"
+    }
+  },
+  "w1s_state": {
+    "state_floats": 906727,
+    "state_components": {
+      "ring": 70720,
+      "slot_keys": 34848,
+      "slot_codes": 786432,
+      "slot_values": 12288,
+      "slot_weights": 384,
+      "sup_tags": 0,
+      "superposed": 0,
+      "gate": 2055
+    },
+    "params": 450569
+  },
+  "needle_scatter": 8,
+  "needle_mix": 1.0,
+  "needle_curriculum": "1:1500,2:1500",
+  "needle_tail": 256,
+  "needle_names": "train",
+  "distill": {
+    "frac": 0.5,
+    "text": "/home/realdanielbyrne/limbic-data/wikitext103_train.txt",
+    "text_tokens": 1148574,
+    "positions": 256,
+    "temp": 1.0,
+    "chunk": 32,
+    "steps": 2990,
+    "loss_mean": 0.825033429374663,
+    "loss_by_tenth": [
+      0.9910494898473937,
+      0.8667137877996949,
+      0.8288959356454703,
+      0.8151391371835435,
+      0.8043865455831573,
+      0.7975237598785987,
+      0.7882844949247048,
+      0.7882605793085385,
+      0.7822354164809288,
+      0.787845147094599
+    ],
+    "agree_mean": 0.6409411580267559,
+    "loss": "T^2 KL(full || windowed+side), mean over the last N positions",
+    "step_kinds": "nndnddnndddndndnnndnddddddndnnddndndndddndnddddddndddnddnddnndnnnnnnnddnnnddnnnnnnnnnddnnndddnnndddnndndndnnnnnnddnnnnnnnddddnndnddndddnndnnndndddnnnnndndnddndnnddnnddddnndnddnndnnndnnnddnnnddnndndddnnndndddnndndnndnnnndndddndnnnnndddddddnndndddddnddndndddndddndddndnddnndndnddndddnnddndddddnnddnnddndnndndnnndddndddnddnddnnndddddnnnnnnnnnndnnnnddnnndnnnnndddnddndnnnnddndddnnnndnndddnnnddnnnnnnnndnddnnnddnddnndddddnnndnndddddndddddnddndnnnddddddnndndnddnnnnndnndndndndndnddnddndnddnddnnndndnddnnnddnnndndnnddddnnddddddndnddndddnnnddnddddnnnndnnddnnndnnnnnnddnddndnndnnnnddndndnnndnndnnddndnnnndddnnndnndddddnnddddnddddnnnnndddnnddddnddnddnnnnndnndnddnddnnddddndndndddddndddnddddnddndnnnnndnddnddnnddddddddnddnddddndnddnnndnnnnddndnndnnnnddndddndnndnnnnnnndnddndnnnddddnndnnddnnddndndnnnndnndnndndnnnndnnndddndnndndddddndddnndnddddnnndddnddnndddnddnddnndnnnddnnnnddnnndnnnnndndnnnnddddndddndnddnddndnndnndnnnddnnnnddndddnnndnndnnndnnnndndndndddddnnnddnddnndddnddddnnddnddddnndddnddnnddnnndddnndnnddndddndnndndnnddnndnnddnndnnndnnddndnddndddnnndndddnddddndnddnnnnndndddddndndndnnddndddnndndnddndnnddnddnndndnndddnndndddddndnndnddndnddnndnddnnddddndnnddddnndnnddnddnnndddndnndnnndndnnndndndnnnnndndddndnnddnnnnnnndndnndnndndnnndndndndndnddddnnndndnndnnnnndddndnnndnndddnndddnndnnnnnndnndnndnnndnndndnnddnndddndnddddnndnnndddndddnnnndnnndddnnddddddddnnnndnnnndddnnndnddndnddddddnndnnnnnnnnndnnddnddnndnnndnnnddnndnnnnndnndnndnndddndddddnnndnddnndddnnddnnndnnnndnddndndndnndddddnddnndnddddnnndddddnddndddnndnddnnddnndddnnndddddndddddnnnddnnndndndnnndnddddnnndndddnnnddnddnddndddnddndnddnnndndnndddnndndddnnnnndnnndndnndndndnnnddnnddnndnnnnddnndnnnddnnnnddnnnndddddnnndndnndnndndndddddndnnndndnddddndndddndddndndnndddddnnnddndndddddddndnddnndndnndnnnnnddnnnnndnddddddnnndnnnndndddndndndnnnnnnddnddnndnndnnnnndddnndndnddnndnddnndnnndndddndnddnddnddnddnnndndnddnddddddndnnnndnddddddnnddnddnndnndnddndnddnndndnnnnnnnddddddndnnddnnndddnndnddddnnnnnddnndnddndnddnnddnddnnnndnnnddddnddddndnnnnndndnddnddnddddnnnnndnnndddddnnddndndddnnndnnddndddndnnnddndnddnndndddddndnddddndndndndnnndddnnndnnddnndddnnddddndndnnnnddnnnnddndnndndnnndddnndnndnndnndnnndnnndddnnnnnnnddnddnddddnnddnndnnnnndnnddnnnnndnndndndddddnddnnnnnddnndnnnnnnndnnddnddddnddddnnddndddddnndnddddnnddnnnnnnnnndnnddddddnndddndndnnndnddnnnddnndndnnddnnnnddndddndnnnndndnddnnddnddnnndnddnnnndnnddndnnndndndddnnndddnddnddnndnnnnnndndndnnddndnndnnddnndddnnnndddnnndnddnnndnddnnnddddnddnddnddnnnnnndndndddnddnnndnnnnnnndndnnnndndnnnnddndndnnnnnddnndnnddnnnndndddndndnndnndnnndddnnndddnnnndnndnnddddnnddnnnddddnnnnnnndndnddnnddddddndnddnnndnnddndnnnnddnnnnndnddnddnddnndnnddnnndddddndndndddnndnnndnndnnndddnndnddnddnddndddddddnnddnddndnndndnnddnddndddnnnndnddndddnddnndddddddddnndndndddndnndnnndnddddndnnndnnnnndnnnndnnndndnnndndnddnnddndddddndndddnnnnnddddnndnnddnddndddddddndndnnnndddddnndddndnnddddddddddndddnndndddndddndnnddnddnddnddddnddndddndndndnnnddnndddnddndnnnnnnnndndndndndndddndddndndddnddndnndndddnnndndnndddndnnnddnnddddnnddnnnndndnnnnnnnddnnnddnndddnnnnddnnnnddddndndddndddndndnnnnndnnnnndddnnnnnddnndnnnnndndnndndddndnnnnnndnddnddddnddndddndnnndndnnddnnndndnnndnndndndddnddnnnnnndnddnndndndndndddnnddddndnndndnddnnnddddddddndnndnnnndddnnnddndndndnndnndddndndndnnddnndddndnnnddnnndddndnndndnddddnddnndnndnndndndndnnndnnndndnnnnnndnnddnddnndndddndddnddddddnddnnndnndddnndndddnnnddnndnddnndndnnnndndnndnddddnnddddnnndnddnnddnddnnnnnnddnddndnndnnndnnddddnnnnnnddddnddnddndnddnndnnnnddndnnndddnddddnnnnnnddndndnnddndddddnndndnnnnnndddddndnddnndddndddddndddddddndnndddnddnndndddnddnnnndnnnnnnnnnndddddnddndddndnnnndnndddddddndddnddddnndnnnddndnnndnnnnnnddnnddddndnndnnddnndddnddnddnndnnndnddddndnddddnnndnnnddnnnnndndndndnndnnnnndddndnddndndnddnnddndndndndndddddnnndndddddndndnnnndnndndnddndnnnndnnddnddndnnddddnnnnnddndnnnnnndnddnnnddnddnndnnnnddddddnddndnnndnddnddndndnndnndddnndndddnnnnndnddnnnnnddndndnnnnnndndddnndndnnnddddddndnndddndnddnnddndnndndddnnnddnndndnnndnnndndnnddndnnnnnddndnnnndnddndnnddndnnnnnnddddnndnndndddnndnnndnnnnnddnnddnnnnddndndnndddddndndndddndddddnddddndddnndndndnddnddnnddddnndnnndnnnnddddnndndddndndnnnnnnndndnnnddnnnddddnddnnndnnddndndddnnnndnnndnnnnddnnnndndnnnddndnndnndndddddnndndnndnddndndnndnnnddnddnndddnnddnnnnddnnddddddndndndnnnnnnddnnddnndddddddddnddndnndnddndnnnnnddndndnnnndndnnddnddnndnnndnddnnnnnddndndnddnnndddddddnndddddndnndndnndddddnnnnnndndnddnddndnddnndnnnnnddddddndnndnndndnddnddnndnddddnnndndnndnndnndddnndnndnnddddddndndddddndnndddddndndddddnddnnndddddndnndddnndndndnndddnddddndddddndndndndndndnnddndddddnndndnndndnnddnndnddnddnddddddndnddddndddnnndnddndnndndnnnnnndddnnnndnddnndddddnnndnnndnndndddndnddnddddndddnnnndnddnnndddndndnddnddndddndnndndnddndnndnddndddddnndndddndndnnnndndnddndnnnnddndddndnddnddddddddndndnddndnddndnddnndndnnnnddnnddndddnnnnnddndndnndnnnnnndndnddnnndndnndndnnddndnnddndndndddnnddndndnddnnnddddddndddnddnddnndndnnnnddddnnnnddnddddnndnddndnnddndnnndddnndnnndnddnnndddnndndndddnddnnddddnnnndnnnnndnnddndndddddnndddnddnnndndnndnndnnndndndddnnndnndnndndnddnnnnnndddnndddnddddnnddnndndndnnnnddnnnndndnnndddnnndndnnddddnnnndndddndndnnnddnnnnnndndnnnndnnddddnnnddddddndnndnnddnddnndndnnndnndnndndndnnnndndndnnddnddnnnndndnddnnnnnddnnnnndnddnnndndnnddndndndndnddnddndnnddnnnnndnnnnnnnddddnnnnddnndnnddnddnndnnnndnddndddnddddnnddddndndndndnddnnddddddddnnddddddddnndnnnndnddnnddnnndnndndnnndnddnnddddndndnnnddnnnnnnddddnndnnddnddnddnnnndddnndnddddddnndndnnddndnndnnnddndnddnndddnndnnddddnnndddddndnddndnndddnnddnnndnddnnnndnddddndnndnnddnddnnddnddnnddndddddnnnddnnnddnddddnnnndnnnnndddnnndnnnddnddndnndndnnnnndnddnddnddnnndndnndnnnddnndndddnnndnddndddndnddndndndnnnnnnnndndnnnnndnnddnnnddnnnddnndndnddndnddndnnddnndnnnnnnndndnddnddnnnnnnddnndnndndndnnnndddnnnnndddndndddnddndnddnnndnndndnndnnnnnddnddndnnnddndndnndnndndnddnndnnddnnndnddddndddddndddnddddnddnddndnndnnnddndnddnddnnddddddnndndndnndddddndndnddnddddnddnnddnnnddnddnndnddddddnndnnnnndnnndnddddddddddndddddnnnnnndddddddndnnddnddddndndnnnnndndnnddnnnddnddndndndnnnnnndddnddnddndddnnnddddndndnddnndddndnndddnndnndddd"
+  }
+}

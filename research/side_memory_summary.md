@@ -1,6 +1,6 @@
 # Side-memory track: where it stands, in plain language
 
-*Written 4 Nov 2026, after round 10; updated after round 11's no-training checks (Stage 0). The evidence is in [`REGISTER.md`](REGISTER.md) (P-rows cited below); the dated detail is in [`NOTEBOOK.md`](NOTEBOOK.md). Update this summary when a round changes the picture.*
+*Written 4 Nov 2026, after round 10; updated after round 11's no-training checks (Stage 0) and Stage A (5 Nov). The evidence is in [`REGISTER.md`](REGISTER.md) (P-rows cited below); the dated detail is in [`NOTEBOOK.md`](NOTEBOOK.md). Update this summary when a round changes the picture.*
 
 ## The setup
 
@@ -30,6 +30,17 @@ It does four simple things:
 Training could sometimes find a way around this, but only by luck, in 1–3 runs out of 5 (P36, P40, P46–P48). Separate slots remove the overwriting by design, and the luck stopped mattering.
 
 **Simpler turned out to be better** (P50, P52, P57). A combination of ideas was expected to win: a smarter trigger, labels from two layers, pre-recording the words before the fact, and a normalising trigger. Combined, they did worse. The normalising trigger adjusted itself to the kind of surrounding text and then failed to save facts when the text changed. The other extras added nothing once facts had their own slots.
+
+## Round 11 so far: what changed when each idea was tried alone (P68–P76)
+
+Sixteen single changes to the slot memory were each trained twice and compared with the original on the same test texts.
+- **One change helped everywhere without a cost:** training the "notice something worth keeping" detector to open where the full model's own attention goes (A15). Recall improves a little, and rephrased questions improve more; nothing gets worse.
+- **Several changes recall better in long documents but give the old answer more often after a fact is corrected.** That happens whenever the "prefer recent memories" penalty is removed.
+- **Most of the big early gains were rescues.** One of the original training runs had simply failed, and almost any change that trained cleanly fixed it. Against the runs that had worked, the best changes add about 2 points.
+- **Shrinking the memory works when done by rule** (shorter stored phrases), not when the memory has to learn what to drop.
+- **New names are still the main weakness** (about 70%).
+
+The next step (Stage A2) combines the best changes, retrains the original to measure run-to-run luck, and tests the alternative write gates (hysteresis and Schmitt), alternative replay, and a sweep of where the memory taps the model.
 
 ## What doesn't work yet
 

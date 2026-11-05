@@ -1502,3 +1502,49 @@ Nothing in Stage A starts without Daniel's go-ahead.
 - **The fix:** the read now shifts E by each query row's best held match (cancelled by the per-slot normalisation) and floors the normaliser at 1e-12, in both the parallel form and `stream()`. A regression test covers it.
 - **Effect on round-10 checkpoints:** re-evaluated, they change by at most 0.005. The 512-token cells are identical; 3–4 of 384 sequences flip at 2048. That is within the runbook's 0.01 compatibility bar, so the Stage-0 diagnostics (old read) stand.
 - **Why it matters now:** sharper alignment (A12) and a learned code (A5) make underflow more likely.
+
+---
+
+## Round 11 Stage A: one change at a time on I1, and what survives the seed-4 rescue (5 Nov 2026)
+
+**Setup.**
+- 16 arms, each a single change to I1, on seeds 1 and 4: the round-11 runbook arms, the RV4 §6 arms (DEC12), and the Stage-B gap runs.
+- Every run is evaluated on 37 cells with windowed, empty and shuffle controls. No evaluation is void.
+- Reading (DEC11, `analyse_round.py`): paired differences in exact against I1 with 95% intervals.
+  - Seed 1 is compared with I1 seed 1.
+  - Seed 4 is compared with I1's learned seeds 0, 2 and 3, because I1 seed 4 failed and almost any arm that trains cleanly "rescues" it (+0.10 to +0.14 on the grid).
+- Register P68–P76.
+
+| Arm | Seed 1: grid / names / query / updates | Seed 4 against the learned I1 seeds: grid / names |
+|---|---|---|
+| **A15** teacher attention target | **+0.024 / +0.047= / +0.076 / +0.004=** | **+0.023 / +0.026=** |
+| A11 gated lexical keys | +0.046 / −0.021= / −0.056 / −0.052 | +0.023 / −0.073 |
+| A1b ordinal time, no age penalty | +0.020 / −0.010= / +0.045 / **−0.240** | +0.022 / +0.042= |
+| A12 sharper alignment start | +0.013 / +0.003= / +0.077 / −0.059 | +0.005 / +0.021= |
+| A1 rotary time | +0.021 / −0.091 / 0.000= / −0.104 | −0.018 / −0.193 |
+| A7 12-token windows | −0.018 / −0.052= / −0.004= / −0.012= | −0.012 / −0.068 |
+| A4 no TimeChannel | +0.006= / +0.023= / +0.095 / −0.014= | −0.218 / −0.125 |
+| A6, A5, A8 (compression) | −0.03 / −0.13 / −0.18 on the grid | −0.40 / −0.69 / −0.08 |
+| A10 name pool, A13 native keys, A14 distillation | −0.33 / −0.74 / −0.44 | −0.32 / −0.48 / −0.06 |
+| A2 supr; I1-superposed; I1-no-align | −0.75; −0.53; −0.82 | −0.70; −0.55; −0.80 |
+
+(= marks a tie; the other values clear 0.)
+
+**What it shows**
+1. **A15 is the only arm better or tied on every group on both seeds.** Full attention's focus as the gate's training target improves the grid and paraphrases without costing updates or names. The teacher check shows full attention marks facts against filler (AUC 0.95), which suits an admission signal, but hardly separates the queried fact from the others (0.65).
+2. **Most of the large seed-4 gains are rescue.** Against I1's learned seeds the best arms gain +0.02 on the grid. The first reading ("+0.3 on seed 4") overstated them.
+3. **Every way of dropping the age penalty buys length and costs updates** (A1b −0.24, A1 −0.10). A11 and A12 also lose some update accuracy.
+4. **Held-out names remain unsolved:** the best arms reach 0.70–0.73.
+5. **The Stage-B gaps are closed.**
+   - Slots and offset alignment are each necessary within I1 (RV4.E1).
+   - E8: I1 recovers 41% of the windowed perplexity gap (14.62 → 12.34; full 9.01).
+   - I1 passes the CPU must-pass checks.
+6. **Compression that was free at evaluation fails when learned from scratch.** Fixed truncation (A7) is near neutral at 53% of the state.
+7. **An inherited quirk** (A2 code review, Q1): I1's point gate fires a full-strength onset at position 0 in about 50–60% of sequences, because the running-SD floor is 1e-3, and holds that slot to the end. Its read weight is small (≤ 0.07), so it costs capacity, not accuracy.
+
+**Corrections to the session's interim readings** (from the plan review and the fact-check):
+- A1b and A1 lose updates heavily. The interim "no cell worse" was read before the update references existed.
+- A11 has a worse cell (paraphrase 4 on seed 1).
+- The seed-4 gains are mostly rescue.
+
+**Next: Stage A2 (DEC14).** Phase 0 evaluation-time ablations, the gate diagnostic, Phase 1 I1 retrains (noise floor, current code), Phase 2 decompositions (incl. the hysteresis and Schmitt gates under both calibrations, pointer replay, compression rescues), then the Phase 3 factorial. The tap sweep follows.
