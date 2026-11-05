@@ -34,13 +34,20 @@ CANDIDATES = {
     "w1i_time": dict(loop="w1i", time=True),
     "w1":       dict(loop="w1", time=False),
     "w1_time":  dict(loop="w1", time=True),
+    # round-10/11 recipe I1 (W1s slots + offset read; point gate, no centring, no pre-record, learned key)
+    "w1s_i1":      dict(loop="w1s", time=False),
+    "w1s_i1_time": dict(loop="w1s", time=True),
 }
+W1S_I1 = ["--w1s-gate", "point", "--no-w1s-centre", "--w1s-pre", "0", "--w1s-key", "learned", "--w1s-taps", ""]
 
 
 def build(cfg: dict, vocab: int, args):
     model = tl.TemporalLoopLM(vocab, args.d, 4, window=args.window, memory=True, time=cfg["time"])
     heads, dh = 4, args.d // 4
-    if cfg["loop"] == "w1i":
+    if cfg["loop"] == "w1s":                                       # one stream (h), the lexical code from h too
+        from evolve.w1s_slots import SlotLoop, split_args
+        model.loop = SlotLoop(args.d, ["h"], "h", split_args(W1S_I1)[0])
+    elif cfg["loop"] == "w1i":
         model.loop = EventLoop(args.d, heads=heads, d_head=dh, chunk=32)
     else:
         model.loop = GDNLoop(args.d, heads=heads, d_head=dh, chunk=32)

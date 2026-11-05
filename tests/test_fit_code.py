@@ -111,4 +111,6 @@ def test_fit_code_end_to_end_tiny(tmp_path, monkeypatch):
         E = loop._alignment(f, st)
         z = F.normalize(f["x"] @ frag["loop.wz.weight"].T, dim=-1)
         beta = frag["loop.log_beta_align"].exp().clamp(max=fit_code.MAX_BETA)
-    torch.testing.assert_close(E, torch.exp(beta * (z @ z.transpose(1, 2) - 1)))
+    # equal up to the per-row shift m_t (the best held match), which the per-slot normalisation cancels
+    d = torch.log(E) - beta * (z @ z.transpose(1, 2) - 1)
+    torch.testing.assert_close(d, d[..., :1].expand_as(d), atol=1e-4, rtol=0)

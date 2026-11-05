@@ -81,6 +81,7 @@ NEG = -1e4                                                        # reinstatemen
 EPS = 1e-8                                                        # floor of squared norms in the cosines
 SCHMITT_GAIN = 4.0                                                # p = σ(4(z − θ_on)) at a Schmitt onset
 MAX_BETA = 40.0                                                   # exp(β(cos − 1)) stays above float32's floor
+ALIGN_FLOOR = 1e-12                                               # a slot's alignment normaliser (E shifted to ≤ 1)
 RECENCY_FORMS = ("linear", "none", "log", "ord", "supr", "supw")
 
 
@@ -176,6 +177,8 @@ def split_args(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
                     help="which M: the first, top value norm ‖v_{j+1}‖, a learned score w·x_{j+1} + b of the "
                          "successor (like the value norm, it scores the token whose value is stored), or scores the "
                          "caller sets (side.keep_scores / side.keep_pair; evaluation diagnostics only)")
+    ap.add_argument("--w1s-keep-init", choices=["zero", "value"], default="zero",
+                    help="learned keep: start from 0 (w·x + b only) or from the value norm (‖v_{j+1}‖ + w·x + b; G0.4)")
     ns, rest = ap.parse_known_args(argv)
     if ns.w1s_recency_form is None:                               # resolved here so the JSON records it
         ns.w1s_recency_form = "linear" if ns.w1s_time_feat == "none" else "none"
@@ -386,6 +389,9 @@ class SlotLoop(GDNLoop):
         rf = _opt(w, "w1s_recency_form", None) or ("linear" if tf == "none" else "none")
         self.rform, self.time_feat = rf, tf
         self.code, self.keep, self.keep_by = _opt(w, "w1s_code", "lex"), _opt(w, "w1s_keep", 0), _opt(w, "w1s_keep_by", "first")
+        self.keep_init = _opt(w, "w1s_keep_init", "zero")
+        if self.keep_init != "zero" and self.keep_by != "learned":
+            raise ValueError("--w1s-keep-init applies to --w1s-keep-by learned")
         if rf not in RECENCY_FORMS or tf not in ("none", "rope", "ordinal"):
             raise ValueError(f"--w1s-recency-form {rf} / --w1s-time-feat {tf}")
         slots_add = self.store == "slots" and self.out == "additive"
@@ -489,6 +495,8 @@ class SlotLoop(GDNLoop):
                 f["kp"] = self.keep_pair.to(f["x"]) if self.keep_pair is not None else None
             elif self.keep_by in ("value", "learned"):            # scored at the successor j + 1
                 sc = f["v"].norm(dim=-1) if self.keep_by == "value" else self.keep_w(f["x"]).squeeze(-1)
+                if self.keep_by == "learned" and self.keep_init == "value":    # starts as value-norm keep
+                    sc = sc + f["v"].norm(dim=-1)
                 f["ks"] = F.pad(sc[:, 1:], (0, 1))
         return f
 
@@ -615,23 +623,33 @@ class SlotLoop(GDNLoop):
         return a[..., :N], a[..., N]
 
     def _alignment(self, f: dict, st: dict) -> torch.Tensor | None:
-        """E[t, j] = exp(β_a (cos(z_t, z_j) − 1)), (B, T, T); None without alignment."""
+        """E[t, j] = exp(β_a (cos(z_t, z_j) − m_t)), (B, T, T); None without alignment.
+
+        m_t is the best cosine among the entries held at t (detached). Within a slot the read normalises
+        E over the slot's entries, so the shift changes nothing mathematically; it keeps the best-matching
+        slot's normaliser ≥ 1, where exp(β(cos − 1)) underflowed and its division's backward overflowed
+        to NaN (CPU suite, 4 Nov 2026). ``stream`` applies the same rule."""
         if self.align == "none":
             return None
         beta = self.log_beta_align.exp().clamp(max=MAX_BETA)
         if self.code == "learned":                                # z = W_z x, plain cosine (no centring)
             zq, zs = F.normalize(f["z"], dim=-1), F.normalize(st["z"], dim=-1)
-            return torch.exp(beta * (zq @ zs.transpose(1, 2) - 1))
-        if self.align == "learned":
+            cos = zq @ zs.transpose(1, 2)
+        elif self.align == "learned":
             zq, zs = F.normalize(f["y"], dim=-1), F.normalize(st["y"], dim=-1)
-            return torch.exp(beta * (zq @ zs.transpose(1, 2) - 1))
-        with torch.no_grad():                                     # lexical: centred on the retained keys
-            Z, mu, mu2 = st["x"], st["mu"], st["mu2"]
-            zc = f["x"] - mu
-            num = zc @ Z.transpose(1, 2) - (zc * mu).sum(-1, keepdim=True)
-            zn = Z.pow(2).sum(-1)[:, None] - 2 * (mu @ Z.transpose(1, 2)) + mu2
-            cos = num / (zc.pow(2).sum(-1, keepdim=True).clamp_min(EPS) * zn.clamp_min(EPS)).sqrt()
-        return torch.exp(beta * (cos - 1))
+            cos = zq @ zs.transpose(1, 2)
+        else:
+            with torch.no_grad():                                 # lexical: centred on the retained keys
+                Z, mu, mu2 = st["x"], st["mu"], st["mu2"]
+                zc = f["x"] - mu
+                num = zc @ Z.transpose(1, 2) - (zc * mu).sum(-1, keepdim=True)
+                zn = Z.pow(2).sum(-1)[:, None] - 2 * (mu @ Z.transpose(1, 2)) + mu2
+                cos = num / (zc.pow(2).sum(-1, keepdim=True).clamp_min(EPS) * zn.clamp_min(EPS)).sqrt()
+        with torch.no_grad():                                     # the best match among the entries held at t
+            held = (st["ret"].to(cos.dtype) @ st["mem"].to(cos.dtype)) > 0
+            m = cos.detach().masked_fill(~held, float("-inf")).amax(-1, keepdim=True)
+            m = torch.where(torch.isfinite(m), m, torch.ones_like(m))
+        return torch.exp(beta * (cos - m))
 
     def _read(self, f: dict, st: dict) -> torch.Tensor:
         """The recalled value r (B, T, dv): slots with offset alignment, or the superposed state."""
@@ -647,7 +665,7 @@ class SlotLoop(GDNLoop):
         if E is None:                                             # the window's values, averaged
             A = (a / mem.sum(-1).clamp_min(1)[:, None, :]) @ mw
         else:                                                     # α_{t,k,j} = E[t, j] / Σ_{j ∈ k} E[t, j]
-            A = E * ((a / (E @ mem.transpose(1, 2)).clamp_min(1e-30)) @ mw)
+            A = E * ((a / (E @ mem.transpose(1, 2)).clamp_min(ALIGN_FLOOR)) @ mw)
         v = st["v"]
         return A @ F.pad(v[:, 1:], (0, 0, 0, 1))                  # the value stored at j + 1
 
@@ -833,7 +851,7 @@ class SlotLoop(GDNLoop):
                 if self.keep and self.keep_by == "value":         # this position's score as a successor
                     e["ks"] = float(e["v"].norm())
                 elif self.keep and self.keep_by == "learned":
-                    e["ks"] = float(self.keep_w(x).squeeze(-1))
+                    e["ks"] = float(self.keep_w(x).squeeze(-1)) + (float(e["v"].norm()) if self.keep_init == "value" else 0.0)
                 if self.gate == "oracle":
                     p = g = float(oracle[b, t])
                 elif self.gate == "dense":
@@ -942,6 +960,21 @@ class SlotLoop(GDNLoop):
                     res["retained"][b][t] = {q["s"] for q in slots}
                     res["read_w"][b][t] = {**{q["s"]: float(a[i]) for i, q in enumerate(slots)}, None: float(a[-1])}
                     rvec, cover = 0.0, torch.zeros(T, dtype=dt)
+                    cs_by = {}                                    # each slot's cosines to the current token
+                    if self.out == "additive" and self.align != "none":
+                        for i, q in enumerate(slots):
+                            tr = q["trans"]
+                            if not tr:
+                                continue
+                            if self.code == "learned":
+                                cs_by[i] = torch.stack([cosine(e["z"], c_) for _, c_, _ in tr])
+                            elif self.align == "lex":
+                                zc = x - mu
+                                cs_by[i] = torch.stack([(zc @ c_ - zc @ mu) / (max(zc @ zc, EPS) * max(
+                                    c_ @ c_ - 2 * (mu @ c_) + mu @ mu, EPS)) ** 0.5 for _, c_, _ in tr])
+                            else:
+                                cs_by[i] = torch.stack([cosine(e["y"], c_) for _, c_, _ in tr])
+                    m_t = max((float(v.max()) for v in cs_by.values()), default=1.0)   # the best held match
                     for i, q in enumerate(slots):
                         if self.out == "reinstate":
                             cover[q["w0"]:q["w1"] + 1] += a[i]
@@ -952,16 +985,8 @@ class SlotLoop(GDNLoop):
                         if self.align == "none":
                             al = torch.full((len(tr),), 1.0 / len(tr), dtype=dt)
                         else:
-                            if self.code == "learned":
-                                cs = torch.stack([cosine(e["z"], c_) for _, c_, _ in tr])
-                            elif self.align == "lex":
-                                zc = x - mu
-                                cs = torch.stack([(zc @ c_ - zc @ mu) / (max(zc @ zc, EPS) * max(
-                                    c_ @ c_ - 2 * (mu @ c_) + mu @ mu, EPS)) ** 0.5 for _, c_, _ in tr])
-                            else:
-                                cs = torch.stack([cosine(e["y"], c_) for _, c_, _ in tr])
-                            E = torch.exp(self.log_beta_align.exp().clamp(max=MAX_BETA) * (cs - 1))
-                            al = E / E.sum()
+                            E = torch.exp(self.log_beta_align.exp().clamp(max=MAX_BETA) * (cs_by[i] - m_t))
+                            al = E / E.sum().clamp_min(ALIGN_FLOOR)
                         vals = torch.stack([v_ for _, _, v_ in tr])
                         rvec = rvec + a[i] * (al @ vals)
                     if self.out == "reinstate":

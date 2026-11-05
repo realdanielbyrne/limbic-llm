@@ -764,3 +764,46 @@ def test_round11_options_that_would_do_nothing_are_refused():
         with pytest.raises(ValueError):
             side(*flags)
     side("--w1s-store=superposed")                               # the round-10 default still builds
+
+
+def test_learned_keep_can_start_from_the_value_norm():
+    """G0.4 → A6: --w1s-keep-init value scores w·x_{j+1} + b + ‖v_{j+1}‖, so with w = 0, b = 0 it keeps what
+    value-norm keep keeps; parallel equals stream; it is refused for other keep rules."""
+    common = (*I1, "--w1s-K=2", "--w1s-gate=oracle", "--w1s-keep=5")
+    a = side(*common, "--w1s-keep-by=learned", "--w1s-keep-init=value", d=16).double()
+    b = side(*common, "--w1s-keep-by=value", d=16).double()
+    with torch.no_grad():
+        a.loop.keep_w.weight.zero_()
+        a.loop.keep_w.bias.zero_()
+    B, T = 2, 150
+    torch.manual_seed(3)
+    h = torch.randn(B, T, 16, dtype=torch.float64)
+    o = every(B, T, 11, 3)
+    sa = a.loop._store(a.loop._features(a.loop.norm(h), h, None, o))
+    sb = b.loop._store(b.loop._features(b.loop.norm(h), h, None, o))
+    assert torch.equal(sa["mem"], sb["mem"])
+    with torch.no_grad():
+        a.loop.keep_w.weight.normal_(0, 0.3)
+        par = a.loop.read(h, None, o)
+    torch.testing.assert_close(par, a.loop.stream(h, None, o)["o"], atol=1e-6, rtol=1e-6)
+    with pytest.raises(ValueError):
+        side(*I1, "--w1s-keep=5", "--w1s-keep-by=value", "--w1s-keep-init=value")
+
+
+def test_alignment_gradients_stay_finite_when_matches_underflow():
+    """Regression (CPU suite, 4 Nov 2026): with β at its clamp and stored codes far from the query,
+    exp(β(cos − 1)) underflowed and the normaliser's backward overflowed to NaN. The read now shifts
+    E by each row's best held match; gradients stay finite and parallel still equals stream."""
+    m = side(*I1, "--w1s-K=2", "--w1s-gate=oracle", "--w1s-align-init=3.68", d=16).double()
+    B, T = 2, 150
+    torch.manual_seed(5)
+    h = 5 * torch.randn(B, T, 16, dtype=torch.float64)
+    o = every(B, T, 11, 3)
+    torch.testing.assert_close(m.loop.read(h, None, o).detach(), m.loop.stream(h, None, o)["o"], atol=1e-6, rtol=1e-6)
+    m32 = side(*I1, "--w1s-K=4", "--w1s-gate=oracle", "--w1s-align-init=3.68", "--w1s-code=learned", "--w1s-dc=4").train()
+    with torch.no_grad():
+        m32.loop.gain_logit.fill_(2.0)
+    m32.oracle_onsets = every(2, 200, 9, 2)
+    y = m32(30 * torch.randn(2, 200, D))[0].pow(2).sum()
+    y.backward()
+    assert all(torch.isfinite(p.grad).all() for p in m32.parameters() if p.grad is not None)

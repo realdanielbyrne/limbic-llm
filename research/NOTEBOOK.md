@@ -1495,3 +1495,10 @@ Nothing in Stage A starts without Daniel's go-ahead.
 **[4 Nov 2026, later] Daniel's readings (DEC10).** G0.8 is read literally, so A1 (rope) runs beside A1b. A12 runs despite G0.1, starting at log β_align = 3.68, the sharpest start below the β ≤ 40 clamp. Updates, dc, RV4 §6 and the go-ahead for Stage A are still open.
 
 **[4 Nov 2026, later] DEC11: relative comparison instead of fixed margins.** Daniel: "Any improvement over base models is an improvement … What matters is the relative difference." From Stage A on, arms are reported against I1, full attention and windowed, with 95% intervals. An arm is better or worse only where its interval separates from I1's. Trade-offs go to Daniel, not to a veto, and updates are scored against ground truth. Deciding cells use n = 384.
+
+**[4 Nov 2026, later] DEC12 (RV4 §6 adopted) and an alignment fix before Stage A.**
+- **DEC12:** RV4 §6 adopted. Finalists run 10 seeds, judged at ≥ 8 of 10. Stage-B gaps first, then generalisation arms, then compression, then time. Backlog changes as RV4.P7.
+- **The bug:** adding I1 to the CPU suite (`cpu_suite.py --models w1s_i1`) turned up a numerical bug inherited from round 10. When a slot's alignment exp(β(cos − 1)) underflowed, the backward pass of its normaliser (clamped at 1e-30) overflowed to NaN. The run diverged at the learning-rate peak.
+- **The fix:** the read now shifts E by each query row's best held match (cancelled by the per-slot normalisation) and floors the normaliser at 1e-12, in both the parallel form and `stream()`. A regression test covers it.
+- **Effect on round-10 checkpoints:** re-evaluated, they change by at most 0.005. The 512-token cells are identical; 3–4 of 384 sequences flip at 2048. That is within the runbook's 0.01 compatibility bar, so the Stage-0 diagnostics (old read) stand.
+- **Why it matters now:** sharper alignment (A12) and a learned code (A5) make underflow more likely.
