@@ -52,16 +52,38 @@ or a hard threshold means something only against a known noise scale, and with i
 density is 0.12 ± 0.05 at any input scale, with no fitting (``gate_bias``). ``--no-w1s-centre``
 drops the mean subtraction only.
 
-``--w1s-gate-norm init`` (round 11, gate track; needs ``--no-w1s-centre``) calibrates the uncentred
-drive. ``gate_bias`` assumes a drive with mean 0. LayerNormed LM states share an offset direction,
-so w·x_t has a mean of several running deviations, with a sign set by the seed. That moves the point
-gate's p up or down, and leaves the hyst latch and the Schmitt trigger always on or always off. The
-flag subtracts w·μ̂, where μ̂ is each gate stream's mean over the first batch the gate sees
-(``calibrate_gate``). μ̂ is a buffer, saved in the checkpoint and never updated. The initial operating
-point is then that of a centred drive, but the decision stays a fixed function of x_t. It does not
-adapt to the sequence's filler, which is how the running-mean centring failed (P50). The first batch
-sets μ̂ once, from all of its positions: a data-dependent initialisation. E1 is about the forward at
-fixed parameters.
+``--w1s-gate-norm`` (round 11, gate track; needs ``--no-w1s-centre``) calibrates the uncentred drive.
+``gate_bias`` assumes a drive with mean 0. LayerNormed LM states share an offset direction, so w·x_t
+has a mean of several running deviations, with a sign set by the seed. That moves the point gate's p
+up or down, and leaves the hyst latch and the Schmitt trigger always on or always off.
+
+  init  subtracts w·μ̂, where μ̂ is each gate stream's mean over the first batch the gate sees
+        (``calibrate_gate``; ``state_report`` records where it came from, and a batch the caller marks
+        ``side.batch_kind = "distill"`` is refused). μ̂ is a buffer, saved in the checkpoint and never
+        updated: a data-dependent initialisation (E1 is about the forward at fixed parameters). It
+        removes only the offset SHARED by the sequences. A sequence whose own mean differs from μ̂ along
+        w by c moves the point gate's argument by c/sd (sd of the drive), but the hyst/schmitt drive by
+        about √((1+λ)/(1−λ)) ≈ 3 times that (λ = 0.8): z = u/sd(u), and the leaky integral u keeps the
+        offset whole while it shrinks the noise. Per-sequence offsets therefore still start some
+        sequences with the latch always on or off (synthetic states with a per-sequence offset c = 0.3:
+        13–24% of the sequences, c = 0.6 about 40%; the centred drive none). The scale is not fixed
+        either: the drive is divided by the causal running deviation of the sequence's own history
+        (causal, so E1 holds). The running variance is seeded with a calibrated prior, ``GATE_PRIOR_N``
+        pseudo-positions of σ̂² = Σ‖w‖²(D − ‖μ̂‖²)/D (the drive's variance for LayerNormed x with an
+        isotropic covariance), so the first positions are not divided by the 1e-3 floor (without it
+        |z_0| ≈ 1000|d_0|: p_0 was 0 or 1, and a p_0 = 1 slot at s = 0 was never evicted at δ = 0).
+  seq   subtracts each sequence's OWN offset, estimated causally from its first W tokens only (W =
+        ``--w1s-gate-norm-window``, 64): d_t = w·x_t − mean_{s ≤ min(t, W−1)} w·x_s. For t < W this is the
+        running-mean centring; from W on the estimate is frozen, so the decision is a fixed function of
+        x_t for the rest of the sequence: later filler, the facts and the query never enter it, and it
+        does not drift over long contexts. d_0 = 0, so position 0 is neutral. No calibration, no buffer;
+        one more streaming scalar. The frozen estimate has an error of its own (≈ σ/√W, amplified like any
+        offset by the latches): on synthetic states 2–4 of 96 sequences start just below 0.03 at W = 64
+        (none pinned), 0–1 at W = 128. Caveat: what P50's reading blames ("the gate's centring adapts to the
+        filler") is the subtraction of the sequence's filler mean, and seq does subtract it: on
+        stationary filler (random tokens) the first-W mean equals the running mean up to sampling noise
+        (≈ σ/√W), so seq may share P50's random-filler failure. What it removes is the drift and the
+        facts' own pull on the mean. It is an opt-in arm, to be read on random-filler retention first.
 
 The gate gets its gradient through log p_k in the read softmax (and through the window weights of
 the hysteresis gate); retention and suppression are hard, which is what keeps the parallel form
@@ -112,6 +134,9 @@ MAX_BETA = 40.0                                                   # exp(β(cos �
 ALIGN_FLOOR = 1e-12                                               # a slot's alignment normaliser (E shifted to ≤ 1)
 RECENCY_FORMS = ("linear", "none", "log", "ord", "supr", "supw")
 TIME_FEATS = ("rope", "ordinal")                                  # --w1s-time-feat takes any combination
+GATE_NORMS = ("none", "init", "seq")                              # --w1s-gate-norm
+GATE_PRIOR_N = 8.0                                                # init: pseudo-positions of the calibrated variance
+PTR_TIE = 1e-5                                                    # pointer: weights within this (relative) of the max tie
 
 
 def _ints(s: str) -> tuple[int, ...]:
@@ -222,9 +247,13 @@ def split_args(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
                          "caller sets (side.keep_scores / side.keep_pair; evaluation diagnostics only)")
     ap.add_argument("--w1s-keep-init", choices=["zero", "value"], default="zero",
                     help="learned keep: start from 0 (w·x + b only) or from the value norm (‖v_{j+1}‖ + w·x + b; G0.4)")
-    ap.add_argument("--w1s-gate-norm", choices=["none", "init"], default="none",
+    ap.add_argument("--w1s-gate-norm", choices=list(GATE_NORMS), default="none",
                     help="uncentred gate (--no-w1s-centre): init subtracts w·μ̂, μ̂ the gate input's mean over the first "
-                         "batch, fixed thereafter (the initial operating point of a centred drive, no filler adaptation)")
+                         "batch, fixed thereafter (removes the offset shared by sequences, not a sequence's own); seq "
+                         "subtracts the sequence's own causal mean over its first --w1s-gate-norm-window tokens, "
+                         "frozen after them")
+    ap.add_argument("--w1s-gate-norm-window", type=int, default=64,
+                    help="--w1s-gate-norm seq: W, the first tokens whose mean is the sequence's offset")
     # round 11, Stage A2 (research/plans/round11_combination_plan.md, "Code needed"); defaults reproduce the above
     ap.add_argument("--w1s-replay", choices=["match", "pointer"], default="match",
                     help="offset alignment at each token: re-match (match), or carry a pointer that advances one "
@@ -233,8 +262,8 @@ def split_args(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
                     help="pointer: initial κ (the pointer entry's alignment weight is multiplied by exp κ)")
     ap.add_argument("--w1s-align-stream", default="lex",
                     help="stream of the lexical alignment code (and of a learned code's input): lex (the lowest key "
-                         "stream, round 10), h (the main tap), or a block index in --w1s-taps; any other index "
-                         "means the main tap, as in --w1s-key-taps")
+                         "stream, round 10), h (the main tap), or a block index in --w1s-taps (or the main tap's "
+                         "--layer); any other index is an error")
     ns, rest = ap.parse_known_args(argv)
     if ns.w1s_recency_form is None:                               # resolved here so the JSON records it
         ns.w1s_recency_form = "linear" if ns.w1s_time_feat == "none" else "none"
@@ -267,10 +296,34 @@ def strict_peaks(p: torch.Tensor, r: int) -> torch.Tensor:
     return (p > w[:, :T].amax(-1)) & (p > w[:, r + 1:r + 1 + T].amax(-1))
 
 
-def running_sd(u: torch.Tensor) -> torch.Tensor:
-    """Causal running standard deviation of u (B, T), about its running mean."""
+def running_sd(u: torch.Tensor, prior: torch.Tensor | None = None, n0: float = GATE_PRIOR_N) -> torch.Tensor:
+    """Causal running standard deviation of u (B, T), about its running mean.
+
+    With ``prior`` (a variance, scalar), the running variance is seeded with ``n0`` pseudo-positions of it:
+    (n0·prior + (t + 1)·var_t) / (n0 + t + 1), so position 0 has sd ≈ √prior instead of the 1e-3 floor."""
     m, m2 = cummean(u), cummean(u * u)
-    return ((m2 - m * m).clamp_min(0) + 1e-6).sqrt()
+    if prior is None:
+        return ((m2 - m * m).clamp_min(0) + 1e-6).sqrt()
+    n = torch.arange(1, u.shape[1] + 1, device=u.device, dtype=u.dtype)
+    return ((n0 * prior.to(u.dtype) + n * (m2 - m * m).clamp_min(0)) / (n0 + n) + 1e-6).sqrt()
+
+
+def first_mean(y: torch.Tensor, W: int) -> torch.Tensor:
+    """Causal mean of y (B, T) over its first min(t + 1, W) positions: the running mean, frozen from t = W − 1."""
+    T = y.shape[1]
+    return cummean(y)[:, torch.arange(T, device=y.device).clamp_max(W - 1)]
+
+
+def first_max(x: torch.Tensor) -> torch.Tensor:
+    """Index along the last dim of the FIRST entry within a relative ``PTR_TIE`` of the maximum (pointer replay).
+
+    The parallel and streaming forms compute the same mathematical weights in different orders, so an exact tie
+    (identical slots or entries) comes out ordered by rounding; both forms use this rule, which takes the
+    earliest (older slot, earlier entry) of the entries tied up to the tolerance."""
+    m = x.amax(-1, keepdim=True)
+    ok = x >= m - PTR_TIE * m.abs()
+    idx = torch.arange(x.shape[-1], device=x.device)
+    return torch.where(ok, idx, torch.full_like(idx, x.shape[-1])).amin(-1)
 
 
 def schmitt(z: torch.Tensor, on: float, off: float) -> torch.Tensor:
@@ -417,12 +470,20 @@ class SlotLoop(GDNLoop):
         if self.gate == "hyst":
             self.latch_c = nn.Parameter(torch.tensor(float(c)))
         self.gate_norm = _opt(w, "w1s_gate_norm", "none")
-        if self.gate_norm not in ("none", "init"):
+        self.gate_norm_window = int(_opt(w, "w1s_gate_norm_window", 64))
+        if self.gate_norm not in GATE_NORMS:
             raise ValueError(f"--w1s-gate-norm {self.gate_norm}")
+        if self.gate_norm_window != 64 and self.gate_norm != "seq":
+            raise ValueError("--w1s-gate-norm-window applies to --w1s-gate-norm seq")
+        if self.gate_norm_window < 1:
+            raise ValueError("--w1s-gate-norm-window must be ≥ 1")
+        if self.gate_norm != "none" and (self.gate not in ("point", "hyst", "schmitt") or self.centre):
+            raise ValueError(f"--w1s-gate-norm {self.gate_norm} calibrates the drive of an uncentred point, hyst or "
+                             "schmitt gate: it needs --no-w1s-centre (it replaces the running-mean centring)")
+        self.batch_kind = None                                    # set by the caller ("distill": μ̂ is not taken from it)
+        self.gate_mu_src = None                                   # where μ̂ came from (state_report)
+        self.calls = 0                                            # forwards and streams run (μ̂'s provenance)
         if self.gate_norm == "init":                              # μ̂ per gate stream, NaN until calibrated
-            if self.gate not in ("point", "hyst", "schmitt") or self.centre:
-                raise ValueError("--w1s-gate-norm init calibrates the drive of an uncentred point, hyst or schmitt "
-                                 "gate: it needs --no-w1s-centre (it replaces the running-mean centring)")
             self.register_buffer("gate_mu", torch.full((M, d_model), float("nan")))
         self.wk = split_linear(w.w1s_dk) if self.use_learned or self.align == "learned" else None
         lex_init, align_init = _opt(w, "w1s_lex_init", None), _opt(w, "w1s_align_init", None)
@@ -563,21 +624,43 @@ class SlotLoop(GDNLoop):
         self.native_dim = k.shape[-1]
         return k.detach(), q.detach()
 
-    def calibrate_gate(self, xs: dict) -> None:
+    def calibrate_gate(self, xs: dict, source: str = "explicit") -> None:
         """--w1s-gate-norm init: set μ̂ to each gate stream's mean over every position of ``xs`` (one batch of
         LayerNormed streams, ``_streams``). ``_gate_offset`` calls it once, on the first batch the gate sees;
-        a checkpoint restores μ̂, so a loaded side is never recalibrated. Call it directly to recalibrate."""
+        a checkpoint restores μ̂, so a loaded side is never recalibrated. Call it directly to recalibrate.
+
+        Provenance (``gate_mu_src``, reported by ``W1sSide.state_report`` and so in run.py's ``w1s_state``): the
+        batch's size, whether the module was training, how many forwards/streams ran before (0 in training =
+        the first training step, whose kind is ``distill.step_kinds[0]`` under A14) and ``batch_kind``. A batch
+        the caller marks ``batch_kind = "distill"`` (an A14 text window, maybe another corpus) is refused:
+        μ̂ must come from the task's own states."""
+        if self.batch_kind == "distill":
+            raise RuntimeError("--w1s-gate-norm init: refusing to calibrate μ̂ on an A14 distillation text batch "
+                               "(side.batch_kind = 'distill'); calibrate on a needle batch first")
+        x0 = xs[self.streams[0]]
         with torch.no_grad():
             for i, m in enumerate(self.streams):
                 x = xs[m]
                 self.gate_mu[i] = x.reshape(-1, x.shape[-1]).mean(0).to(self.gate_mu)
+        self.gate_mu_src = dict(source=source, batch=int(x0.shape[0]), positions=int(x0.shape[1]),
+                                training=bool(self.training), calls_before=int(self.calls),
+                                kind=self.batch_kind or "unknown")
 
     def _gate_offset(self, xs: dict) -> torch.Tensor:
         """w·μ̂ (a scalar), the drive's calibrated offset (--w1s-gate-norm init). μ̂ is fixed, and w gets its
         gradient, so the drive is w·(x_t − μ̂) whatever w becomes."""
         if torch.isnan(self.gate_mu).any():
-            self.calibrate_gate(xs)
+            self.calibrate_gate(xs, "first batch seen")
         return sum(lin(self.gate_mu[i]) for i, lin in enumerate(self.gate_w)).squeeze(-1)
+
+    def _gate_prior(self) -> torch.Tensor:
+        """σ̂², the init drive's calibrated variance (detached): Σ_streams ‖w‖²·(D − ‖μ̂‖²)/D. For LayerNormed x
+        (no affine) ‖x‖² = D, so the calibration batch's total variance is D − ‖μ̂‖²; spread evenly over the
+        dimensions, a drive w·x has variance ‖w‖² times its share. It follows w through training."""
+        with torch.no_grad():
+            D = self.gate_mu.shape[-1]
+            return sum(lin.weight.pow(2).sum() * (D - self.gate_mu[i].pow(2).sum()).clamp_min(0) / D
+                       for i, lin in enumerate(self.gate_w))
 
     def _gate(self, xs: dict, oracle) -> tuple[torch.Tensor, torch.Tensor]:
         """Onset strength p and on-state g, (B, T) each."""
@@ -592,15 +675,23 @@ class SlotLoop(GDNLoop):
             p = torch.sigmoid(self.gate_b).to(dt).expand(B, T)
             return p, p
         y = sum(lin(xs[m]).squeeze(-1) for lin, m in zip(self.gate_w, self.streams))
+        prior = prior_u = None
         if self.gate_norm == "init":                              # w·(x_t − μ̂), μ̂ fixed at calibration
             y = y - self._gate_offset(xs)
-        d = y - cummean(y) if self.centre else y                  # w·(x_t − m_t) = w·x_t − mean_{s≤t} w·x_s
+            prior = self._gate_prior()                            # seeds the running variances (no t = 0 blow-up)
+        if self.gate_norm == "seq":                               # w·x_t − the mean over the first W tokens
+            d = y - first_mean(y, self.gate_norm_window)
+        else:
+            d = y - cummean(y) if self.centre else y              # w·(x_t − m_t) = w·x_t − mean_{s≤t} w·x_s
         if self.gate == "point":
-            p = torch.sigmoid(self.gate_a.exp() * d / running_sd(y) + self.gate_b)
+            p = torch.sigmoid(self.gate_a.exp() * d / running_sd(y, prior) + self.gate_b)
             return p, p
         lam = torch.sigmoid(self.lam_logit)
         u = d @ (causal_decay(T, lam[None], d.device)[0].to(dt) * (1 - lam)).T   # leaky integrator
-        z = u / running_sd(u)
+        if prior is not None:                                     # a white drive's variance after the integrator
+            lam_ = lam.detach()
+            prior_u = prior * (1 - lam_) / (1 + lam_)
+        z = u / running_sd(u, prior_u)
         if self.gate == "hyst":
             g = latch(self.gate_a.exp() * z + self.gate_b, self.latch_c)
             return g * (1 - F.pad(g[:, :-1], (1, 0))), g
@@ -815,7 +906,10 @@ class SlotLoop(GDNLoop):
         """Pointer replay (``--w1s-replay pointer``): E'[t, j] = E[t, j]·exp(κ) at j = π_{t−1} + 1, else E[t, j].
 
         π_t is the entry read at t: in the slot with the largest read weight (none when that is the null), the
-        argmax of E' over the slot's stored entries (ties to the earlier position). So a replay that read entry
+        argmax of E' over the slot's stored entries. Ties go to the older slot and the earlier entry, where a tie
+        is a weight within a relative ``PTR_TIE`` of the maximum (``first_max``): mathematically equal weights
+        (identical slots or codes) come out of the two forms in different rounding, and an exact argmax would
+        then pick by the last ulp, differently in each, with an O(1) effect on the read. So a replay that read entry
         j at t − 1 is carried to j + 1 at t, and the entry it lands on wins the alignment when the current token
         matches it (within a factor exp κ of the best match); when it does not (the replay has ended, or the
         query left the stored sequence), the plain match wins again. The pointer is hard and recursive: one
@@ -826,7 +920,7 @@ class SlotLoop(GDNLoop):
         B, T, N = a.shape
         gain = self.ptr_gain().to(E.dtype)
         with torch.no_grad():
-            k = torch.cat([a, a_null[..., None]], -1).argmax(-1)                  # (B, T); N = the null
+            k = first_max(torch.cat([a, a_null[..., None]], -1))                 # (B, T); N = the null
             rows = _rows(st["mem"], k.clamp_max(N - 1)) & (k < N)[..., None]      # (B, T, T) the read slot's entries
             Ed, g_ = E.detach(), gain.detach()
             hit = torch.zeros(B, T, T, dtype=torch.bool, device=E.device)        # the pointer's entry at each t
@@ -835,7 +929,7 @@ class SlotLoop(GDNLoop):
             for t in range(T):
                 hit[b_, t, (prev + 1).clamp_max(T - 1)] = prev >= 0
                 e = Ed[:, t] * torch.where(hit[:, t], g_, torch.ones_like(g_))
-                j = e.masked_fill(~rows[:, t], float("-inf")).argmax(-1)
+                j = first_max(e.masked_fill(~rows[:, t], float("-inf")))
                 prev = torch.where(rows[:, t].any(-1), j, torch.full_like(j, -1))
                 ptr[:, t] = prev
         st["ptr"] = ptr
@@ -912,7 +1006,10 @@ class SlotLoop(GDNLoop):
 
     # ------------------------------------------------------------- outputs
     def _run_store(self, x, h, extra, oracle) -> tuple[dict, dict]:
-        f = self._features(x, h, extra, oracle)
+        try:
+            f = self._features(x, h, extra, oracle)
+        finally:
+            self.calls += 1
         if self.ctrl == "shuffle" and f["p"].shape[0] < 2:
             raise ValueError("--w1s-ctrl shuffle needs a batch of ≥ 2 rows (one row would read its own store)")
         sf = {k: (v.roll(1, 0) if v is not None else None) for k, v in f.items()} if self.ctrl == "shuffle" else f
@@ -1036,9 +1133,12 @@ class SlotLoop(GDNLoop):
         if self.keep and self.keep_by == "external" and kscores is None and kpair is None:
             raise ValueError("--w1s-keep-by external needs side.keep_scores or side.keep_pair")
         goff = self._gate_offset(xs) if self.gate_norm == "init" else None   # w·μ̂ (a constant, not state)
+        prior = self._gate_prior() if self.gate_norm == "init" else None     # σ̂², likewise a constant
+        Wg = self.gate_norm_window
+        self.calls += 1
         for b in range(B):
             ring, slots, S = deque(maxlen=ring_len), [], None
-            ysum = y2sum = u = gprev = usum = u2sum = 0.0
+            ysum = y2sum = u = gprev = usum = u2sum = ywsum = 0.0
             sprev, xsum = False, torch.zeros(D, dtype=dt)
             ptr = -1                                              # pointer replay: the entry read at t − 1
             for t in range(T):
@@ -1072,15 +1172,24 @@ class SlotLoop(GDNLoop):
                     if goff is not None:
                         yg = yg - goff
                     ysum, y2sum = ysum + yg, y2sum + yg * yg
-                    d = yg - ysum / (t + 1) if self.centre else yg
-                    sd = lambda s1, s2: ((s2 / (t + 1) - (s1 / (t + 1)) ** 2).clamp_min(0) + 1e-6).sqrt()
+                    if self.gate_norm == "seq":                   # the mean over the first W tokens, then frozen
+                        if t < Wg:
+                            ywsum = ywsum + yg
+                        d = yg - ywsum / min(t + 1, Wg)
+                    else:
+                        d = yg - ysum / (t + 1) if self.centre else yg
+                    def sd(s1, s2, pv):                           # pv: init's prior variance (else None)
+                        var = (s2 / (t + 1) - (s1 / (t + 1)) ** 2).clamp_min(0)
+                        if pv is None:
+                            return (var + 1e-6).sqrt()
+                        return ((GATE_PRIOR_N * pv + (t + 1) * var) / (GATE_PRIOR_N + t + 1) + 1e-6).sqrt()
                     if self.gate == "point":
-                        p = g = torch.sigmoid(self.gate_a.exp() * d / sd(ysum, y2sum) + self.gate_b)
+                        p = g = torch.sigmoid(self.gate_a.exp() * d / sd(ysum, y2sum, prior) + self.gate_b)
                     else:
                         lam = torch.sigmoid(self.lam_logit)
                         u = lam * u + (1 - lam) * d
                         usum, u2sum = usum + u, u2sum + u * u
-                        z = u / sd(usum, u2sum)
+                        z = u / sd(usum, u2sum, None if prior is None else prior * (1 - lam) / (1 + lam))
                         if self.gate == "hyst":
                             g = torch.sigmoid(self.gate_a.exp() * z + self.gate_b + self.latch_c * (gprev - 0.5))
                             p, gprev = g * (1 - gprev), g
@@ -1218,8 +1327,8 @@ class SlotLoop(GDNLoop):
                         vals = torch.stack([v_ for _, _, v_ in tr])
                         rvec = rvec + a[i] * (al @ vals)
                     if gain is not None:                          # the entry read at t: in the slot read most
-                        top = int(torch.argmax(a))                # (first maximum: the older slot; the null last)
-                        ptr = (slots[top]["trans"][int(torch.argmax(E_by[top]))][0]
+                        top = int(first_max(a))                   # (ties, up to PTR_TIE: the older slot; the null last)
+                        ptr = (slots[top]["trans"][int(first_max(E_by[top]))][0]
                                if top < len(slots) and top in E_by else -1)
                         res["ptr"][b, t] = ptr
                     if self.out == "reinstate":
@@ -1324,6 +1433,7 @@ class SlotLoop(GDNLoop):
         c["superposed"] = S.numel() if S is not None else 0
         lexs = "x" if self.need_x else "xa" if self.need_xa else None   # a lexical stream kept: its running sum
         c["gate"] = 7 + (ring[0][lexs].numel() if lexs else 0)    # gate state and the lexical running sum
+        c["gate"] += self.gate_norm == "seq"                      # the first-W sum of the drive
         if self.replay == "pointer":                              # the entry read at t − 1
             c["pointer"] = 1
         return c
@@ -1346,7 +1456,7 @@ class SlotLoop(GDNLoop):
         keyed_x = self.keyed_x
         code = dc if self.code == "learned" else D if self.align == "lex" else dk if self.align == "learned" else 0
         c = dict(ring=ring_len * per, slot_keys=0, slot_codes=0, slot_values=0, slot_weights=0, sup_tags=0,
-                 superposed=0, gate=7 + D * (self.need_x or self.need_xa))
+                 superposed=0, gate=7 + D * (self.need_x or self.need_xa) + (self.gate_norm == "seq"))
         if self.replay == "pointer":
             c["pointer"] = 1
         if self.store == "superposed":
@@ -1396,15 +1506,18 @@ class W1sSide(nn.Module):
             if max(self.taps) >= self.reinstate_L:
                 raise ValueError(f"taps {self.taps} must lie below --w1s-L {self.reinstate_L}")
         lex = min(streams, key=lambda m: math.inf if m == "h" else m)
-        astream = self.align_stream(_opt(w, "w1s_align_stream", "lex"), lex)
+        layer = getattr(args, "layer", None)                      # the main tap's block, when --layer was given
+        self.align_spec = str(_opt(w, "w1s_align_stream", "lex")).strip().lower()
+        astream = self.align_stream(self.align_spec, lex, layer if isinstance(layer, int) else None)
         self.time = TimeChannel(d_model) if getattr(args, "time", True) else None
         self.loop = SlotLoop(d_model, streams, lex, w, astream)
         self.w1s = vars(w)
 
-    def align_stream(self, spec, lex):
+    def align_stream(self, spec, lex, main: int | None = None):
         """The stream of ``--w1s-align-stream``: lex (the lowest key stream), h (the main tap), or a block index:
-        a tap of --w1s-taps (read by ``taps.TapLM`` even when it is not a key tap), any other index the main tap,
-        as in --w1s-key-taps."""
+        a tap of --w1s-taps (read by ``taps.TapLM`` even when it is not a key tap), or ``main``, the main tap's
+        block (``--layer``, when given). Any other index is an error: unlike --w1s-key-taps, a block that is not
+        tapped would silently become the main tap, often the lexical stream itself (no split, the run = I1)."""
         spec = str(spec).strip().lower()
         if spec == "lex":
             return lex
@@ -1414,7 +1527,22 @@ class W1sSide(nn.Module):
             i = int(spec)
         except ValueError:
             raise ValueError(f"--w1s-align-stream {spec!r}: lex, h or a block index") from None
-        return i if i in self.taps else "h"
+        if i in self.taps:
+            return i
+        if main is not None and i == main:
+            return "h"
+        raise ValueError(f"--w1s-align-stream {i}: block {i} is not in --w1s-taps {list(self.taps)}"
+                         + (f" and is not the main tap (--layer {main})" if main is not None else "")
+                         + "; add it to --w1s-taps, or give h for the main tap")
+
+    @property
+    def batch_kind(self) -> str | None:
+        """What the caller says the current batch is (``"distill"``: an A14 text batch, which μ̂ is not taken from)."""
+        return self.loop.batch_kind
+
+    @batch_kind.setter
+    def batch_kind(self, value: str | None) -> None:
+        self.loop.batch_kind = value
 
     @property
     def gate(self) -> str:
@@ -1458,6 +1586,23 @@ class W1sSide(nn.Module):
                    params=sum(p.numel() for p in self.parameters() if p.requires_grad))
         if self.loop.use_native and self.loop.native_dim is None:  # K/Q width not seen yet: an overcount (review R0)
             out["provisional"] = "native K/Q width unknown before a forward with captured activations"
+        lp = self.loop
+        if lp.gate_norm != "none":                                # the calibration and where μ̂ came from
+            g = {"mode": lp.gate_norm}
+            if lp.gate_norm == "seq":
+                g["window"] = lp.gate_norm_window
+            else:
+                ok = bool(torch.isfinite(lp.gate_mu).all())
+                g["mu_source"] = (lp.gate_mu_src if lp.gate_mu_src is not None else
+                                  {"source": "loaded (checkpoint or set directly)" if ok else "not calibrated"})
+                if ok:
+                    g["mu_norm"] = [round(x, 4) for x in lp.gate_mu.norm(dim=-1).tolist()]
+                    g["prior_var"] = float(lp._gate_prior())
+                g["prior_positions"] = GATE_PRIOR_N
+            out["gate_norm"] = g
+        if self.align_spec != "lex":                              # what --w1s-align-stream resolved to
+            out["align_stream"] = {"spec": self.align_spec, "stream": str(lp.astream), "lex": str(lp.lex),
+                                   "split": bool(lp.split_align)}
         return out
 
     def forward(self, h: torch.Tensor) -> tuple[torch.Tensor, LoopStats]:

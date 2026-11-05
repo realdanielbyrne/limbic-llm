@@ -1089,16 +1089,21 @@ def test_native_state_report_is_marked_provisional_before_the_width_is_seen():
 GATE_TRACK = {name: R11[name] for name in ("none", "log", "ord", "supr", "supw", "rope", "ordinal", "keep-value",
                                            "keep-learned", "code")}
 GATE_TRACK.update({"linear": [], "align-init": ["--w1s-align-init=3.5"], "native": ["--w1s-key=native"]})
-GATE_NORM = {"none": [], "init": ["--w1s-gate-norm=init"]}
-SHIFT = {"none": 0.0, "init": 1.5}                                # init is tested where it matters: a shared offset
+GATE_NORM = {"none": [], "init": ["--w1s-gate-norm=init"], "seq": ["--w1s-gate-norm=seq"]}
+SHIFT = {"none": 0.0, "init": 1.5, "seq": 1.5}                    # the norms are tested where they matter: an offset
 
 
-def ln_like(B, T, d, a=0.0, scale=1.0, seed=0, dtype=torch.float32):
+def ln_like(B, T, d, a=0.0, scale=1.0, seed=0, dtype=torch.float32, c=0.0):
     """States shaped like an LM's before LayerNorm: a direction shared by every token (the same for every seed;
-    token cosine about a²/(1 + a²) after LN) plus noise, times ``scale``; rounded through ``dtype``."""
+    token cosine about a²/(1 + a²) after LN) plus noise, times ``scale``; rounded through ``dtype``. ``c`` adds a
+    per-sequence offset c·v_b (v_b a random direction of norm √d for each sequence, like a document's own mean;
+    drawn from a generator of its own, so c = 0 gives the states of before)."""
     u = torch.randn(d, generator=torch.Generator().manual_seed(123), dtype=torch.float64)
     u = u / u.norm() * d ** 0.5
     x = a * u + torch.randn(B, T, d, generator=torch.Generator().manual_seed(seed), dtype=torch.float64)
+    if c:
+        v = torch.randn(B, 1, d, generator=torch.Generator().manual_seed(seed + 7919), dtype=torch.float64)
+        x = x + c * v / v.norm(dim=-1, keepdim=True) * d ** 0.5
     return (scale * x).to(dtype).to(torch.float64 if dtype == torch.float64 else torch.float32)
 
 
@@ -1227,6 +1232,237 @@ def test_gate_norm_init_restores_the_initial_operating_point(gate, a, scale):
     assert max(raw) - min(raw) > 0.2, raw                         # uncalibrated: the seed decides
 
 
+def _latch_by_sequence(gate, flags, seed, h, calib=None):
+    """Per-sequence mean on-state over t ≥ 64 of an untrained I1-like side (module seed ``seed``), (B,)."""
+    torch.manual_seed(seed)
+    m = W1sSide(64, ARGS, split_args([*I1, f"--w1s-gate={gate}", *flags])[0]).eval()
+    with torch.no_grad():
+        if calib is not None:
+            run(m, calib, None)
+        run(m, h, None)
+    return m.loop.last_diag["g"][:, 64:].mean(1)
+
+
+@pytest.mark.parametrize("gate", ["hyst", "schmitt"])
+def test_gate_norm_init_leaves_per_sequence_offsets(gate):
+    """The limit of --w1s-gate-norm init (review 3, Q0). μ̂ removes the offset SHARED by sequences only. Give each
+    sequence an offset of its own (c = 0.3: per-sequence means at cosine ≈ 0.99 to each other) and the
+    hysteresis/Schmitt drive, which the leaky integral and z = u/sd(u) amplify about 3× in units of z, starts
+    14-18% of the sequences (16 sequences × 6 module seeds) with the latch always on or always off (on-fraction
+    < 0.03 or > 0.97; c = 0.6: about 40%), while the centred drive starts none so. Without the per-sequence
+    offset (c = 0, what the restoration test uses) init saturates none either."""
+    def saturated(flags, h, calib=None):
+        g = torch.cat([_latch_by_sequence(gate, flags, s, h, calib) for s in range(6)])
+        return int(((g < 0.03) | (g > 0.97)).sum()), len(g)
+    h0, cal0 = ln_like(16, 1024, 64, 3.0, seed=3), ln_like(8, 512, 64, 3.0, seed=99)
+    assert saturated(["--w1s-gate-norm=init"], h0, cal0)[0] == 0
+    h, cal = ln_like(16, 1024, 64, 3.0, seed=3, c=0.3), ln_like(8, 512, 64, 3.0, seed=99, c=0.3)
+    n_init, n = saturated(["--w1s-gate-norm=init"], h, cal)
+    assert n_init >= 0.1 * n, (n_init, n)                        # the documented limit (13-17 of 96 here)
+    assert saturated(["--w1s-centre"], h)[0] == 0
+
+
+@pytest.mark.parametrize("gate", ["point", "hyst", "schmitt"])
+@pytest.mark.parametrize("c", [0.0, 0.3, 1.0])
+def test_gate_norm_seq_removes_per_sequence_offsets(gate, c):
+    """--w1s-gate-norm seq removes each sequence's own offset (its mean over the first W = 64 tokens, frozen after):
+    with per-sequence offsets up to c = 1 (and the shared one, a = 3) at most 5% of the sequences start below 0.03
+    or above 0.97, and none is pinned (< 0.005 or > 0.995), whatever c; init saturates 14-18% at c = 0.3 and up
+    to 2/3 at c = 1. The residue is the frozen estimate's own error (≈ σ/√W, amplified like any offset): 4 and 2 of
+    96 sequences at on-fraction 0.01-0.025 for hyst and schmitt at W = 64, 1 and 0 at W = 128, none at 256.
+    The initial operating point is the centred gate's per module seed (onset density ± 0.006; mean on-state
+    0.12 ± 0.03 for point, 0.05–0.25 for the latches)."""
+    h = ln_like(16, 1024, 64, 3.0, seed=3, c=c)
+    gs = []
+    for s in range(6):
+        g = _latch_by_sequence(gate, ["--w1s-gate-norm=seq"], s, h)
+        assert int(((g < 0.005) | (g > 0.995)).sum()) == 0, (s, g)
+        gs.append(g)
+        dens, on = _operating_point(gate, ["--w1s-gate-norm=seq"], s, h)
+        dens_c, on_c = _operating_point(gate, ["--w1s-centre"], s, h)
+        assert abs(dens - dens_c) < 0.006, (s, dens, dens_c)
+        assert (abs(on - 0.12) < 0.03) if gate == "point" else (0.05 < on < 0.25), (s, on, on_c)
+    g = torch.cat(gs)
+    assert int(((g < 0.03) | (g > 0.97)).sum()) <= 0.05 * len(g), g
+
+
+@pytest.mark.parametrize("gate", ["point", "hyst", "schmitt"])
+def test_gate_norm_seq_is_the_first_window_mean_frozen(gate):
+    """seq's drive is d_t = w·x_t − mean_{s ≤ min(t, W − 1)} w·x_s: at t = 0 it is 0 (the gate is neutral: point p_0 =
+    σ(b)), before W it is the running-mean centring, and from W on the offset is frozen (``first_mean``; W = 1
+    freezes at the first token)."""
+    from evolve.w1s_slots import first_mean
+    y = torch.randn(3, 50, dtype=torch.float64)
+    for W in (1, 7, 50, 80):
+        fm = first_mean(y, W)
+        for t in (0, 3, 6, 7, 20, 49):
+            torch.testing.assert_close(fm[:, t], y[:, :min(t + 1, W)].mean(1))
+    m = side(*I1, f"--w1s-gate={gate}", "--w1s-gate-norm=seq", "--w1s-gate-norm-window=16")
+    assert m.loop.gate_norm_window == 16 and "loop.gate_mu" not in m.state_dict()
+    h = ln_like(2, 120, D, 2.0, seed=4)
+    with torch.no_grad():
+        xs = m.loop._streams(h, None)
+        p, _ = m.loop._gate(xs, None)
+        if gate == "point":
+            torch.testing.assert_close(p[:, 0], torch.sigmoid(m.loop.gate_b).expand(2))
+        ys = sum(lin(xs[k]).squeeze(-1) for lin, k in zip(m.loop.gate_w, m.loop.streams))
+        assert torch.equal(first_mean(ys, 16)[:, 15:], first_mean(ys, 16)[:, 15:16].expand(2, 105))
+
+
+def test_gate_norm_seq_state_refusals_and_defaults():
+    """seq keeps one more streaming scalar (the first-W sum), has no buffer and no parameter of its own, and its
+    flags are refused where they would do nothing: --w1s-gate-norm-window without seq, seq with the centring or
+    with the oracle/dense gates. The window's default is 64 and changes nothing else."""
+    assert split_args([])[0].w1s_gate_norm_window == 64
+    for gate in ("hyst", "point"):
+        m = side(*I1, f"--w1s-gate={gate}", "--w1s-gate-norm=seq", "--w1s-K=2", d=16)
+        ref = side(*I1, f"--w1s-gate={gate}", "--w1s-K=2", d=16)
+        assert list(m.state_dict()) == list(ref.state_dict())
+        assert all(torch.equal(p, q) for p, q in zip(m.parameters(), ref.parameters()))
+        sizes = []
+        for T in (300, 900):
+            torch.manual_seed(2)
+            r = m.loop.stream(ln_like(1, T, 16, 1.5, seed=T))
+            assert r["evictions"] > 0
+            sizes.append(r["state_floats"])
+        assert sizes[0] == sizes[1] and r["state_components"] == m.loop.analytic_state(16)
+        assert r["state_components"]["gate"] == ref.loop.analytic_state(16)["gate"] + 1
+        assert m.state_report()["gate_norm"] == {"mode": "seq", "window": 64}
+    for flags in (["--w1s-gate-norm-window=32"], [*I1, "--w1s-gate-norm=init", "--w1s-gate-norm-window=32"],
+                  [*I1, "--w1s-centre", "--w1s-gate-norm=seq"], [*I1, "--w1s-gate=oracle", "--w1s-gate-norm=seq"],
+                  [*I1, "--w1s-gate=dense", "--w1s-gate-norm=seq"],
+                  [*I1, "--w1s-gate-norm=seq", "--w1s-gate-norm-window=0"]):
+        with pytest.raises(ValueError, match="gate-norm"):
+            side(*flags)
+
+
+@pytest.mark.parametrize("gate", ["point", "hyst", "schmitt"])
+@pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
+@pytest.mark.parametrize("W", [1, 16, 64])
+def test_gate_norm_seq_strictly_causal_with_every_gate(gate, dtype, W):
+    """E1 for --w1s-gate-norm seq with the point, hyst and Schmitt gates (and per-sequence offsets): perturbing h from
+    t0 on, before and after the window freezes, leaves every output row before t0 bitwise unchanged."""
+    m = side(*I1, f"--w1s-gate={gate}", "--w1s-gate-norm=seq", f"--w1s-gate-norm-window={W}", "--w1s-K=2")
+    with torch.no_grad():
+        m.loop.gain_logit.fill_(2.0)
+    T = 200
+    h = ln_like(2, T, D, 1.5, seed=0, dtype=dtype, c=0.5)
+    g = torch.Generator().manual_seed(1)
+    with torch.no_grad():
+        y = run(m, h, None)
+        assert (m.loop.last_diag["retained"] >= 0).any()
+        for t0 in (1, 10, 16, 23, 64, 65, 131, 199):
+            h2 = h.clone()
+            h2[:, t0:] = (h2[:, t0:] + torch.randn(h2[:, t0:].shape, generator=g)).to(dtype).float()
+            y2 = run(m, h2, None)
+            assert torch.equal(y[:, :t0], y2[:, :t0]), (gate, W, t0)
+            assert not torch.equal(y, y2)
+
+
+@pytest.mark.parametrize("gate", ["point", "hyst", "schmitt"])
+@pytest.mark.parametrize("W", [1, 16, 64])
+def test_gate_norm_seq_stream_equals_parallel_with_every_gate(gate, W):
+    """E2 for --w1s-gate-norm seq with every gate: the read, p, the onsets, the slots held at every t and their read
+    weights equal the streaming store's (K = 2: evictions)."""
+    m = side(*I1, f"--w1s-gate={gate}", "--w1s-gate-norm=seq", f"--w1s-gate-norm-window={W}", "--w1s-K=2",
+             d=16).double()
+    with torch.no_grad():
+        m.loop.gain_logit.fill_(2.0)
+    B, T = 2, 170
+    h = ln_like(B, T, 16, 1.5, seed=1, dtype=torch.float64, c=0.5)
+    with torch.no_grad():
+        par = m.loop.read(h, None)
+    d = m.loop.last_diag
+    ref = m.loop.stream(h, None)
+    torch.testing.assert_close(par, ref["o"], atol=1e-6, rtol=1e-6)
+    torch.testing.assert_close(d["p"], ref["p"], atol=1e-6, rtol=1e-6)
+    closes = T - m.loop.delay
+    assert torch.equal(d["onsets"][:, :closes], ref["onsets"][:, :closes]) and ref["evictions"] > 0
+    for b in range(B):
+        for t in range(T):
+            assert {int(s) for s in d["retained"][b, t] if s >= 0} == ref["retained"][b][t], (b, t)
+            w = {int(s): float(a) for s, a in zip(d["retained"][b, t], d["read_w"][b, t]) if s >= 0}
+            for s, a in ref["read_w"][b][t].items():
+                assert abs((w[s] if s is not None else float(d["read_w"][b, t, -1])) - a) < 1e-6, (b, t, s)
+
+
+@pytest.mark.parametrize("gate", ["point", "hyst", "schmitt"])
+def test_gate_norm_init_has_no_saturated_onset_at_t0(gate):
+    """Review 3, Q1: at t = 0 the running variance is 0, so the 1e-3 floor made the uncentred drive's argument
+    ≈ 1000·d_0: p_0 was 0 or 1, and when 1 the slot at s = 0 had the top priority and, with δ = 0, was never
+    evicted (init: ≈ 57 of 96 sequences). Under --w1s-gate-norm init the running variances are now seeded with the
+    calibrated prior σ̂², so position 0 is an ordinary position: no sequence (of 96, 6 module seeds) has an onset at
+    t = 0 with p > 0.9 (before: 55-59), p_0 is never saturated (point, hyst: none above 0.99 or below 1e-3), and a
+    slot from t = 0 is held at the end in at most 10% of the sequences (7 and 3 of 96 for point and schmitt, about
+    the rate of any early position; before: 57-59). seq has d_0 = 0 (neutral) by construction."""
+    h, cal = ln_like(16, 512, 64, 3.0, seed=3), ln_like(8, 512, 64, 3.0, seed=99)
+    for norm in ("init", "seq"):
+        hot = held = 0
+        p0 = []
+        for s in range(6):
+            torch.manual_seed(s)
+            m = W1sSide(64, ARGS, split_args([*I1, f"--w1s-gate={gate}", f"--w1s-gate-norm={norm}"])[0]).eval()
+            with torch.no_grad():
+                if norm == "init":
+                    run(m, cal, None)
+                run(m, h, None)
+            dg = m.loop.last_diag
+            hot += int(((dg["p"][:, 0] > 0.9) & dg["onsets"][:, 0]).sum())
+            held += int((dg["retained"][:, -1] == 0).any(-1).sum())
+            p0.append(dg["p"][:, 0])
+        p0 = torch.cat(p0)
+        assert hot == 0 and held <= 0.1 * len(p0), (norm, hot, held)
+        assert (p0 <= 0.99).all() and (gate == "schmitt" or (p0 >= 1e-3).all()), (norm, p0)
+
+
+def test_running_sd_prior():
+    """The prior seeds the running variance with n0 pseudo-positions: sd_0 = √(n0/(n0 + 1)·prior), and it fades as
+    n0/(n0 + t + 1); without it the function is the round-10 one, bitwise."""
+    from evolve.w1s_slots import GATE_PRIOR_N, running_sd
+    u = torch.randn(2, 400, dtype=torch.float64) * 3 + 1
+    plain = running_sd(u)
+    m, m2 = u.cumsum(1) / torch.arange(1, 401), (u * u).cumsum(1) / torch.arange(1, 401)
+    assert torch.equal(plain, ((m2 - m * m).clamp_min(0) + 1e-6).sqrt())
+    sd = running_sd(u, torch.tensor(4.0, dtype=torch.float64))
+    torch.testing.assert_close(sd[:, 0], torch.full((2,), (GATE_PRIOR_N / (GATE_PRIOR_N + 1) * 4.0 + 1e-6) ** 0.5,
+                                                    dtype=torch.float64))
+    assert (sd[:, -1] / plain[:, -1] - 1).abs().max() < 0.03
+
+
+def test_gate_norm_init_records_where_mu_came_from_and_refuses_text_batches():
+    """Review 3, Q4: state_report (run.py's w1s_state) says where μ̂ came from: the first batch seen (its size,
+    whether training, how many calls ran before: 0 in training is the first training step), an explicit
+    calibration, a checkpoint, or nothing yet. A batch the caller marks side.batch_kind = "distill" (an A14 text
+    window) is refused for calibration; once μ̂ is set, such a batch runs and leaves μ̂ alone. Defaults report
+    nothing new."""
+    assert "gate_norm" not in side(*I1).state_report() and "align_stream" not in side(*I1).state_report()
+    m = side(*I1, "--w1s-gate=hyst", "--w1s-gate-norm=init")
+    assert m.state_report()["gate_norm"]["mu_source"] == {"source": "not calibrated"}
+    h = ln_like(2, 150, D, 1.5, seed=1)
+    m.train()
+    m.batch_kind = "distill"
+    with pytest.raises(RuntimeError, match="distill"):
+        run(m, h, None)
+    assert torch.isnan(m.loop.gate_mu).all()
+    m.batch_kind = None
+    run(m, h, None)
+    src = m.state_report()["gate_norm"]
+    assert src["mu_source"] == {"source": "first batch seen", "batch": 2, "positions": 150, "training": True,
+                                "calls_before": 1, "kind": "unknown"}, src
+    assert src["prior_var"] > 0 and len(src["mu_norm"]) == 1
+    mu = m.loop.gate_mu.clone()
+    m.batch_kind = "distill"
+    run(m, ln_like(2, 150, D, -2.0, seed=2), None)
+    assert torch.equal(m.loop.gate_mu, mu)
+    fresh = side(*I1, "--w1s-gate=hyst", "--w1s-gate-norm=init")
+    fresh.load_state_dict(m.state_dict())
+    assert fresh.state_report()["gate_norm"]["mu_source"]["source"].startswith("loaded")
+    fresh.batch_kind = "needle"
+    fresh.loop.calibrate_gate(fresh.loop._streams(h, None))
+    assert fresh.state_report()["gate_norm"]["mu_source"]["source"] == "explicit"
+    assert fresh.state_report()["gate_norm"]["mu_source"]["kind"] == "needle"
+
+
 def test_gate_norm_defaults_change_nothing_and_refusals():
     """Regression: by default (and with I1's flags) there is no μ̂ and no new key, so outputs and round-10/11
     checkpoints are unchanged; init adds one buffer per gate stream (no parameter, NaN until calibrated) and is
@@ -1325,20 +1561,32 @@ def test_diag_gate_init_on_a_tiny_model(tmp_path):
     text = tmp_path / "filler.txt"
     text.write_text("The river runs past the old mill and the quiet town wakes slowly under grey skies. " * 300)
     common = ["--tiny", "--device", "cpu", "--window", "64", "--seq-len", "512", "--pairs", "3", "--layer", "2"]
-    out = dg.main([*common, "--text-file", str(text), *I1[1:], "--norms", "none,init,centre", "--n", "4",
-                   "--batch", "2", "--out", str(tmp_path / "diag.json")])
-    assert set(out["arms"]) == {f"{g}/{n}" for g in ("point", "hyst", "schmitt") for n in ("none", "init", "centre")}
+    out = dg.main([*common, "--text-file", str(text), *I1[1:], "--norms", "none,init,seq,centre", "--n", "4",
+                   "--batch", "2", "--side-seeds", "2", "--out", str(tmp_path / "diag.json")])
+    assert set(out["arms"]) == {f"{g}/{n}" for g in ("point", "hyst", "schmitt")
+                                for n in ("none", "init", "seq", "centre")}
     assert json.loads((tmp_path / "diag.json").read_text())["arms"].keys() == out["arms"].keys()
     assert out["recipe"]["w1s_key"] == "learned" and out["recipe"]["w1s_pre"] == 0 and out["layer"] == 2
+    assert out["side_seeds"] == [0, 1]
     for arm, rec in out["arms"].items():
         assert rec["flags"]["w1s_gate"] == arm.split("/")[0]
-        assert set(rec["fillers"]) == {"natural", "random"}
-        for r in rec["fillers"].values():
-            assert r["n"] == 4 and 0 < r["onset_density"] < 0.2 and 0 <= r["on_fraction"] <= 1
-            for k in ("onset_in_fact", "coverage_all_facts", "fact_coverage", "latch_saturated"):
+        assert set(rec["fillers"]) == {"natural", "random"} and set(rec["seeds"]) == {"0", "1"}
+        for f, r in rec["fillers"].items():                       # pooled over the two seeds
+            assert r["n"] == 8 and r["n_per_seed"] == 4 and 0 < r["onset_density"] < 0.2 and 0 <= r["on_fraction"] <= 1
+            for k in ("onset_in_fact", "coverage_all_facts", "fact_coverage", "latch_saturated", "p_low_sequences",
+                      "p_high_sequences", "onset_in_fact_p05"):
                 assert 0 <= r[k] <= 1, (arm, k, r[k])
+            assert 0 <= r["p_onset_median"] <= 1
+            per = [rec["seeds"][s]["fillers"][f] for s in ("0", "1")]
+            assert all(p["n"] == 4 for p in per)
+            assert abs(r["latch_saturated"] - sum(p["latch_saturated"] for p in per) / 2) < 1e-9
+            acr = r["across_seeds"]
+            assert acr["latch_saturated"]["by_seed"] == {0: per[0]["latch_saturated"], 1: per[1]["latch_saturated"]}
+            assert acr["on_fraction"]["min"] <= r["on_fraction"] <= acr["on_fraction"]["max"]
+            assert acr["seeds_saturated"] in (0.0, 0.5, 1.0)
         if arm.endswith("/init"):
             assert rec["calibration"]["filler"] == "natural" and all(x > 0 for x in rec["calibration"]["gate_mu_norm"])
+            assert all("calibration" in rec["seeds"][s] for s in ("0", "1"))
         else:
             assert "calibration" not in rec
     run = {"args": vars(pl.parse_args(common[:1] + common[3:])), "needle_scatter": 8, "needle_tail": 256,
@@ -1494,7 +1742,10 @@ def test_stage_a2_defaults_change_nothing():
     for flags, same in (([], ["--w1s-align-stream=3"]), (list(I1), ["--w1s-align-stream=h"]),
                         (list(I1), ["--w1s-align-stream=21"]), ([*I1, *a11], ["--w1s-align-stream=3"]),
                         ([*I1, "--w1s-time-feat=rope"], ["--w1s-replay=match"])):
-        m0, m1 = side(*flags), side(*flags, *same)
+        torch.manual_seed(0)                                      # 21 names the main tap only with --layer 21
+        m0 = W1sSide(D, type("A", (), {"time": True, "layer": 21})(), split_args(flags)[0]).eval()
+        torch.manual_seed(0)
+        m1 = W1sSide(D, type("A", (), {"time": True, "layer": 21})(), split_args([*flags, *same])[0]).eval()
         assert not m0.loop.split_align and not m1.loop.split_align and m1.loop.replay == "match"
         assert not hasattr(m1.loop, "ptr_kappa") and "pointer" not in m1.loop.analytic_state(D)
         assert list(m0.state_dict()) == list(m1.state_dict())
@@ -1638,6 +1889,31 @@ def test_pointer_gives_way_to_the_match_when_the_token_is_not_the_successor(monk
     assert m.loop.last_diag["align"][0, t] == fact["d"][3] + 1
 
 
+@pytest.mark.parametrize("dtype", [torch.float64, torch.float32])
+@pytest.mark.parametrize("cfg", [["--w1s-gate=dense"], ["--w1s-gate=dense", "--w1s-align=learned"]])
+def test_pointer_stream_equals_parallel_at_exact_ties(cfg, dtype):
+    """Review 3, Q6: states from a 6-token vocabulary repeat exactly, so slots (identical keys, no age term) and
+    entries (identical codes) tie mathematically, and the two forms round the tied weights differently. An exact
+    argmax then chose the older slot in one form and the newer in the other, and the read differed by O(1) (0.46).
+    Both forms now take the first entry within a relative PTR_TIE of the maximum: the pointer and the read agree."""
+    torch.manual_seed(1)
+    emb, toks = torch.randn(6, 32), torch.randint(0, 6, (3, 400))
+    m = side(*I1, "--w1s-replay=pointer", "--w1s-K=4", "--w1s-recency-form=none", *cfg).to(dtype)
+    with torch.no_grad():
+        m.loop.gain_logit.fill_(2.0)
+        m.loop.null_logit.fill_(-5.0)
+        par = m.loop.read(emb[toks].to(dtype), None, None)
+    d = m.loop.last_diag
+    ref = m.loop.stream(emb[toks].to(dtype), None, None)
+    assert (ref["ptr"] >= 0).float().mean() > 0.5
+    assert torch.equal(torch.where(ref["ptr"] >= 0, ref["ptr"] + 1, -1), d["align"])
+    torch.testing.assert_close(par, ref["o"], **({} if dtype == torch.float32 else dict(atol=1e-9, rtol=1e-9)))
+    from evolve.w1s_slots import first_max
+    x = torch.tensor([[0.3, 0.5, 0.5 * (1 + 1e-7), 0.1], [0.2, 0.1, 0.0, 0.2], [float("-inf")] * 4],
+                     dtype=torch.float64)
+    assert first_max(x).tolist() == [1, 0, 0]
+
+
 def test_pointer_kappa_and_codes_get_gradients_and_refusals():
     """κ (from --w1s-ptr-init) is the pointer's only parameter and is trained; with a split alignment stream a
     learned code's map gets gradient through tap 3. Options that would do nothing are errors: a pointer without an
@@ -1691,4 +1967,24 @@ def test_align_stream_reads_the_chosen_stream():
         st = k.loop._store(f)
     assert torch.equal(f["xa"], torch.nn.functional.layer_norm(h, (D,)))
     assert torch.equal(f["x"], torch.nn.functional.layer_norm(ex[3], (D,))) and "K" in st and "Ka" in st
-    assert side(*I1, "--w1s-taps=3", "--w1s-key-taps=3", "--w1s-align-stream=7").loop.astream == "h"
+
+
+def test_align_stream_refuses_a_block_that_is_not_tapped():
+    """Review 3, Q5: a block index that is neither in --w1s-taps nor the main tap (--layer) is an error, not a silent
+    fall-back to the main tap: I1 + --w1s-align-stream 3 (no tap 3) would otherwise be I1 bitwise under an A11a
+    label. The main tap's own index is accepted when --layer gives it (it means h). A value that names the lexical
+    stream is still allowed, and state_report records what a non-default value resolved to (the A11a slip
+    --w1s-taps 3 --w1s-align-stream 3 without --w1s-key-taps 21: stream 3 = lex, no split)."""
+    for flags in (["--w1s-align-stream=3"], ["--w1s-taps=3", "--w1s-key-taps=3", "--w1s-align-stream=7"],
+                  ["--w1s-align-stream=21"]):
+        with pytest.raises(ValueError, match="--w1s-align-stream"):
+            side(*I1, *flags)
+    L21 = type("A", (), {"time": True, "layer": 21})()
+    with pytest.raises(ValueError, match="main tap"):
+        W1sSide(D, L21, split_args([*I1, "--w1s-align-stream=7"])[0])
+    m = W1sSide(D, L21, split_args([*I1, "--w1s-taps=3", "--w1s-key-taps=3", "--w1s-align-stream=21"])[0])
+    assert m.loop.astream == "h" and m.loop.split_align
+    assert m.state_report()["align_stream"] == {"spec": "21", "stream": "h", "lex": "3", "split": True}
+    slip = side(*I1, "--w1s-taps=3", "--w1s-align-stream=3")
+    assert slip.state_report()["align_stream"] == {"spec": "3", "stream": "3", "lex": "3", "split": False}
+    assert a2("A11a").state_report()["align_stream"]["split"] is True

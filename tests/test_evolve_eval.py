@@ -1258,3 +1258,56 @@ def test_init_from_w1s_fitted_code_reaches_training(tmp_path, monkeypatch):
     side = W1sSide(64, type("A", (), {"time": True})(), split_args(flags)[0])
     missing, unexpected = side.load_state_dict(torch.load(tmp_path / "init.pt"), strict=False)
     assert not missing and not unexpected
+
+
+# ------------------------------------------------------------------ --init-seed (same-data-seed replicates)
+def test_init_seed_changes_only_the_side_initialisation(tmp_path, monkeypatch):
+    """--init-seed N: the side's initial weights depend on N; the training batches (random.Random(--seed)), the
+    base model and the torch generator's state when training starts are those of the run without the flag; the
+    JSON records init_seed. Without the flag nothing is recorded."""
+    keep_pl(monkeypatch)
+    seen = {}
+    orig = evolve_run._train
+
+    def spy(lm, task, args):
+        seen["side"] = {k: v.detach().clone() for k, v in lm.side.state_dict().items()}
+        seen["base"] = {k: v.detach().clone() for k, v in lm.model.state_dict().items()}
+        seen["rng"] = torch.random.get_rng_state().clone()
+        batches, inner = [], task.batch
+
+        def batch(B, rng):
+            out = inner(B, rng)
+            batches.append(out[0].clone())
+            return out
+        task.batch = batch
+        try:
+            return orig(lm, task, args)
+        finally:
+            del task.batch
+            seen["batches"] = batches
+
+    monkeypatch.setattr(evolve_run, "_train", spy)
+    flags = ["--layer", "3", "--candidate", "evolve.w1s_slots:W1sSide", "--w1s-taps", "1", "--w1s-code", "learned",
+             "--w1s-dc", "8", "--seed", "1"]
+
+    def run(name, extra):
+        out = tmp_path / f"{name}.json"
+        evolve_run.main(INIT + ["--steps", "2"] + flags + extra + ["--out", str(out)])
+        return dict(seen), json.loads(out.read_text())
+
+    base, rec0 = run("base", [])
+    a, rec_a = run("a", ["--init-seed", "11"])
+    a2, _ = run("a2", ["--init-seed", "11"])
+    b, rec_b = run("b", ["--init-seed", "12"])
+    assert "init_seed" not in rec0 and rec_a["init_seed"] == 11 and rec_b["init_seed"] == 12
+    learned = [k for k, v in a["side"].items() if v.numel() > 1 and v.is_floating_point() and v.std() > 0]
+    assert learned                                                  # random initial weights exist
+    assert any(not torch.equal(a["side"][k], b["side"][k]) for k in learned)      # N changes the side's init
+    assert any(not torch.equal(a["side"][k], base["side"][k]) for k in learned)
+    assert all(torch.equal(a["side"][k], a2["side"][k]) for k in a["side"])       # and N fixes it
+    for r in (a, b):
+        assert len(r["batches"]) == len(base["batches"]) == 2
+        assert all(torch.equal(x, y) for x, y in zip(r["batches"], base["batches"]))   # the same data
+        assert all(torch.equal(r["base"][k], base["base"][k]) for k in base["base"])   # the same frozen base
+        assert torch.equal(r["rng"], base["rng"])                  # later torch draws as without the flag
+    assert pl.SideChannels is not None and not getattr(pl.SideChannels, "__name__", "") == "wrapped"

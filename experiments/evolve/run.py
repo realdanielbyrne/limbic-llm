@@ -37,6 +37,13 @@ Runs ``pretrained_loop.main`` unchanged, with three additions:
                 key in two fragments, a wrong shape and ``--steps 0`` are refused; the loaded values replace
                 the constructor's (and ``--init-gain``). The result JSON records ``init_from`` (each file and
                 its keys). Without the flag nothing is loaded and training is exactly as before.
+  init-seed     ``--init-seed N`` (default off) seeds torch's CPU generator with N just before the side channels
+                are constructed, and afterwards leaves the generator where the unseeded construction would
+                (``seeded_init``). Only the side's initialisation changes: the base model, the data
+                (``random.Random(--seed)``) and every later torch draw are those of the run without the flag.
+                It makes same-data-seed replicates (s_seed from within-seed differences in analyse_round.py).
+                The result JSON records ``init_seed``. Without the flag nothing is wrapped and the run is
+                exactly as before.
 
 The task variants that ``eval_by_query.py`` evaluates live here too: ``UpdateNeedleTask`` (forms
 same/now/new/changed/nowold, ``k`` restatements, decoys), ``OrderNeedleTask`` (before/next/first/last) and
@@ -477,6 +484,24 @@ def load_init(side, fragments: list[tuple[str, dict]]) -> list[dict]:
     return done
 
 
+def seeded_init(build, seed: int):
+    """``build`` (the side's constructor) wrapped so that the side it returns is built with torch's CPU generator
+    seeded at ``seed``, and the generator is left where the unseeded construction leaves it: a throwaway side is
+    built first from the current state (it advances the generator exactly as a run without the flag does), then
+    the returned one from ``seed``, then the throwaway's end state is restored. Every later torch draw (the
+    window check, anything drawn in training) is therefore that of the run without the flag."""
+    def wrapped(*a, **kw):
+        throwaway = build(*a, **kw)
+        after = torch.random.get_rng_state()
+        del throwaway
+        torch.random.default_generator.manual_seed(seed)
+        try:
+            return build(*a, **kw)
+        finally:
+            torch.random.set_rng_state(after)
+    return wrapped
+
+
 def train(lm, task, args):
     """Activate a task curriculum for the duration of training only. With an A14/A15 flag on, train
     through ``teacher.training`` (a task proxy and a patched ``pl.scores``); with both off, exactly as
@@ -555,6 +580,8 @@ def main(argv=None):
                     help="with --needle-scatter: minimum filler between the last fact and the query (> --window)")
     ap.add_argument("--init-from", action="append", default=[], metavar="PT",
                     help="a state-dict fragment loaded into the side channels before training (repeatable)")
+    ap.add_argument("--init-seed", type=int, default=None, metavar="N",
+                    help="seed torch with N for the side's construction only (data order and the base unchanged)")
     own, rest = ap.parse_known_args(argv)
     cand_ns = None
     if own.candidate:                                              # refuse before patching anything
@@ -607,16 +634,19 @@ def main(argv=None):
             raise SystemExit(f"--needle-tail {tail} must exceed --window {window}")
         pl.NeedleTask = lambda *a, **kw: ScatterNeedleTask(*a, min_gap=gap, tail=tail, block=window, mix=mix,
                                                            curriculum=cur, names=names, **kw)
+    base_side = pl.SideChannels
+    if own.init_seed is not None:                                  # the side's initialisation only
+        pl.SideChannels = seeded_init(base_side, own.init_seed)
     try:
         results = pl.main(rest)
     finally:
-        pl.HookedLM, pl.scores = base_lm, base_scores
+        pl.HookedLM, pl.scores, pl.SideChannels = base_lm, base_scores, base_side
     args = pl.parse_args(rest)
     out = Path(args.out or f"results/pretrained/pretrained_loop_{args.task}.json")
     side = _last_lm.side if _last_lm is not None else None
     state = side.state_report() if hasattr(side, "state_report") else None
     teach = teacher.active(tns)
-    record = own.candidate or own.needle_scatter or teach or _init_loaded
+    record = own.candidate or own.needle_scatter or teach or _init_loaded or own.init_seed is not None
     if record:
         rec = json.loads(out.read_text())
     if own.candidate:                                             # record the candidate and its flags
@@ -636,6 +666,8 @@ def main(argv=None):
         rec.update(teacher.summary(tns, _teacher_stats))
     if _init_loaded:                                              # --init-from: each fragment and its keys
         rec["init_from"] = _init_loaded
+    if own.init_seed is not None:                                 # --init-seed: the side's construction seed
+        rec["init_seed"] = own.init_seed
     if record:
         out.write_text(json.dumps(rec, indent=2))
     if _last_lm is not None:

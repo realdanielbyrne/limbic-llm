@@ -8,7 +8,14 @@ cell by cell, and replace a discovered run of that name). A run's seed is the la
 Round-10 Stage-B's ``update`` cell (update new, 512 tokens, k 1) is read as ``updnew512``.
 
 Every evaluation whose ``windowed`` or ``side_empty`` exact is not 0 is void: listed, and left out of every
-statistic.
+statistic. A missing control is not clean: without a ``windowed`` control (``--no-controls``) the cell is
+unverified, listed and left out like a void one; without a ``side_empty`` one (every evaluation made before
+``--ctrl-conds``, the round-10 references among them) it is listed and kept.
+
+Evaluation-time modifications (``--w1s-param``, ``--w1s-set``, ``--w1s-ctrl``, ``--w1s-load-extra``,
+``--keep-oracle``, the oracle gate, ``--attn-impl``) are recorded per cell and reported per run; two cells whose
+modifications differ are not paired unless ``--allow-modified`` (Phase 0's E-lex / E-ord pair a modified
+evaluation with the plain checkpoint on purpose).
 
 Pairing (strong check). Two cells are paired only when their ``per_sequence`` rank and gap agree row for row
 (and n, the eval seed, the task, the length and pairs, the filler file's name and, where both have it,
@@ -16,8 +23,11 @@ Pairing (strong check). Two cells are paired only when their ``per_sequence`` ra
 reference made of several runs (the mechanism column) is their row-by-row mean, each run checked so.
 
 Groups. The statistic is the mean of the per-cell paired differences. Cells whose sequences are the same rows
-(identical (rank, gap) fingerprints: held-out, nat512p3 and para1–4; updnow and updnew) are averaged row by
-row first, so their correlation enters the interval; the weights keep the statistic the mean over cells.
+are averaged row by row first, so their correlation enters the interval; the weights keep the statistic the
+mean over cells. Same rows: identical (rank, gap) fingerprints (held-out, nat512p3 and para1–4); (rank, gap)
+equal on ≥ 95% of rows (the overlap is reported); or update cells of one draw (updsame/updnow/updnew at one
+length: the same names, codes and order, gaps shifted by the stem's length). A group of one 0/1 cell (names)
+decides near the edge on Newcombe's interval, as the cell does.
   grid           the 18 DEC2 cells (nat/rand × 512/1024/2048 × 1/3/5 codes)
   names          held-out names
   query          para1, 2 and 4 (para3 is out: full attention 0.44 < 0.8); jitter is reported beside it with
@@ -30,8 +40,10 @@ row first, so their correlation enters the interval; the weights keep the statis
                  Stage-B ranking
   gate           (reported only) per run, from the ``w1s`` block: fact coverage, onset-in-fact, gate AUC and
                  onset density, on natural against random grid cells, jitter, the paraphrases and held-out
-                 names; and the late-drop step (the first logged step from which the training loss stays
-                 ≤ ``--drop-loss``), read from the run's training JSON (the evaluation's ``result``)
+                 names, over the cells both sides of a comparison have; and the late-drop step, from the run's
+                 training JSON (the evaluation's ``result``): the first logged step from which a trailing median
+                 of the logged loss stays ≤ ``--drop-loss`` (``late_drop``; ``never``, or ``too few points``
+                 below ``--drop-min-points`` = 30 logged points: runs logged every steps/10 read no step)
 
 Intervals.
   checkpoint level   the per-sequence paired interval, mean ± 1.96·sd/√n (two trained checkpoints). Near
@@ -39,10 +51,17 @@ Intervals.
                      auto`` decides on the alternative instead: Newcombe's paired score interval (method 10,
                      Wilson limits) for a single 0/1 cell, a bootstrap over rows (within each shared-row
                      cluster) for groups and averaged references. Every interval is reported.
-  recipe level       d̄ ± t·s_seed·√(1/k_A + 1/k_B): d̄ the difference of the recipes' mean group levels, s_seed
-                     the pooled between-run SD of the group level over repeated runs of a fixed recipe
-                     (``--noise NAME=RUN,RUN,...``, repeatable), t on its pooled degrees of freedom. A recipe is
-                     better or worse only where the interval clears 0 and the sign holds on every shared seed.
+  recipe level       d̄ ± half: d̄ the difference of the recipes' mean group levels, from repeated runs of fixed
+                     recipes (``--noise NAME=RUN,RUN,...``, repeatable). The pre-registered half-width is
+                     t·s_seed·√(1/k_A + 1/k_B), s_seed the pooled between-run SD (always reported, ``between``).
+                     On shared seeds the seed effect cancels in d̄ but not in s_seed, so with ``--s-seed auto``
+                     (default) and same-seed replicates in the noise sets (df ≥ ``--min-within-df`` = 3; e.g. a
+                     run and its ``run.py --init-seed`` twin) the verdict uses σ_run from within-seed residuals
+                     (equal seed compositions) or Var(d̄) = c·σ_seed² + (1/k_A + 1/k_B)·σ_run²
+                     (``recipe_interval``).
+                     A recipe is better or worse only where the interval clears 0 and the sign holds on every
+                     shared seed. Stage-B pick: an Updates verdict that is missing (void or absent cells, no
+                     --noise) is ``unknown``, never "not worse".
 
 Reports (any combination):
   --arms REGEX ... --ref TEMPLATE ...   every matching run against the same-seed reference (``{seed}`` in the
@@ -56,9 +75,12 @@ Reports (any combination):
                                         the Stage-B default (the top recipe; if it is worse on updates, also the
                                         best one that is not)
   --design CSV                          factorial main effects: a CSV with a ``run`` column, an optional ``seed``
-                                        column and one column per factor (0/1, -/+, off/on). Each effect is the
-                                        mean over seeds of (mean on − mean off); intervals from the residual of a
-                                        main-effects model with seed blocks, and from s_seed when ``--noise`` is given
+                                        column and one column per factor (0/1, -/+, off/on). The design is checked
+                                        first (balance, orthogonality, resolution and aliases; below III refused,
+                                        below IV warned). Each effect is the least-squares main effect with seed
+                                        blocks (the mean over seeds of mean on − mean off when nothing is missing);
+                                        intervals from the model's residual, and from the noise when ``--noise`` is
+                                        given; missing runs are refit, and effects they leave unestimable named
 
     python experiments/evolve/analyse_round.py --dir results/evolve/round11/eval --dir results/evolve/round10/stageB \\
         --arms 'e11_r11_.*' --ref 'e11ref_r10_I1_s{seed}' --out summary.json
@@ -276,11 +298,38 @@ def load_cell(path: str) -> dict | None:
             "full": ctrl.get("full", {}).get("exact"), "windowed": ctrl.get("windowed", {}).get("exact"),
             "side_empty": ctrl.get("side_empty", {}).get("exact"),
             "full_stale": ((d.get("update") or {}).get("full") or {}).get("old_exact"),
-            "w1s": d.get("w1s"), "result": d.get("result"), "raw_cell": None}
+            "w1s": d.get("w1s"), "result": d.get("result"), "raw_cell": None,
+            "mods": {k: d[k] for k in MODS if k in d}}
+
+
+MODS = ("w1s_param", "w1s_set", "w1s_ctrl", "w1s_load_extra", "keep_oracle", "oracle_gate", "attn_impl")
+
+
+def draw_key(c: dict) -> str | None:
+    """Update cells (``task.update`` set) that differ only in the update's phrasing draw the same names, codes and
+    order from the same eval seed (run.py: the forms take the same random numbers), so their rows are the same
+    sequences up to the stem's length: the key they share. None for other cells."""
+    t = c["task"]
+    if not t.get("update"):
+        return None
+    rest = {k: v for k, v in t.items() if k != "update"}
+    return fingerprint([c["n"], c["seed"], c["seq_len"], c["pairs"], c["filler"], sorted(rest.items())])
 
 
 def is_void(c: dict) -> bool:
+    """A control that is present and not 0. A missing control is not clean: see ``unverified``."""
     return bool(c["windowed"]) or bool(c["side_empty"])
+
+
+def unverified(c: dict) -> bool:
+    """No windowed control (``--no-controls``): the E-control rule cannot be checked, so the cell is left out like
+    a void one (listed apart). A missing side_empty alone is listed (``controls_unknown``) but kept: every
+    evaluation made before ``--ctrl-conds`` lacks it (round-10 Stage B, the references)."""
+    return c["windowed"] is None
+
+
+def excluded(c: dict) -> bool:
+    return c["void"] or c.get("unverified", False)
 
 
 def discover(dirs: list[str]) -> dict[str, dict[str, str]]:
@@ -313,8 +362,15 @@ def from_templates(templates: list[str]) -> dict[str, str]:
     return out
 
 
-def load_runs(paths: dict[str, dict[str, str]]) -> tuple[dict[str, dict[str, dict]], list[str]]:
-    """Read every cell; aliases applied; returns ({run: {cell: data}}, void list)."""
+def load_runs(paths: dict[str, dict[str, str]],
+              report: dict | None = None) -> tuple[dict[str, dict[str, dict]], list[str]]:
+    """Read every cell; aliases applied; returns ({run: {cell: data}}, void list). ``report`` (if given) gets the
+    cells without a windowed control (``unverified``, left out), without a side_empty one (``controls_unknown``,
+    kept) and each run's evaluation-time modifications (``modified``: {run: {cell: mods}})."""
+    report = {} if report is None else report
+    for k in ("unverified", "controls_unknown"):
+        report.setdefault(k, [])
+    report.setdefault("modified", {})
     runs, voids = {}, []
     for run, cells in paths.items():
         got = {}
@@ -327,8 +383,16 @@ def load_runs(paths: dict[str, dict[str, str]]) -> tuple[dict[str, dict[str, dic
                 continue
             c["raw_cell"] = cell
             c["void"] = is_void(c)
+            c["unverified"] = unverified(c)
+            c["draw"] = draw_key(c)
             if c["void"]:
                 voids.append(f"{run}/{name}")
+            if c["unverified"]:
+                report["unverified"].append(f"{run}/{name}")
+            if c["side_empty"] is None:
+                report["controls_unknown"].append(f"{run}/{name}")
+            if c["mods"]:
+                report["modified"].setdefault(run, {})[name] = c["mods"]
             got[name] = c
         if got:
             runs[run] = got
@@ -341,8 +405,11 @@ def run_seed(name: str) -> int | None:
 
 
 # ------------------------------------------------------------------------------------------------ pairing
-def pair_check(a: dict, b: dict) -> str | None:
-    """Why two cells cannot be paired row by row, or None (they draw the same sequences)."""
+def pair_check(a: dict, b: dict, allow_modified: bool = False) -> str | None:
+    """Why two cells cannot be paired row by row, or None (they draw the same sequences). Cells whose
+    evaluation-time modifications (``MODS``: --w1s-param, --w1s-set, --w1s-ctrl, ...) differ are refused unless
+    ``allow_modified`` (``--allow-modified``; Phase 0's E-lex / E-ord pair the modified checkpoint with the plain
+    one on purpose)."""
     if a["n"] != b["n"]:
         return f"n {a['n']} vs {b['n']}"
     for k in ("seed", "seq_len", "pairs", "filler"):
@@ -355,6 +422,9 @@ def pair_check(a: dict, b: dict) -> str | None:
             return f"row {i}: (rank, gap) {list(x)} vs {list(y)}"
     if a["repeat"] is not None and b["repeat"] is not None and a["repeat"] != b["repeat"]:
         return "per_sequence_repeat differs"
+    ma, mb = a.get("mods") or {}, b.get("mods") or {}
+    if ma != mb and not allow_modified:
+        return f"eval-time modifications differ: {json.dumps(ma)} vs {json.dumps(mb)} (--allow-modified pairs them)"
     return None
 
 
@@ -362,10 +432,10 @@ def values(c: dict, metric: str) -> list[float] | None:
     return c["exact"] if metric == "exact" else c["stale"]
 
 
-def paired_cell(a: dict, refs: list[dict], metric: str) -> dict:
+def paired_cell(a: dict, refs: list[dict], metric: str, allow_modified: bool = False) -> dict:
     """Per-row differences of ``a`` against the row mean of ``refs``, or a refusal with its reason."""
     for r in refs:
-        why = pair_check(a, r)
+        why = pair_check(a, r, allow_modified)
         if why:
             return {"refused": why, "ref": r["path"]}
     va, vr = values(a, metric), [values(r, metric) for r in refs]
@@ -377,7 +447,8 @@ def paired_cell(a: dict, refs: list[dict], metric: str) -> dict:
         return out
     ref = [sum(col) / len(col) for col in zip(*vr)]
     binary = len(refs) == 1 and all(x in (0.0, 1.0) for x in va + ref)
-    return {"d": [x - y for x, y in zip(va, ref)], "a": va, "b": ref, "fp": a["fp"], "binary": binary}
+    return {"d": [x - y for x, y in zip(va, ref)], "a": va, "b": ref, "fp": a["fp"], "binary": binary,
+            "rows": a["rows"], "draw": a.get("draw")}
 
 
 def near(level_a: float, level_b: float, edge: float) -> bool:
@@ -419,15 +490,56 @@ def bootstrap(clusters: list[tuple[float, list[list[float]]]], opts) -> list[flo
     return [percentile(stats, 0.025), percentile(stats, 0.975)]
 
 
+ROW_OVERLAP = 0.95                                                  # share of equal (rank, gap) rows: same rows
+
+
+def row_clusters(cells: dict[str, dict]) -> tuple[dict[str, list[str]], dict]:
+    """Cells whose rows are (nearly) the same sequences, joined (transitively) into one cluster, which the group
+    statistic averages row by row: the same (rank, gap) fingerprint; or equal n and (rank, gap) equal on at least
+    ``ROW_OVERLAP`` of the rows; or update cells of one draw (``draw_key``: the same names, codes and order, only
+    the update's phrasing differs; updsame/updnow/updnew at one length, whose gaps differ by the stem's length,
+    so neither test above sees them; their per-row differences correlate, +0.44 at 2048 in round 11).
+    Row-index clustering is unbiased whether or not the joined cells are correlated, so joining cells that are
+    in fact independent costs no bias. Returns ({cluster key: cells}, {"a~b": overlap} for joins that are not
+    fingerprint matches)."""
+    names = list(cells)
+    parent = {c: c for c in names}
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+    overlap = {}
+    for i, c in enumerate(names):
+        for e in names[i + 1:]:
+            p, q = cells[c], cells[e]
+            if len(p["d"]) != len(q["d"]):
+                continue
+            if p["fp"] == q["fp"]:
+                parent[find(e)] = find(c)
+                continue
+            rp, rq = p.get("rows"), q.get("rows")
+            frac = sum(x == y for x, y in zip(rp, rq)) / len(rp) if rp and rq and len(rp) == len(rq) else 0.0
+            draw = p.get("draw") is not None and p.get("draw") == q.get("draw")
+            if frac >= ROW_OVERLAP or draw:
+                parent[find(e)] = find(c)
+                rank = sum(x[0] == y[0] for x, y in zip(rp, rq)) / len(rp) if rp and rq and len(rp) == len(rq) else None
+                overlap[f"{c}~{e}"] = {"rows_equal": frac, "rank_equal": rank, "same_draw": draw}
+    out: dict[str, list[str]] = {}
+    for c in names:                                                # clusters in the cells' order
+        out.setdefault(find(c), []).append(c)
+    return out, overlap
+
+
 def group_stats(cells: dict[str, dict], opts, lower_better: bool = False) -> dict | None:
-    """The group statistic from paired cells {cell: paired_cell}: the mean over cells, rows shared by cells with
-    the same fingerprint averaged row by row first (so the normal interval carries their correlation)."""
+    """The group statistic from paired cells {cell: paired_cell}: the mean over cells, rows shared by cells of
+    one ``row_clusters`` cluster averaged row by row first (so the normal interval carries their correlation).
+    A group of one 0/1 cell decides near the edge on Newcombe's interval, as that cell's own row does."""
     if not cells:
         return None
     K = len(cells)
-    by_fp: dict[str, list[str]] = {}
-    for c, p in cells.items():
-        by_fp.setdefault(p["fp"], []).append(c)
+    by_fp, overlap = row_clusters(cells)
     stat = la = lb = v = 0.0
     clusters = []
     for fp, names in by_fp.items():
@@ -442,9 +554,16 @@ def group_stats(cells: dict[str, dict], opts, lower_better: bool = False) -> dic
     half = Z * math.sqrt(v)
     out = {"diff": stat, "a": la, "b": lb, "cells": sorted(cells), "n_cells": K,
            "shared_rows": [sorted(n) for n in by_fp.values() if len(n) > 1], "normal": [stat - half, stat + half]}
+    if overlap:
+        out["row_overlap"] = overlap
+    alt = "bootstrap"
+    if K == 1 and next(iter(cells.values()))["binary"]:            # one 0/1 cell: as cell_stats decides it
+        (p,) = cells.values()
+        out["newcombe"] = list(newcombe_paired(p["a"], p["b"]))
+        alt = "newcombe"
     if opts.bootstrap:
         out["bootstrap"] = bootstrap(clusters, opts)
-    out.update(decide(out, near(la, lb, opts.near), opts, lower_better, alt="bootstrap"))
+    out.update(decide(out, near(la, lb, opts.near), opts, lower_better, alt=alt))
     return out
 
 
@@ -453,18 +572,22 @@ def compare(runs: dict, a: str, refs: list[str], opts) -> dict:
     every cell they share, the groups, the refused pairs and the gate block's differences."""
     A = runs[a]
     R = [runs[r] for r in refs]
+    allow = getattr(opts, "allow_modified", False)
     shared = sorted(set(A).intersection(*[set(r) for r in R]))
-    out = {"a": a, "ref": refs, "cells": {}, "refused": {}, "void": [], "groups": {}, "beside": {}}
+    out = {"a": a, "ref": refs, "cells": {}, "refused": {}, "void": [], "unverified": [], "groups": {}, "beside": {}}
     paired = {"exact": {}, "stale": {}}
     for c in shared:
         if A[c]["void"] or any(r[c]["void"] for r in R):
             out["void"].append(c)
             continue
+        if excluded(A[c]) or any(excluded(r[c]) for r in R):       # no windowed control: not checked, left out
+            out["unverified"].append(c)
+            continue
         row = {"full": A[c]["full"], "ref_full": mean([r[c]["full"] for r in R])}
         for metric in ("exact", "stale"):
             if metric == "stale" and A[c]["level_stale"] is None:
                 continue
-            p = paired_cell(A[c], [r[c] for r in R], metric)
+            p = paired_cell(A[c], [r[c] for r in R], metric, allow)
             if "refused" in p:
                 out["refused"][f"{c}:{metric}"] = p["refused"]
                 if "unpaired_diff" in p:
@@ -490,7 +613,8 @@ def compare(runs: dict, a: str, refs: list[str], opts) -> dict:
         for c in BESIDE.get(g, []):
             if c in out["cells"]:
                 out["beside"][c] = out["cells"][c]
-    ga, gr = gate_block(A, opts), [gate_block(r, opts) for r in R]
+    keep = [c for c in shared if c not in out["void"] and c not in out["unverified"]]
+    ga, gr = gate_block(A, opts, keep), [gate_block(r, opts, keep) for r in R]   # the same cells on both sides
     out["gate"] = {"a": ga, "ref": gr[0] if len(gr) == 1 else None,
                    "diff": gate_diff(ga, gr[0]) if len(gr) == 1 else None}
     return out
@@ -498,8 +622,21 @@ def compare(runs: dict, a: str, refs: list[str], opts) -> dict:
 
 # --------------------------------------------------------------------------------------------- gate block
 def late_drop(cells: dict, opts) -> dict | None:
-    """The late-drop step of the run behind these evaluations (their ``result``): the first logged step from
-    which every logged training loss is ≤ ``--drop-loss`` (None if the last one is above it)."""
+    """The late-drop step of the run behind these evaluations (their ``result``), read from its logged training
+    loss, robustly: ``pl.train`` logs one single batch's loss per point, and single batches spike (0.98 among
+    0.001s in round 11), so a raw rule ("every later point ≤ the threshold") lets one batch decide. Here:
+
+      smoothed   the trailing median (``--drop-smooth median``, default; or ``mean``) of the last k logged
+                 losses, k = ``--drop-window`` (0: max(5, points // 20)); a median ignores spikes in fewer than
+                 half the window
+      step       the first logged step from which the smoothed loss stays ≤ ``--drop-loss`` to the end
+      status     ``learned`` (step set); ``never`` (the smoothed loss is above the threshold at the end: no step);
+                 ``too few points`` (fewer than ``--drop-min-points`` logged, default 30: the step is not read;
+                 runs logged every steps/10 have 10 and need ``--log-every``); ``not logged`` (no curve);
+                 ``not found`` (no training JSON)
+
+    ``step`` is None unless the status is ``learned``. The curriculum's end (``needle_curriculum``, P:STEPS
+    stages) is reported: a step before it was read while the task still had fewer pairs."""
     res = next((c["result"] for c in cells.values() if c.get("result")), None)
     if not res:
         return None
@@ -507,32 +644,59 @@ def late_drop(cells: dict, opts) -> dict | None:
                                                                                for c in cells.values()}]
     path = next((p for p in cands if p.is_file() and p.suffix == ".json"), None)
     if path is None:
-        return {"result": res, "found": False}
+        return {"result": res, "found": False, "status": "not found", "step": None}
     try:
-        curve = json.loads(path.read_text()).get("curve") or []
+        rec = json.loads(path.read_text())
     except ValueError:
-        return {"result": res, "found": False}
-    curve = [c for c in curve if isinstance(c, dict) and "step" in c and "loss" in c]
+        return {"result": res, "found": False, "status": "not found", "step": None}
+    curve = [c for c in rec.get("curve") or [] if isinstance(c, dict) and "step" in c and "loss" in c]
+    thr = opts.drop_loss
+    out = {"result": str(path), "found": True, "step": None, "threshold": thr, "points": len(curve)}
     if not curve:
-        return {"result": res, "found": True, "step": None}
+        return {**out, "status": "not logged"}
+    out["log_every"] = curve[1]["step"] - curve[0]["step"] if len(curve) > 1 else None
+    out["final_loss"] = curve[-1]["loss"]
+    cur = str(rec.get("needle_curriculum") or "")
+    stages = [st.split(":") for st in cur.split(",") if ":" in st]
+    if stages:
+        try:
+            out["curriculum_end"] = sum(int(n) for _, n in stages)
+        except ValueError:
+            pass
+    min_pts = getattr(opts, "drop_min_points", 30)
+    if len(curve) < min_pts:
+        return {**out, "status": "too few points", "min_points": min_pts}
+    k = getattr(opts, "drop_window", 0) or max(5, len(curve) // 20)
+    how = getattr(opts, "drop_smooth", "median")
+    loss = [c["loss"] for c in curve]
+    smooth = {}
+    for i in range(k - 1, len(loss)):
+        w = sorted(loss[i - k + 1:i + 1])
+        smooth[i] = (w[k // 2] if k % 2 else (w[k // 2 - 1] + w[k // 2]) / 2) if how == "median" else sum(w) / k
+    out.update({"window": k, "smooth": how, "final_smoothed": smooth.get(len(loss) - 1)})
     step = None
-    for i in range(len(curve)):
-        if all(c["loss"] <= opts.drop_loss for c in curve[i:]):
-            step = curve[i]["step"]
+    for i in range(len(loss) - 1, k - 2, -1):                     # walk back while the smoothed loss stays low
+        if smooth[i] > thr:
             break
-    every = curve[1]["step"] - curve[0]["step"] if len(curve) > 1 else None
-    return {"result": str(path), "found": True, "step": step, "log_every": every, "final_loss": curve[-1]["loss"],
-            "threshold": opts.drop_loss}
+        step = curve[i]["step"]
+    out["step"] = step
+    out["status"] = "learned" if step is not None else "never"
+    return out
 
 
-def gate_block(run: dict, opts) -> dict:
-    """The gate-robustness numbers of one run (reported only): the w1s block's means per cell set."""
+def gate_block(run: dict, opts, only: list[str] | None = None) -> dict:
+    """The gate-robustness numbers of one run (reported only): the w1s block's means per cell set, over the cells
+    in ``only`` if given (a comparison passes the cells both sides have, so a difference is not a difference of
+    cell sets)."""
     out = {}
     for name, cells in GATE_SETS.items():
-        got = [run[c]["w1s"] for c in cells if c in run and not run[c]["void"] and run[c].get("w1s")]
+        use = [c for c in cells if c in run and (only is None or c in only) and not excluded(run[c])
+               and run[c].get("w1s")]
+        got = [run[c]["w1s"] for c in use]
         if got:
             out[name] = {k: mean([w.get(k) for w in got]) for k in GATE_KEYS}
             out[name]["cells"] = len(got)
+            out[name]["cell_names"] = use
     if "natural" in out and "random" in out:
         out["natural_minus_random"] = {k: (out["natural"][k] - out["random"][k])
                                        if out["natural"][k] is not None and out["random"][k] is not None else None
@@ -542,20 +706,35 @@ def gate_block(run: dict, opts) -> dict:
 
 
 def gate_diff(a: dict, b: dict) -> dict:
-    out = {}
-    for name in list(GATE_SETS) + ["natural_minus_random"]:
+    """a − b per gate set, only where both sides averaged the same cells (else listed in ``cells_differ``); the
+    late-drop step difference only when both runs read a step (``late_drop_status`` says why not)."""
+    out, differ = {}, {}
+    for name in GATE_SETS:
         if name in a and name in b:
+            if a[name].get("cell_names") != b[name].get("cell_names"):
+                differ[name] = [a[name].get("cell_names"), b[name].get("cell_names")]
+                continue
             out[name] = {k: a[name][k] - b[name][k] for k in GATE_KEYS
                          if a[name].get(k) is not None and b[name].get(k) is not None}
-    sa, sb = (a.get("late_drop") or {}).get("step"), (b.get("late_drop") or {}).get("step")
+    if "natural_minus_random" in a and "natural_minus_random" in b and not ({"natural", "random"} & set(differ)):
+        out["natural_minus_random"] = {k: a["natural_minus_random"][k] - b["natural_minus_random"][k]
+                                       for k in GATE_KEYS if a["natural_minus_random"].get(k) is not None
+                                       and b["natural_minus_random"].get(k) is not None}
+    if differ:
+        out["cells_differ"] = differ
+    la, lb = a.get("late_drop") or {}, b.get("late_drop") or {}
+    sa, sb = la.get("step"), lb.get("step")
     out["late_drop_step"] = sa - sb if sa is not None and sb is not None else None
+    out["late_drop_status"] = [la.get("status"), lb.get("status")]
     return out
 
 
 # ------------------------------------------------------------------------------------------- recipe level
-def common_cells(runs: dict, names: list[str], cells: list[str], metric: str) -> tuple[list[str], dict]:
-    """The cells of ``cells`` that every run in ``names`` has, not void, with a level for ``metric``, and whose
-    sequences agree across the runs (strong check against the first run); the others with why."""
+def common_cells(runs: dict, names: list[str], cells: list[str], metric: str,
+                 allow_modified: bool = False) -> tuple[list[str], dict]:
+    """The cells of ``cells`` that every run in ``names`` has, not void (nor unverified), with a level for
+    ``metric``, and whose sequences agree across the runs (strong check against the first run); the others with
+    why."""
     keep, why = [], {}
     for c in cells:
         have = [runs[r].get(c) for r in names]
@@ -563,10 +742,12 @@ def common_cells(runs: dict, names: list[str], cells: list[str], metric: str) ->
             why[c] = "missing in " + ", ".join(r for r, h in zip(names, have) if h is None)
         elif any(h["void"] for h in have):
             why[c] = "void"
+        elif any(excluded(h) for h in have):
+            why[c] = "unverified (no windowed control)"
         elif any(h[f"level_{metric}"] is None for h in have):
             why[c] = f"no {metric} level"
         else:
-            bad = [(r, pair_check(have[0], h)) for r, h in zip(names[1:], have[1:])]
+            bad = [(r, pair_check(have[0], h, allow_modified)) for r, h in zip(names[1:], have[1:])]
             bad = [(r, w) for r, w in bad if w]
             if bad:
                 why[c] = f"unpaired with {names[0]}: {bad[0][0]} ({bad[0][1]})"
@@ -579,44 +760,90 @@ def level(run: dict, cells: list[str], metric: str) -> float:
     return sum(run[c][f"level_{metric}"] for c in cells) / len(cells)
 
 
-def levels(runs: dict, names: list[str], group: str) -> tuple[dict[str, float] | None, dict]:
+def levels(runs: dict, names: list[str], group: str,
+           allow_modified: bool = False) -> tuple[dict[str, float] | None, dict]:
     """Each run's group level on the cells all of them share ({run: level}, info). ``pick``: the mean of the
     grid, names and query levels."""
     if group == "pick":
         parts, info = {}, {}
         for g in PICK:
-            lv, inf = levels(runs, names, g)
+            lv, inf = levels(runs, names, g, allow_modified)
             if lv is None:
                 return None, {"missing_group": g, **inf}
             parts[g], info[g] = lv, inf
         return {r: sum(parts[g][r] for g in PICK) / len(PICK) for r in names}, info
     spec = GROUPS[group]
-    cells, why = common_cells(runs, names, spec["cells"], spec["metric"])
+    cells, why = common_cells(runs, names, spec["cells"], spec["metric"], allow_modified)
     info = {"cells": cells, "left_out": why}
     if not cells:
         return None, info
     return {r: level(runs[r], cells, spec["metric"]) for r in names}, info
 
 
-def pooled_sd(runs: dict, noise: dict[str, list[str]], group: str, like: list[str]) -> dict:
-    """s_seed: the pooled between-run SD of the group level over the ``noise`` sets (each a fixed recipe's
+def seed_key(run: str):
+    """The data seed of a run (``run_seed``); a run without one is its own seed."""
+    s = run_seed(run)
+    return s if s is not None else ("run", run)
+
+
+def seed_noise(sets: list[list[tuple[object, float]]]) -> dict:
+    """Noise estimates from repeated runs of fixed recipes, each set a list of (data seed, group level).
+
+      s_seed, df             the pooled between-run SD (each set's sample variance, pooled): σ_seed² + σ_run²
+                             when a set's runs are on different data seeds (the pre-registered estimator)
+      s_within, df_within    σ_run: pooled within-seed residuals, Σ (x − mean of its seed in its set)², on
+                             n − (seeds) df per set; only same-seed replicates (``run.py --init-seed``, or a
+                             rerun) contribute, so the seed main effect is removed before pooling
+      seed_var, df_seed      σ_seed² by the one-way random-effects method of moments: (SS between seeds −
+                             df_seed·σ̂_run²) / Σ (n − Σ n_s²/n), floored at 0; None without both a same-seed
+                             replicate and two seeds in one set"""
+    ss = df = ssw = dfw = ssb = dfb = coef = 0.0
+    for members in sets:
+        x = [v for _, v in members]
+        n = len(x)
+        if n < 2:
+            continue
+        ss += var(x) * (n - 1)
+        df += n - 1
+        by: dict = {}
+        for sd, v in members:
+            by.setdefault(sd, []).append(v)
+        m = sum(x) / n
+        for v in by.values():
+            mv = sum(v) / len(v)
+            ssw += sum((y - mv) ** 2 for y in v)
+            ssb += len(v) * (mv - m) ** 2
+        dfw += n - len(by)
+        dfb += len(by) - 1
+        coef += n - sum(len(v) ** 2 for v in by.values()) / n
+    out = {"s_seed": math.sqrt(ss / df) if df else None, "df": int(df),
+           "s_within": math.sqrt(ssw / dfw) if dfw else None, "df_within": int(dfw), "seed_var": None,
+           "df_seed": int(dfb)}
+    if dfw and coef > 0:
+        out["seed_var"] = max(0.0, (ssb - dfb * ssw / dfw) / coef)
+    return out
+
+
+def pooled_sd(runs: dict, noise: dict[str, list[str]], group: str, like: list[str],
+              allow_modified: bool = False) -> dict:
+    """s_seed and σ_run (``seed_noise``) of the group level over the ``noise`` sets (each a fixed recipe's
     repeated runs), on the cells ``like``'s runs share (a set lacking one is left out)."""
-    want, want_info = levels(runs, like, group)
-    ss, df, used, skipped = 0.0, 0, [], {}
+    want, want_info = levels(runs, like, group, allow_modified)
+    used, skipped, sets = [], {}, []
     for name, members in noise.items():
         members = [m for m in members if m in runs]
         if len(members) < 2:
             skipped[name] = "fewer than 2 runs found"
             continue
-        lv, info = levels(runs, list(like) + members, group)
+        lv, info = levels(runs, list(like) + members, group, allow_modified)
         if lv is None or want is None or not same_cells(want_info, info):
             skipped[name] = "does not have every cell of the comparison"
             continue
         x = [lv[m] for m in members]
-        ss += var(x) * (len(x) - 1)
-        df += len(x) - 1
-        used.append({"set": name, "runs": members, "levels": x, "sd": math.sqrt(var(x))})
-    return {"s_seed": math.sqrt(ss / df) if df else None, "df": df, "sets": used, "skipped": skipped}
+        sets.append([(seed_key(m), lv[m]) for m in members])
+        used.append({"set": name, "runs": members, "levels": x, "sd": math.sqrt(var(x)),
+                     "seeds": [run_seed(m) for m in members]})
+    return {**seed_noise(sets), "sets": used, "skipped": skipped}
 
 
 def same_cells(i1: dict, i2: dict) -> bool:
@@ -626,13 +853,66 @@ def same_cells(i1: dict, i2: dict) -> bool:
     return all(same_cells(i1[g], i2.get(g, {})) for g in PICK if g in i1)
 
 
+def seed_coef(A: list[str], B: list[str]) -> float:
+    """c = Σ_s (n_A,s/k_A − n_B,s/k_B)²: the factor of σ_seed² in Var(d̄) under level = recipe + seed + noise.
+    0 when the two recipes have the same seed composition (the seed effect cancels in d̄); 1/k_A + 1/k_B when
+    every run is on a seed of its own (the pre-registered formula's case)."""
+    na, nb = {}, {}
+    for r in A:
+        na[seed_key(r)] = na.get(seed_key(r), 0) + 1
+    for r in B:
+        nb[seed_key(r)] = nb.get(seed_key(r), 0) + 1
+    return sum((na.get(s, 0) / len(A) - nb.get(s, 0) / len(B)) ** 2 for s in set(na) | set(nb))
+
+
+def recipe_interval(noise: dict, k_a: int, k_b: int, c_seed: float, how: str = "auto",
+                    min_df: int = 3) -> tuple[dict | None, dict | None]:
+    """(the interval the verdict uses, the between-run one) as {"estimator", "sd", "df", "half"}.
+
+      between       t_df · s_seed · √(1/k_A + 1/k_B): the pre-registered estimator. When the recipes share seeds
+                    the seed effect cancels in d̄ while s_seed includes it, so the interval is wide (≈ 99% where
+                    95% is meant, in round-11 simulations); exact when every run is on a seed of its own
+      within-seed   (the same seed composition, c = 0) t_dfw · σ̂_run · √(1/k_A + 1/k_B)
+      seed-aware    (otherwise) Var(d̄) = c·σ̂_seed² + (1/k_A + 1/k_B)·σ̂_run², t on Satterthwaite's df
+
+    ``how``: ``auto`` uses within-seed / seed-aware when the noise sets' same-seed replicates give df_within ≥
+    ``min_df`` (``--min-within-df``, default 3), and between otherwise; ``between`` always uses between. The
+    choice depends on the design (the df) only, never on the observed spreads, so it does not bias coverage;
+    the floor is there because on 1 or 2 df the t quantile (12.7, 4.3) makes the calibrated interval wider in
+    expectation than the conservative one unless σ_seed is large against σ_run."""
+    kk = 1 / k_a + 1 / k_b
+    between = None
+    if noise.get("s_seed") is not None and noise.get("df"):
+        sd = noise["s_seed"] * math.sqrt(kk)
+        between = {"estimator": "between", "sd": sd, "df": noise["df"], "half": t_quantile(0.975, noise["df"]) * sd}
+    if how == "between" or (noise.get("df_within") or 0) < max(1, min_df):
+        return between, between
+    sw2, dfw = noise["s_within"] ** 2, noise["df_within"]
+    if c_seed < 1e-12:
+        sd = math.sqrt(kk * sw2)
+        return {"estimator": "within-seed", "sd": sd, "df": dfw, "half": t_quantile(0.975, dfw) * sd,
+                "c_seed": 0.0}, between
+    if noise.get("seed_var") is None or not noise.get("df_seed"):
+        return between, between                                    # no estimate of σ_seed alone
+    u1, u2 = c_seed * noise["seed_var"], kk * sw2
+    v = u1 + u2
+    den = (u1 * u1 / noise["df_seed"] if u1 > 0 else 0.0) + u2 * u2 / dfw
+    df = v * v / den if den > 0 else dfw
+    sd = math.sqrt(v)
+    return {"estimator": "seed-aware", "sd": sd, "df": df, "half": t_quantile(0.975, df) * sd,
+            "c_seed": c_seed}, between
+
+
 def recipe_compare(runs: dict, A: list[str], B: list[str], noise: dict, opts) -> dict:
-    """Recipe level: d̄ ± t·s_seed·√(1/k_A + 1/k_B) per group (and pick), with the per-seed differences and
+    """Recipe level: d̄ ± half per group (and pick), ``recipe_interval`` choosing the estimator (``interval``
+    names it; the between-run interval is always reported as ``between``), with the per-seed differences and
     whether the sign holds on every seed both recipes have."""
     out = {}
+    allow = getattr(opts, "allow_modified", False)
+    how = getattr(opts, "s_seed", "auto")
     for g in list(GROUPS) + ["pick"]:
         lower = GROUPS.get(g, {}).get("lower_better", False)
-        lv, info = levels(runs, A + B, g)
+        lv, info = levels(runs, A + B, g, allow)
         if lv is None:
             out[g] = {"missing": info}
             continue
@@ -649,11 +929,18 @@ def recipe_compare(runs: dict, A: list[str], B: list[str], noise: dict, opts) ->
                "sign_every_seed": bool(per_seed) and sign, "k_a": len(A), "k_b": len(B),
                "cells": info.get("cells") if "cells" in info else {p: info[p]["cells"] for p in PICK},
                "reported_only": GROUPS.get(g, {}).get("reported_only", False)}
-        noise_sd = pooled_sd(runs, noise, g, A + B) if noise else None
+        noise_sd = pooled_sd(runs, noise, g, A + B, allow) if noise else None
         row["noise"] = noise_sd
-        if noise_sd and noise_sd["s_seed"] is not None:
-            half = t_quantile(0.975, noise_sd["df"]) * noise_sd["s_seed"] * math.sqrt(1 / len(A) + 1 / len(B))
-            row["lo"], row["hi"] = d - half, d + half
+        use = between = None
+        if noise_sd:
+            use, between = recipe_interval(noise_sd, len(A), len(B), seed_coef(A, B), how,
+                                           getattr(opts, "min_within_df", 3))
+        if between is not None:
+            row["between"] = {"lo": d - between["half"], "hi": d + between["half"], "df": between["df"],
+                              "verdict": verdict(d - between["half"], d + between["half"], lower)}
+        if use is not None:
+            row["interval"] = use
+            row["lo"], row["hi"] = d - use["half"], d + use["half"]
             v = verdict(row["lo"], row["hi"], lower)
             row["verdict"] = v if v == "tie" or row["sign_every_seed"] else "tie (sign not on every seed)"
         else:
@@ -662,16 +949,41 @@ def recipe_compare(runs: dict, A: list[str], B: list[str], noise: dict, opts) ->
     return out
 
 
+UPDATE_GROUPS = ("updates_new", "updates_stale")
+
+
+def updates_state(r: dict) -> str:
+    """A ranking row's Updates verdict: ``worse`` if either group is worse; ``not worse`` only if both have a
+    verdict (better / tie); otherwise ``unknown`` (a missing group, void or absent cells, or no --noise)."""
+    vs = [str(r.get(g) or "") for g in UPDATE_GROUPS]
+    if any(v.startswith("worse") for v in vs):
+        return "worse"
+    if all(v.startswith(("better", "tie")) for v in vs):
+        return "not worse"
+    return "unknown"
+
+
 def stage_b_pick(ranking: list[dict]) -> dict:
-    """The default for Daniel: the top recipe on pick; if it is worse on updates, also the best one that is not."""
+    """The default for Daniel: the top recipe on pick; if it is worse on updates, also the best one that is not.
+    If its Updates verdict is unknown, that is said (``top_worse_on_updates`` None, a warning) and the best
+    recipe known not to be worse is named beside it; a recipe with an unknown verdict is never the ``also``."""
     if not ranking:
         return {}
     top = ranking[0]
-    worse = lambda r: any(str(r.get(g, "")).startswith("worse") for g in ("updates_new", "updates_stale"))
-    out = {"top": top["recipe"], "top_worse_on_updates": worse(top)}
-    if worse(top):
-        nxt = next((r for r in ranking[1:] if not worse(r)), None)
+    state = updates_state(top)
+    out = {"top": top["recipe"], "top_updates": state,
+           "top_worse_on_updates": {"worse": True, "not worse": False}.get(state)}
+    if state != "not worse":
+        nxt = next((r for r in ranking[1:] if updates_state(r) == "not worse"), None)
         out["also"] = nxt["recipe"] if nxt else None
+        if state == "unknown":
+            why = "; ".join(f"{g}: {top.get(g) or 'missing'}" for g in UPDATE_GROUPS)
+            out["warning"] = (f"the Updates verdict of {top['recipe']} is unknown ({why}): it is picked on pick "
+                              "alone; " + (f"{nxt['recipe']} is the best recipe known not to be worse on Updates"
+                                           if nxt else "no recipe has a known Updates verdict that is not worse"))
+    unknown = [r["recipe"] for r in ranking if updates_state(r) == "unknown"]
+    if unknown:
+        out["unknown_updates"] = unknown
     out["note"] = "ties go to the simpler recipe (not judged here); a recipe without the linear age penalty needs a DEC"
     return out
 
@@ -700,24 +1012,154 @@ def read_design(path: str) -> tuple[list[str], list[dict]]:
     return factors, out
 
 
+ROMAN = {1: "I", 2: "II", 3: "III", 4: "IV", 5: "V", 6: "VI", 7: "VII", 8: "VIII"}
+
+
+def _block_centre(col: list[float], blocks: list) -> list[float]:
+    """``col`` minus its mean within each block (the seed blocks of the model)."""
+    sums: dict = {}
+    for x, b in zip(col, blocks):
+        t = sums.setdefault(b, [0.0, 0])
+        t[0] += x
+        t[1] += 1
+    return [x - sums[b][0] / sums[b][1] for x, b in zip(col, blocks)]
+
+
+def _corr(u: list[float], v: list[float]) -> float | None:
+    nu, nv = math.sqrt(sum(x * x for x in u)), math.sqrt(sum(x * x for x in v))
+    if nu < 1e-12 or nv < 1e-12:
+        return None
+    return sum(x * y for x, y in zip(u, v)) / (nu * nv)
+
+
+def design_check(factors: list[str], design: list[dict]) -> dict:
+    """The design's aliasing, from its ±1 columns with the seed blocks taken out (each column centred within its
+    seed). Main effects must be balanced in every seed block and mutually orthogonal (else ``problems``: the
+    factorial refuses). The defining words are the factor products constant within every block (all subsets for
+    ≤ 10 factors, else up to 4); the resolution is the shortest word's length (``full`` if none). Main effects
+    against two-factor interactions (resolution III) and two-factor interactions against each other (IV) are
+    listed with their correlation: 1 is a full alias (a regular fraction), between 0 and 1 a partial one (a
+    non-regular design; the resolution then reads at most III or IV from these lists)."""
+    from itertools import combinations
+    blocks = [r["seed"] for r in design]
+    X = {f: [float(r["levels"][f]) for r in design] for f in factors}
+    C = {f: _block_centre(X[f], blocks) for f in factors}
+    out = {"problems": [], "warnings": [], "words": [], "main_vs_2fi": {}, "2fi_vs_2fi": {}}
+    for f in factors:
+        for b in sorted(set(blocks), key=lambda x: (x is None, str(x))):
+            tot = sum(x for x, bb in zip(X[f], blocks) if bb == b)
+            if abs(tot) > 1e-9:
+                out["problems"].append(f"{f} unbalanced in seed {b} (Σx = {tot:+.0f})")
+        if all(abs(x) < 1e-12 for x in C[f]):
+            out["problems"].append(f"{f} constant within every seed (confounded with the seed blocks)")
+    for f, g in combinations(factors, 2):
+        r = _corr(C[f], C[g])
+        if r is not None and abs(r) > 1e-9:
+            out["problems"].append(f"{f} and {g} not orthogonal (r = {r:+.3f})" if abs(r) < 1 - 1e-9 else
+                                   f"{f} aliased with {g}")
+    kmax = len(factors) if len(factors) <= 10 else 4
+    for k in range(1, kmax + 1):
+        for sub in combinations(factors, k):
+            col = [math.prod(X[f][i] for f in sub) for i in range(len(design))]
+            if all(abs(x) < 1e-12 for x in _block_centre(col, blocks)):
+                out["words"].append("·".join(sub))
+    lens = [w.count("·") + 1 for w in out["words"]]
+    res = min(lens) if lens else None
+    pairs = list(combinations(factors, 2))
+    P = {gh: _block_centre([X[gh[0]][i] * X[gh[1]][i] for i in range(len(design))], blocks) for gh in pairs}
+    for f in factors:
+        al = {}
+        for gh in pairs:
+            if f in gh:
+                continue
+            r = _corr(C[f], P[gh])
+            if r is not None and abs(r) > 1e-9:
+                al["×".join(gh)] = round(r, 4)
+        if al:
+            out["main_vs_2fi"][f] = al
+    for a, b in combinations(pairs, 2):
+        if set(a) & set(b):
+            continue
+        r = _corr(P[a], P[b])
+        if r is not None and abs(r) > 1e-9:
+            out["2fi_vs_2fi"]["×".join(a) + " ~ " + "×".join(b)] = round(r, 4)
+    if res is None:                                                # no word: a full factorial or non-regular
+        res = 3 if out["main_vs_2fi"] else 4 if out["2fi_vs_2fi"] else None
+        out["resolution"] = ROMAN.get(res, "full") if res else "full (≥ V)"
+    else:
+        out["resolution"] = ROMAN.get(res, str(res))
+    out["resolution_n"] = res
+    if out["main_vs_2fi"]:
+        out["warnings"].append("resolution below IV: main effects aliased with two-factor interactions: " +
+                               "; ".join(f"{f} ~ {', '.join(k)}" for f, k in out["main_vs_2fi"].items()))
+    return out
+
+
+def _rank(M: list[list[float]], tol: float = 1e-9) -> int:
+    A = [row[:] for row in M]
+    rank, cols = 0, len(A[0]) if A else 0
+    for c in range(cols):
+        p = max(range(rank, len(A)), key=lambda r: abs(A[r][c]), default=None)
+        if p is None or abs(A[p][c]) < tol:
+            continue
+        A[rank], A[p] = A[p], A[rank]
+        for r in range(len(A)):
+            if r != rank and A[r][c] != 0.0:
+                f = A[r][c] / A[rank][c]
+                A[r] = [x - f * y for x, y in zip(A[r], A[rank])]
+        rank += 1
+        if rank == len(A):
+            break
+    return rank
+
+
 def factorial(runs: dict, factors: list[str], design: list[dict], noise: dict, opts) -> dict:
-    """Main effects per group: per seed, mean(on) − mean(off); averaged over seeds. Intervals: the residual of
-    y = seed block + Σ β_F x_F (x = ±1, effect = 2β), and s_seed·√(1/n_on + 1/n_off) when --noise is given."""
+    """Main effects per group: per seed, mean(on) − mean(off); averaged over seeds (``raw_effect``). The
+    reported ``effect`` is the least-squares one, 2β from y = seed block + Σ β_F x_F (x = ±1), on the runs
+    present: equal to the raw effect for a complete balanced design, and still adjusted for the other factors
+    when runs are missing. Intervals are centred on it: from the residual of that model, and from the noise
+    (σ_run from same-seed replicates when the noise sets have one, else s_seed: the effects are within-seed
+    contrasts) times 2√(X'X)⁻¹_jj when --noise is given.
+
+    The intended design (missing runs included) is checked first (``design_check``): unbalanced or
+    non-orthogonal main effects, or a resolution below III, are refused (SystemExit); below IV is warned and
+    each effect lists its two-factor aliases. With runs missing, a factor whose column is no longer independent
+    of the others is ``not estimable`` (dropped from the fit), and the correlations the gaps introduce are
+    listed. A singular fit gives no verdicts."""
+    chk = design_check(factors, design)
+    if chk["problems"] or (chk["resolution_n"] is not None and chk["resolution_n"] < 3):
+        raise SystemExit("--design: not a usable main-effects design: " + "; ".join(
+            chk["problems"] or [f"resolution {chk['resolution']} (words {', '.join(chk['words'])})"]))
+    allow = getattr(opts, "allow_modified", False)
+    how = getattr(opts, "s_seed", "auto")
     missing = [r["run"] for r in design if r["run"] not in runs]
     design = [r for r in design if r["run"] in runs]
     names = [r["run"] for r in design]
-    out = {"factors": factors, "runs": names, "missing_runs": missing, "groups": {}}
+    out = {"factors": factors, "runs": names, "missing_runs": missing, "groups": {}, "design": chk}
     if not design:
         return out
     seeds = sorted({r["seed"] for r in design}, key=lambda s: (s is None, s))
+    blocks = [r["seed"] for r in design]
+    Xb = [[1.0] + [1.0 if r["seed"] == s else 0.0 for s in seeds[1:]] for r in design]
+    est = []
+    for f in factors:                                              # estimable: its column is not in the others' span
+        cols = [[float(r["levels"][g]) for r in design] for g in factors]
+        full = [xb + [c[i] for c in cols] for i, xb in enumerate(Xb)]
+        drop = [xb + [c[i] for g, c in zip(factors, cols) if g != f] for i, xb in enumerate(Xb)]
+        if _rank(full) > _rank(drop):
+            est.append(f)
+    out["not_estimable"] = [f for f in factors if f not in est]
+    if missing:
+        C = {f: _block_centre([float(r["levels"][f]) for r in design], blocks) for f in est}
+        out["induced_correlation"] = {f"{f}~{g}": round(r, 4) for i, f in enumerate(est) for g in est[i + 1:]
+                                      if (r := _corr(C[f], C[g])) is not None and abs(r) > 1e-9}
     for g in list(GROUPS) + ["pick"]:
-        lv, info = levels(runs, names, g)
+        lv, info = levels(runs, names, g, allow)
         if lv is None:
             out["groups"][g] = {"missing": info}
             continue
         y = [lv[r["run"]] for r in design]
-        X = [[1.0] + [1.0 if r["seed"] == s else 0.0 for s in seeds[1:]] + [float(r["levels"][f]) for f in factors]
-             for r in design]
+        X = [xb + [float(r["levels"][f]) for f in est] for xb, r in zip(Xb, design)]
         p, N = len(X[0]), len(X)
         XtX = [[sum(X[i][a] * X[i][b] for i in range(N)) for b in range(p)] for a in range(p)]
         Xty = [sum(X[i][a] * y[i] for i in range(N)) for a in range(p)]
@@ -728,31 +1170,47 @@ def factorial(runs: dict, factors: list[str], design: list[dict], noise: dict, o
             rss = sum((y[i] - sum(X[i][j] * beta[j] for j in range(p))) ** 2 for i in range(N))
             res_df = N - p
             res_sd = math.sqrt(rss / res_df) if res_df > 0 else None
-        noise_sd = pooled_sd(runs, noise, g, names) if noise else None
+        noise_sd = pooled_sd(runs, noise, g, names, allow) if noise else None
+        sig = None
+        if noise_sd:
+            if how != "between" and (noise_sd.get("df_within") or 0) >= max(1, getattr(opts, "min_within_df", 3)):
+                sig = {"estimator": "within-seed", "s": noise_sd["s_within"], "df": noise_sd["df_within"]}
+            elif noise_sd.get("s_seed") is not None and noise_sd.get("df"):
+                sig = {"estimator": "between", "s": noise_sd["s_seed"], "df": noise_sd["df"]}
         lower = GROUPS.get(g, {}).get("lower_better", False)
         effs = {}
-        for k, f in enumerate(factors):
+        for f in factors:
             per_seed = {}
             for s in seeds:
                 on = [yy for yy, r in zip(y, design) if r["seed"] == s and r["levels"][f] > 0]
                 off = [yy for yy, r in zip(y, design) if r["seed"] == s and r["levels"][f] < 0]
                 if on and off:
                     per_seed[str(s)] = sum(on) / len(on) - sum(off) / len(off)
-            e = mean(list(per_seed.values()))
+            raw = mean(list(per_seed.values()))
             n_on = sum(1 for r in design if r["levels"][f] > 0)
             n_off = len(design) - n_on
-            row = {"effect": e, "per_seed": per_seed, "n_on": n_on, "n_off": n_off}
+            row = {"effect": raw, "raw_effect": raw, "per_seed": per_seed, "n_on": n_on, "n_off": n_off}
+            if f not in est:
+                row["not_estimable"] = True
+                effs[f] = row
+                continue
+            j = len(Xb[0]) + est.index(f)
+            scale = None
             if beta is not None:
-                j = 1 + (len(seeds) - 1) + k
-                row["ols_effect"] = 2 * beta[j]
-                if res_sd is not None and e is not None:
-                    half = t_quantile(0.975, N - p) * 2 * res_sd * math.sqrt(inv[j][j])
+                row["ols_effect"] = row["effect"] = 2 * beta[j]
+                scale = 2 * math.sqrt(inv[j][j])
+                if res_sd is not None:
+                    half = t_quantile(0.975, N - p) * res_sd * scale
+                    e = row["effect"]
                     row["residual"] = {"lo": e - half, "hi": e + half, "df": N - p,
                                        "verdict": verdict(e - half, e + half, lower)}
-            if noise_sd and noise_sd["s_seed"] is not None and n_on and n_off and e is not None:
-                half = t_quantile(0.975, noise_sd["df"]) * noise_sd["s_seed"] * math.sqrt(1 / n_on + 1 / n_off)
-                row["seed_noise"] = {"lo": e - half, "hi": e + half, "df": noise_sd["df"],
+            if sig is not None and row["effect"] is not None and inv is not None:
+                half = t_quantile(0.975, sig["df"]) * sig["s"] * scale
+                e = row["effect"]
+                row["seed_noise"] = {"lo": e - half, "hi": e + half, "df": sig["df"], "estimator": sig["estimator"],
                                      "verdict": verdict(e - half, e + half, lower)}
+            if f in chk["main_vs_2fi"]:
+                row["aliases"] = chk["main_vs_2fi"][f]
             effs[f] = row
         out["groups"][g] = {"effects": effs, "residual_sd": res_sd, "singular": inv is None,
                             "cells": info.get("cells") if "cells" in info else {q: info[q]["cells"] for q in PICK}}
@@ -788,6 +1246,16 @@ def table(res: dict) -> str:
     lines = []
     if res["void"]:
         lines.append("VOID (windowed or side_empty exact ≠ 0): " + ", ".join(res["void"]))
+    chk = res.get("checks") or {}
+    if chk.get("unverified"):
+        lines.append("UNVERIFIED (no windowed control; left out): " + ", ".join(chk["unverified"]))
+    if chk.get("controls_unknown"):
+        lines.append(f"side_empty control absent (kept; made before --ctrl-conds): "
+                     f"{len(chk['controls_unknown'])} cells")
+    for run, cells in (chk.get("modified") or {}).items():
+        kinds = sorted({json.dumps(m, sort_keys=True) for m in cells.values()})
+        lines.append(f"MODIFIED evaluation {run} ({len(cells)} cells): " + " | ".join(kinds)
+                     + ("" if res["settings"].get("allow_modified") else "  (paired only with the same modifications)"))
     for arm, cols in res.get("arms", {}).items():
         lines.append(f"\n{arm}")
         for label, cmp_ in cols.items():
@@ -802,11 +1270,16 @@ def table(res: dict) -> str:
             if cmp_["refused"]:
                 lines.append(f"    refused pairs: {len(cmp_['refused'])} ({next(iter(cmp_['refused'].items()))})")
             gd = (cmp_.get("gate") or {}).get("diff") or {}
-            if gd.get("natural_minus_random") or gd.get("late_drop_step") is not None:
+            if gd.get("natural_minus_random") or gd.get("late_drop_step") is not None or gd.get("late_drop_status"):
                 nm = gd.get("natural_minus_random", {})
                 cov, onf = nm.get("fact_coverage", float("nan")), nm.get("onset_in_fact", float("nan"))
+                st = gd.get("late_drop_status") or [None, None]
+                ld = (gd["late_drop_step"] if gd.get("late_drop_step") is not None
+                      else f"- ({st[0]} / {st[1]})")
                 lines.append(f"    gate Δ (nat−rand): coverage {cov:+.3f}, onset-in-fact {onf:+.3f}; "
-                             f"late-drop step Δ {gd.get('late_drop_step')}")
+                             f"late-drop step Δ {ld}")
+            if gd.get("cells_differ"):
+                lines.append(f"    gate sets on different cells (no Δ): {', '.join(gd['cells_differ'])}")
     for c in res.get("compare", []):
         lines.append(f"\n{c['a']} vs {' + '.join(c['ref'])}")
         lines += group_lines(c["groups"])
@@ -817,28 +1290,56 @@ def table(res: dict) -> str:
         for g, row in rc.items():
             if "diff" in row:
                 sd = (row.get("noise") or {}).get("s_seed")
+                sw = (row.get("noise") or {}).get("s_within")
                 seeds = json.dumps({k: round(v, 3) for k, v in row["per_seed"].items()})
                 tail = f"  s_seed {sd:.3f}" if sd is not None else ""
+                if row.get("interval") and row["interval"]["estimator"] != "between":
+                    bt = row.get("between")
+                    tail += (f"  σ_run {sw:.3f} ({row['interval']['estimator']}, df {row['interval']['df']:.1f})"
+                             + (f"; between [{bt['lo']:+.3f},{bt['hi']:+.3f}] {bt['verdict']}" if bt else ""))
                 tail += "  (reported only)" if row["reported_only"] else ""
                 lines.append(f"    {g:14s} {fmt(row)}  per seed {seeds}{tail}")
             else:
                 lines.append(f"    {g:14s} not computed: {json.dumps(row.get('missing'))[:160]}")
     if res.get("ranking"):
         lines.append("\nranking on pick: " + ", ".join(f"{r['recipe']} {r['pick']:+.3f}" for r in res["ranking"]))
-        lines.append(f"Stage-B default: {json.dumps(res['stage_b_pick'])}")
+        sb = res["stage_b_pick"]
+        if sb.get("warning"):
+            lines.append(f"WARNING: {sb['warning']}")
+        lines.append(f"Stage-B default: {json.dumps(sb)}")
+        unk = [r["recipe"] for r in res["ranking"] if updates_state(r) == "unknown"]
+        if unk:
+            lines.append("Updates verdict unknown (void/missing cells or no --noise): " + ", ".join(unk))
     fac = res.get("factorial")
     if fac:
-        lines.append(f"\nfactorial ({len(fac['runs'])} runs; missing {fac['missing_runs'] or 'none'})")
+        dc = fac.get("design") or {}
+        lines.append(f"\nfactorial ({len(fac['runs'])} runs; missing {fac['missing_runs'] or 'none'}; resolution "
+                     f"{dc.get('resolution')}; words {', '.join(dc.get('words') or []) or 'none'})")
+        for w in dc.get("warnings") or []:
+            lines.append(f"  WARNING: {w}")
+        if fac.get("not_estimable"):
+            lines.append(f"  NOT ESTIMABLE with the missing runs: {', '.join(fac['not_estimable'])}")
+        if fac.get("induced_correlation"):
+            lines.append(f"  missing runs correlate: {json.dumps(fac['induced_correlation'])} (effects adjusted by "
+                         "least squares)")
         for g, row in fac["groups"].items():
             if "effects" not in row:
+                continue
+            if row.get("singular"):
+                lines.append(f"    {g:14s} SINGULAR (aliased columns): no effects or verdicts")
                 continue
             parts = []
             for f, e in row["effects"].items():
                 iv, tag = (e["seed_noise"], "s") if "seed_noise" in e else (e.get("residual"), "r")
+                if e.get("not_estimable"):
+                    parts.append(f"{f} not estimable")
+                    continue
                 if e["effect"] is None:
                     parts.append(f"{f} -")
                     continue
-                parts.append(f"{f} {e['effect']:+.3f}" + (f" [{iv['lo']:+.3f},{iv['hi']:+.3f}]{tag}" if iv else ""))
+                al = f" (aliased: {', '.join(e['aliases'])})" if e.get("aliases") else ""
+                parts.append(f"{f} {e['effect']:+.3f}" + (f" [{iv['lo']:+.3f},{iv['hi']:+.3f}]{tag} {iv['verdict']}"
+                                                          if iv else "") + al)
             lines.append(f"    {g:14s} " + "; ".join(parts))
     return "\n".join(lines)
 
@@ -879,6 +1380,18 @@ def main(argv=None):
     ap.add_argument("--bootstrap", type=int, default=1000, help="bootstrap resamples (0: none)")
     ap.add_argument("--boot-seed", type=int, default=0)
     ap.add_argument("--drop-loss", type=float, default=0.1, help="late-drop threshold on the logged training loss")
+    ap.add_argument("--drop-min-points", type=int, default=30,
+                    help="late drop: fewer logged points than this read 'too few points' (no step)")
+    ap.add_argument("--drop-window", type=int, default=0, help="late drop: smoothing window in logged points "
+                                                               "(0: max(5, points // 20))")
+    ap.add_argument("--drop-smooth", choices=["median", "mean"], default="median", help="late drop: the smoother")
+    ap.add_argument("--s-seed", choices=["auto", "between"], default="auto",
+                    help="recipe-level noise: auto = σ_run from same-seed replicates when the noise sets have one "
+                         "(seed effect removed), else the between-run s_seed; between = always s_seed")
+    ap.add_argument("--min-within-df", type=int, default=3,
+                    help="--s-seed auto: the same-seed replicates' df needed to use σ_run (else s_seed)")
+    ap.add_argument("--allow-modified", action="store_true",
+                    help="pair evaluations whose eval-time modifications (--w1s-param, --w1s-set, ...) differ")
     ap.add_argument("--root", default=".", help="the repository root, for the evaluations' training JSON paths")
     ap.add_argument("--list", action="store_true", help="print the runs and their cells, and stop")
     ap.add_argument("--out", default=None, help="the summary JSON")
@@ -888,15 +1401,17 @@ def main(argv=None):
     paths = discover(opts.dir)
     for name, templates in parse_kv(opts.run, "--run").items():
         paths[name] = from_templates(templates)
-    runs, voids = load_runs(paths)
+    checks: dict = {}
+    runs, voids = load_runs(paths, checks)
     if opts.list:
         for r in sorted(runs):
             print(f"{r} (seed {run_seed(r)}): {' '.join(sorted(runs[r]))}")
         return {"runs": sorted(runs)}
-    res = {"settings": {k: v for k, v in vars(opts).items() if k not in ("list",)}, "void": voids,
+    res = {"settings": {k: v for k, v in vars(opts).items() if k not in ("list",)}, "void": voids, "checks": checks,
            "runs": {r: {"seed": run_seed(r), "cells": {c: {"path": d["path"], "n": d["n"], "fp": d["fp"],
                                                             "exact": d["level_exact"], "stale": d["level_stale"],
-                                                            "full": d["full"], "void": d["void"]}
+                                                            "full": d["full"], "void": d["void"],
+                                                            "unverified": d["unverified"], "mods": d["mods"]}
                                                         for c, d in sorted(cs.items())}}
                     for r, cs in sorted(runs.items())}}
     noise = {k: v for k, v in parse_kv(opts.noise, "--noise").items()}
@@ -948,7 +1463,8 @@ def main(argv=None):
             res["recipe_compare"][f"{name} vs {opts.recipe_ref}"] = rc
             if "diff" in rc.get("pick", {}):
                 ranking.append({"recipe": name, "pick": rc["pick"]["diff"], "pick_verdict": rc["pick"]["verdict"],
-                                **{g: rc[g].get("verdict") for g in ("updates_new", "updates_stale") if g in rc}})
+                                **{g: rc[g].get("verdict") or "missing (no cells in common)" for g in UPDATE_GROUPS
+                                   if g in rc}})
         ranking.sort(key=lambda r: -r["pick"])
         res["ranking"], res["stage_b_pick"] = ranking, stage_b_pick(ranking)
     if noise:
