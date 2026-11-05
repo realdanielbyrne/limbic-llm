@@ -1441,3 +1441,53 @@ Seeds 0–4 (I1 and A2 reuse Stage A's seeds 1–2), 420 evaluations: the 18-cel
 - gate G0.1 is reframed around alignment;
 - reinstatement stays deferred.
 
+---
+
+## Proposal: windowed intent memory as the alignment controller's gain source (4 Nov 2026)
+
+**Motivation.** The A6 abliterated-model sweep (`results/alignment/a6_qwen3_abliterated.json`)
+diagnosed why `conditional` and `graded` underperform plain `static`. On the harmful set,
+`conditional@0.5` and `graded@0.6` apply near-full gain through essentially the whole response
+(`gain_mean` 0.50 / 0.59) yet barely move refusal (harmful 0.09), because by design they leave the
+prompt's own encoding alone (`gain_prompt_mean` 0.02 / 0.01) to avoid `static`'s instability.
+`static` is the only arm that injects into the prompt encoding, and it is the only one that moves
+refusal meaningfully (0.20 at gain 0.2) — at the cost of over-refusing borderline/harmless prompts
+(0.13 / 0.16 at that same gain) and degenerating at higher gain (0.37–0.77 by gain 0.4–0.5). The
+harm signal driving all of this is also a single last-prompt-token linear probe: a snapshot, not a
+trajectory, which cannot by construction catch intent that is built up gradually or spread across
+many tokens — the way jailbreaks often "talk around" a harmful topic rather than stating it
+plainly.
+
+**Idea (Daniel).** Replace the single-token probe with a windowed, memory-based intent signal,
+reusing the side-channel memory modules already in this repo (`HippocampalLoop`/CA3 in
+`limbic_llm/temporal_loop.py`, the successor-bound addressing in `gated_delta.py`) rather than
+inventing a new mechanism. Window the prompt (and eventually multi-turn history), score each window
+for harmful intent with a classifier, and let the side channel's own windowed representation — not
+a single last-token snapshot — drive the controller's gain. Two expected benefits over the current
+design:
+- it targets distributed/indirect intent that a last-token probe cannot see by construction;
+- because a side channel can be hooked into the residual stream from the start of the prompt (as
+  `pretrained_loop.py`'s side channels already do), gain could ramp into the prompt's own encoding
+  as evidence accumulates, rather than switching on only at generation time — a principled route to
+  recovering `static`'s effectiveness without its blast radius.
+
+**Dependency.** This explicitly depends on the round-11 (or later) side-memory track landing a
+selection mechanism that generalizes. As of round 10 Stage B (P54, P55), I1 is one seed short of
+the reliability bar (3 of 5) and fails to generalize to held-out names (0.58–0.74 against
+0.85–0.98 on training names) — round 11 is addressing exactly that. This proposal should not start
+until that track lands something stable enough to repurpose.
+
+**Risks and open questions.**
+- New-mechanism work (a new candidate classifier and a new decision source for the controller) —
+  out of the A1/A6 scope this round; needs its own go-ahead and its own build.
+- Per `evolution_protocol.md`'s discipline, diagnose before building: a cheap synthetic check
+  (does a windowed classifier separate indirect/distributed-intent synthetic prompts better than
+  the current last-token probe, on the same prompts) should run before any GPU time.
+- The natural home for the "windowed, multi-turn" half of this is **A3** (escalation and recovery
+  under multi-turn pressure, H4), which isn't built yet — this may be the mechanism A3's runner
+  needs, more than a tweak to A6.
+- Data rule applies as everywhere else in this track: stored windowed representations are
+  activations and scores only, never raw text.
+
+Recorded as **A9** (REGISTER §4.4).
+
