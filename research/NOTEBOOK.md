@@ -1493,3 +1493,5 @@ Seeds 0–4 (I1 and A2 reuse Stage A's seeds 1–2), 420 evaluations: the 18-cel
 Nothing in Stage A starts without Daniel's go-ahead.
 
 **[4 Nov 2026, later] Daniel's readings (DEC10).** G0.8 is read literally, so A1 (rope) runs beside A1b. A12 runs despite G0.1, starting at log β_align = 3.68, the sharpest start below the β ≤ 40 clamp. Updates, dc, RV4 §6 and the go-ahead for Stage A are still open.
+
+**[4 Nov 2026, later] DEC11: relative comparison instead of fixed margins.** Daniel: "Any improvement over base models is an improvement … What matters is the relative difference." From Stage A on, arms are reported against I1, full attention and windowed, with 95% intervals. An arm is better or worse only where its interval separates from I1's. Trade-offs go to Daniel, not to a veto, and updates are scored against ground truth. Deciding cells use n = 384.

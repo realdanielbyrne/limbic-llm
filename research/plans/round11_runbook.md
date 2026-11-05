@@ -195,6 +195,8 @@ Report per arm:
 
 ## 6. Decision rules (pre-registered; plan §6)
 
+> **Superseded for Stage A and B by DEC11 (4 Nov 2026):** arms are judged by relative difference against I1, full attention and windowed, with 95% intervals; the fixed margins below are not used, trade-offs are reported rather than vetoed, and updates are scored against ground truth. DEC10 also runs A1 and A12 (G0.8 read literally; A12 starts at log β_align 3.68). The rules below are kept for the record.
+
 - **Void:** windowed ≠ 0.00, empty-store ≠ 0, shuffle not near chance, or any E1 failure.
 - **Every arm (revision 2):** it is not adopted if it lowers held-out-name exact by more than 0.02 against I1 on the same seeds.
 - **A10 and A11:** adopt if held-out-name exact rises by ≥ 0.10 over I1 and no DEC2 cell drops by more than 0.02. A11 must also not collapse a seed (grid mean < 0.5 counts as a collapse).
