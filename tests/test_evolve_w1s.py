@@ -1081,3 +1081,614 @@ def test_native_state_report_is_marked_provisional_before_the_width_is_seen():
     m.loop.native_dim = 32
     rep = m.state_report()
     assert "provisional" not in rep and rep["state_floats"] > 0
+
+
+# ============================================================ gate track (round 11, Stage A2)
+# research/plans/round11_combination_plan.md, "Gate track": the hysteresis and Schmitt gates on I1 (no centring) with
+# every round-11 option, and --w1s-gate-norm init, which calibrates the uncentred drive's initial operating point.
+GATE_TRACK = {name: R11[name] for name in ("none", "log", "ord", "supr", "supw", "rope", "ordinal", "keep-value",
+                                           "keep-learned", "code")}
+GATE_TRACK.update({"linear": [], "align-init": ["--w1s-align-init=3.5"], "native": ["--w1s-key=native"]})
+GATE_NORM = {"none": [], "init": ["--w1s-gate-norm=init"]}
+SHIFT = {"none": 0.0, "init": 1.5}                                # init is tested where it matters: a shared offset
+
+
+def ln_like(B, T, d, a=0.0, scale=1.0, seed=0, dtype=torch.float32):
+    """States shaped like an LM's before LayerNorm: a direction shared by every token (the same for every seed;
+    token cosine about a²/(1 + a²) after LN) plus noise, times ``scale``; rounded through ``dtype``."""
+    u = torch.randn(d, generator=torch.Generator().manual_seed(123), dtype=torch.float64)
+    u = u / u.norm() * d ** 0.5
+    x = a * u + torch.randn(B, T, d, generator=torch.Generator().manual_seed(seed), dtype=torch.float64)
+    return (scale * x).to(dtype).to(torch.float64 if dtype == torch.float64 else torch.float32)
+
+
+def gt(gate, cfg, norm, d=D):
+    """I1 with the gate swapped (no centring), one round-11 option, K = 2 (evictions)."""
+    m = side(*I1, *GATE_TRACK[cfg], f"--w1s-gate={gate}", "--w1s-K=2", *GATE_NORM[norm], d=d)
+    with torch.no_grad():
+        m.loop.gain_logit.fill_(2.0)
+        if hasattr(m.loop, "ord_E"):
+            m.loop.ord_E.normal_(0, 1.0)
+    return m
+
+
+def gt_extra(cfg, B, T, dtype=torch.float32):
+    return ({k: v.to(dtype) for k, v in native_extra(B, T, dtype=torch.float64).items()} if cfg == "native"
+            else None)
+
+
+@pytest.mark.parametrize("norm", list(GATE_NORM))
+@pytest.mark.parametrize("cfg", list(GATE_TRACK))
+@pytest.mark.parametrize("gate", ["hyst", "schmitt"])
+@pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
+def test_gate_track_strictly_causal(gate, cfg, norm, dtype):
+    """E1 for the hysteresis and Schmitt gates on I1 with each round-11 option (and the calibrated drive): perturbing
+    h (and the native K/Q) from t0 on leaves every output row before t0 bitwise unchanged, for float32 and
+    bf16-rounded input. μ̂ is calibrated on a batch of its own first, as the first training batch would."""
+    m = gt(gate, cfg, norm)
+    T = 200
+    if norm == "init":
+        with torch.no_grad():
+            run(m, ln_like(2, T, D, SHIFT[norm], seed=9, dtype=dtype), gt_extra(cfg, 2, T))
+        assert torch.isfinite(m.loop.gate_mu).all()
+    h = ln_like(2, T, D, SHIFT[norm], seed=0, dtype=dtype)
+    ex = gt_extra(cfg, 2, T)
+    if ex is not None:
+        ex = {k: v.to(dtype).float() for k, v in ex.items()}
+    g = torch.Generator().manual_seed(1)
+    with torch.no_grad():
+        y = run(m, h, ex)
+        assert (m.loop.last_diag["retained"] >= 0).any()
+        for t0 in (1, 23, 60, 131, 199):
+            h2 = h.clone()
+            h2[:, t0:] = (h2[:, t0:] + torch.randn(h2[:, t0:].shape, generator=g)).to(dtype).float()
+            e2 = None
+            if ex is not None:
+                e2 = {k: v.clone() for k, v in ex.items()}
+                for v in e2.values():
+                    v[:, t0:] = (v[:, t0:] + torch.randn(v[:, t0:].shape, generator=g)).to(dtype).float()
+            y2 = run(m, h2, e2)
+            assert torch.equal(y[:, :t0], y2[:, :t0]), (gate, cfg, norm, t0)
+            assert not torch.equal(y, y2)
+
+
+@pytest.mark.parametrize("norm", list(GATE_NORM))
+@pytest.mark.parametrize("cfg", list(GATE_TRACK))
+@pytest.mark.parametrize("gate", ["hyst", "schmitt"])
+def test_gate_track_stream_equals_parallel(gate, cfg, norm):
+    """E2 for the hysteresis and Schmitt gates on I1 with each round-11 option (K = 2, so slots are evicted): the
+    read, the gate, the onsets, the slots held at every t and their read weights equal the streaming store's."""
+    m = gt(gate, cfg, norm, d=16).double()
+    B, T = 2, 170
+    if norm == "init":
+        m.loop.calibrate_gate(m.loop._streams(ln_like(B, T, 16, SHIFT[norm], seed=9, dtype=torch.float64), None))
+    h = ln_like(B, T, 16, SHIFT[norm], seed=1, dtype=torch.float64)
+    ex = gt_extra(cfg, B, T, torch.float64)
+    with torch.no_grad():
+        par = m.loop.read(h, ex)
+    d = m.loop.last_diag
+    ref = m.loop.stream(h, ex)
+    torch.testing.assert_close(par, ref["o"], atol=1e-6, rtol=1e-6)
+    torch.testing.assert_close(d["p"], ref["p"], atol=1e-6, rtol=1e-6)
+    closes = T - m.loop.delay
+    assert torch.equal(d["onsets"][:, :closes], ref["onsets"][:, :closes])
+    assert ref["evictions"] > 0
+    for b in range(B):
+        for t in range(T):
+            held = {int(s) for s in d["retained"][b, t] if s >= 0}
+            assert held == ref["retained"][b][t], (b, t)
+            w = {int(s): float(a) for s, a in zip(d["retained"][b, t], d["read_w"][b, t]) if s >= 0}
+            for s, a in ref["read_w"][b][t].items():
+                assert abs((w[s] if s is not None else float(d["read_w"][b, t, -1])) - a) < 1e-6, (cfg, b, t, s)
+
+
+def _operating_point(gate, flags, seed, h, calib=None):
+    """(onset density, mean on-state over t ≥ 64) of an untrained I1-like side (module seed ``seed``) on h;
+    ``calib``, if given, is the first batch it sees (which sets μ̂ under --w1s-gate-norm init)."""
+    torch.manual_seed(seed)
+    m = W1sSide(64, ARGS, split_args([*I1, f"--w1s-gate={gate}", *flags])[0]).eval()
+    with torch.no_grad():
+        if calib is not None:
+            run(m, calib, None)
+        run(m, h, None)
+    d = m.loop.last_diag
+    return d["onsets"].float().mean().item(), d["g"][:, 64:].mean().item()
+
+
+@pytest.mark.parametrize("gate", ["hyst", "schmitt"])
+def test_uncentred_drive_starts_the_latch_saturated(gate):
+    """The problem the calibration fixes. On LN-like states with a shared offset (token cosine 0.9), the uncentred
+    drive w·x_t sits several running deviations from 0, with a sign and size set by the seed (w·u): the
+    hysteresis latch and the Schmitt trigger start always on or always off (on-fraction < 0.03 or > 0.97) for
+    half the seeds (already at cosine 0.5 for three of six), while the centred gate starts at its calibrated
+    operating point (P35's starved gate)."""
+    h = ln_like(4, 1024, 64, a=3.0, seed=3)
+    on = [_operating_point(gate, [], s, h)[1] for s in range(6)]
+    assert sum(g < 0.03 or g > 0.97 for g in on) >= 3 and max(on) - min(on) > 0.9, on
+    centred = [_operating_point(gate, ["--w1s-centre"], s, h)[1] for s in range(6)]
+    assert all(0.07 < g < 0.22 for g in centred), centred
+
+
+@pytest.mark.parametrize("gate", ["point", "hyst", "schmitt"])
+@pytest.mark.parametrize("a,scale", [(1.0, 1.0), (1.0, 30.0), (3.0, 1.0), (3.0, 30.0)])
+def test_gate_norm_init_restores_the_initial_operating_point(gate, a, scale):
+    """--w1s-gate-norm init: calibrated on a first batch of the same kind of states (another draw), the uncentred
+    gate starts where the centred one does, per module seed: the same onset density (± 0.006) and on-fraction
+    (± 0.04; 0.12 ± 0.03 for point, 0.05–0.25 for the latches, whose per-seed level varies with the centring
+    too), over T = 1024, at input scales 1 and 30 and token cosines 0.5 and 0.9. Without it the point gate's
+    mean p and the latch's on-fraction follow the seed."""
+    h, calib = ln_like(4, 1024, 64, a, scale, seed=3), ln_like(4, 512, 64, a, scale, seed=99)
+    for s in range(6):
+        dens, on = _operating_point(gate, ["--w1s-gate-norm=init"], s, h, calib)
+        dens_c, on_c = _operating_point(gate, ["--w1s-centre"], s, h)
+        assert abs(dens - dens_c) < 0.006 and abs(on - on_c) < 0.04, (s, dens, dens_c, on, on_c)
+        assert (abs(on - 0.12) < 0.03) if gate == "point" else (0.05 < on < 0.25), (s, on)
+    raw = [_operating_point(gate, [], s, h)[1] for s in range(6)]
+    assert max(raw) - min(raw) > 0.2, raw                         # uncalibrated: the seed decides
+
+
+def test_gate_norm_defaults_change_nothing_and_refusals():
+    """Regression: by default (and with I1's flags) there is no μ̂ and no new key, so outputs and round-10/11
+    checkpoints are unchanged; init adds one buffer per gate stream (no parameter, NaN until calibrated) and is
+    refused where it would do nothing or double the centring."""
+    assert split_args([])[0].w1s_gate_norm == "none"
+    for flags in ([], list(I1), [*I1, "--w1s-gate=hyst"], ["--w1s-out=reinstate"], ["--w1s-store=superposed"]):
+        m = side(*flags)
+        assert m.loop.gate_norm == "none" and "loop.gate_mu" not in m.state_dict()
+    m = side(*I1, "--w1s-gate=hyst", "--w1s-gate-norm=init")
+    ref = side(*I1, "--w1s-gate=hyst")
+    assert set(m.state_dict()) - set(ref.state_dict()) == {"loop.gate_mu"}
+    assert [k for k, _ in m.named_parameters()] == [k for k, _ in ref.named_parameters()]
+    assert all(torch.equal(p, q) for p, q in zip(m.parameters(), ref.parameters()))   # same initialisation
+    assert m.loop.gate_mu.shape == (1, D) and torch.isnan(m.loop.gate_mu).all()
+    two = side("--w1s-gate=point", "--no-w1s-centre", "--w1s-gate-norm=init")         # taps 3 and h
+    assert two.loop.gate_mu.shape == (2, D)
+    for flags in (["--w1s-gate-norm=init"], [*I1, "--w1s-centre", "--w1s-gate-norm=init"],
+                  [*I1, "--w1s-gate=oracle", "--w1s-gate-norm=init"], [*I1, "--w1s-gate=dense", "--w1s-gate-norm=init"]):
+        with pytest.raises(ValueError, match="gate-norm"):
+            side(*flags)
+    big = W1sSide(2048, ARGS, split_args([*I1, "--w1s-gate=schmitt", "--w1s-gate-norm=init"])[0])
+    assert sum(b.numel() for b in big.buffers()) <= 1_000_000
+
+
+def test_gate_norm_calibrates_once_and_never_adapts():
+    """μ̂ is set by the first batch (the mean of the LayerNormed gate stream over all its positions), then fixed: a
+    batch of other states leaves it unchanged, a checkpoint restores it (the loaded side is not recalibrated and
+    computes what the original does, bitwise), and calibrate_gate recalibrates on request."""
+    m = side(*I1, "--w1s-gate=hyst", "--w1s-gate-norm=init")
+    h1, h2 = ln_like(2, 150, D, 1.5, seed=1), ln_like(2, 150, D, -2.0, seed=2)
+    with torch.no_grad():
+        y1 = run(m, h1, None)
+    mu = m.loop.gate_mu.clone()
+    torch.testing.assert_close(mu[0], torch.nn.functional.layer_norm(h1, (D,)).mean((0, 1)))
+    with torch.no_grad():
+        y2 = run(m, h2, None)
+    assert torch.equal(m.loop.gate_mu, mu)
+    fresh = side(*I1, "--w1s-gate=hyst", "--w1s-gate-norm=init")
+    fresh.load_state_dict(m.state_dict(), strict=True)
+    with torch.no_grad():
+        assert torch.equal(run(fresh, h2, None), y2) and torch.equal(run(fresh, h1, None), y1)
+    assert torch.equal(fresh.loop.gate_mu, mu)
+    fresh.loop.calibrate_gate(fresh.loop._streams(h2, None))
+    assert not torch.equal(fresh.loop.gate_mu, mu)
+
+
+@pytest.mark.parametrize("first", ["stream", "parallel"])
+def test_gate_norm_stream_calibrates_like_the_forward(first):
+    """An uncalibrated side calibrates μ̂ from the same LayerNormed streams whichever form runs first, so the
+    streaming store equals the parallel read on that batch."""
+    m = side(*I1, "--w1s-gate=schmitt", "--w1s-gate-norm=init", "--w1s-K=2", d=16).double()
+    h = ln_like(2, 150, 16, 1.5, seed=4, dtype=torch.float64)
+    with torch.no_grad():
+        if first == "stream":
+            ref = m.loop.stream(h)
+            par = m.loop.read(h)
+        else:
+            par = m.loop.read(h)
+            ref = m.loop.stream(h)
+    torch.testing.assert_close(par, ref["o"], atol=1e-6, rtol=1e-6)
+    assert ref["evictions"] > 0
+
+
+@pytest.mark.parametrize("gate", ["point", "hyst", "schmitt"])
+@pytest.mark.parametrize("norm", list(GATE_NORM))
+def test_admission_target_trains_the_uncentred_gates(gate, norm):
+    """A15's admission loss (``teacher.admit_kl`` on the store's log p over the candidates) reaches the uncentred
+    gates' parameters, with and without the calibrated drive: finite and non-zero, as in training."""
+    from evolve import teacher
+    m = side(*I1, f"--w1s-gate={gate}", *GATE_NORM[norm]).train()
+    h = ln_like(2, 300, D, SHIFT[norm], seed=5)
+    if norm == "init":
+        m.loop.calibrate_gate(m.loop._streams(ln_like(2, 300, D, SHIFT[norm], seed=9), None))
+    with teacher.store_tap(m.loop) as box:
+        run(m, h, None)
+    st = box["st"]
+    target = torch.rand(st["lp"].shape, generator=torch.Generator().manual_seed(0)) * st["valid"]
+    target = target / target.sum(1, keepdim=True).clamp_min(1e-30)
+    has = st["valid"].any(1)
+    assert has.all()
+    teacher.admit_kl(st["lp"], target, st["valid"], has).sum().backward()
+    names = {"point": ["gate_a", "gate_b"], "hyst": ["gate_a", "gate_b", "latch_c", "lam_logit"],
+             "schmitt": ["lam_logit"]}[gate]
+    for p in [m.loop.gate_w[0].weight] + [getattr(m.loop, n) for n in names]:
+        assert p.grad is not None and torch.isfinite(p.grad).all() and p.grad.abs().sum() > 0, (gate, norm)
+
+
+def test_diag_gate_init_on_a_tiny_model(tmp_path):
+    """experiments/evolve/diag_gate_init.py on the random tiny GPT-2: every gate × norm arm is measured on the same
+    natural- and random-filler needle sequences, init calibrates μ̂ on a batch of its own (natural, as a training
+    run's first batch), and the readings are in range. From a run JSON the recipe and task come from the run,
+    and command-line W1s flags override it."""
+    import json
+    import pretrained_loop as pl
+    from evolve import diag_gate_init as dg
+    text = tmp_path / "filler.txt"
+    text.write_text("The river runs past the old mill and the quiet town wakes slowly under grey skies. " * 300)
+    common = ["--tiny", "--device", "cpu", "--window", "64", "--seq-len", "512", "--pairs", "3", "--layer", "2"]
+    out = dg.main([*common, "--text-file", str(text), *I1[1:], "--norms", "none,init,centre", "--n", "4",
+                   "--batch", "2", "--out", str(tmp_path / "diag.json")])
+    assert set(out["arms"]) == {f"{g}/{n}" for g in ("point", "hyst", "schmitt") for n in ("none", "init", "centre")}
+    assert json.loads((tmp_path / "diag.json").read_text())["arms"].keys() == out["arms"].keys()
+    assert out["recipe"]["w1s_key"] == "learned" and out["recipe"]["w1s_pre"] == 0 and out["layer"] == 2
+    for arm, rec in out["arms"].items():
+        assert rec["flags"]["w1s_gate"] == arm.split("/")[0]
+        assert set(rec["fillers"]) == {"natural", "random"}
+        for r in rec["fillers"].values():
+            assert r["n"] == 4 and 0 < r["onset_density"] < 0.2 and 0 <= r["on_fraction"] <= 1
+            for k in ("onset_in_fact", "coverage_all_facts", "fact_coverage", "latch_saturated"):
+                assert 0 <= r[k] <= 1, (arm, k, r[k])
+        if arm.endswith("/init"):
+            assert rec["calibration"]["filler"] == "natural" and all(x > 0 for x in rec["calibration"]["gate_mu_norm"])
+        else:
+            assert "calibration" not in rec
+    run = {"args": vars(pl.parse_args(common[:1] + common[3:])), "needle_scatter": 8, "needle_tail": 256,
+           "candidate": {"class": "evolve.w1s_slots:W1sSide", "args": vars(split_args([*I1, "--w1s-K=4"])[0])}}
+    js = tmp_path / "run.json"
+    js.write_text(json.dumps(run))
+    out2 = dg.main([str(js), "--device", "cpu", "--gates", "hyst", "--norms", "init", "--n", "2", "--batch", "2",
+                    "--w1s-K", "6"])
+    assert (tmp_path / "run.gate_init.json").exists() and out2["result"] == str(js)
+    assert out2["recipe"]["w1s_K"] == 6 and out2["recipe"]["w1s_key"] == "learned"
+    assert set(out2["arms"]) == {"hyst/init"} and set(out2["arms"]["hyst/init"]["fillers"]) == {"random"}
+    assert out2["arms"]["hyst/init"]["calibration"]["filler"] == "random"
+
+
+# ============================================================ Stage A2 (round11_combination_plan.md)
+# "Code needed" 1-3: rotary and ordinal time together, pointer replay, and the alignment code's own stream. Each is
+# tested on I1 with every gate (the hysteresis and Schmitt gates too: the plan's gate track), against rules E1-E3.
+A2 = {
+    "rope+ordinal": ["--w1s-time-feat=rope,ordinal", "--w1s-rope-dims=8", "--w1s-rope-periods=4,4096"],
+    "rope+ordinal+linear": ["--w1s-time-feat=rope,ordinal", "--w1s-rope-dims=8", "--w1s-recency-form=linear"],
+    "rope+ordinal+supr": ["--w1s-time-feat=ordinal,rope", "--w1s-rope-dims=8", "--w1s-recency-form=supr",
+                          "--w1s-sup-w=5"],
+    "pointer": ["--w1s-replay=pointer"],
+    "pointer-learned": ["--w1s-replay=pointer", "--w1s-align=learned"],
+    "pointer-code": ["--w1s-replay=pointer", "--w1s-code=learned", "--w1s-dc=8"],
+    "pointer-keep": ["--w1s-replay=pointer", "--w1s-keep=5", "--w1s-keep-by=value"],
+    "pointer+time": ["--w1s-replay=pointer", "--w1s-time-feat=rope,ordinal", "--w1s-rope-dims=8"],
+    "A11a": ["--w1s-taps=3", "--w1s-key-taps=21", "--w1s-align-stream=3"],              # code on 3, gate/key on h
+    "A11k": ["--w1s-taps=3", "--w1s-key-taps=3,21", "--w1s-key=both", "--w1s-align-stream=h"],   # code on h
+    "A11k-code": ["--w1s-taps=3", "--w1s-key-taps=3,21", "--w1s-key=both", "--w1s-align-stream=h",
+                  "--w1s-code=learned", "--w1s-dc=8"],
+    "A11a-pointer": ["--w1s-taps=3", "--w1s-key-taps=21", "--w1s-align-stream=3", "--w1s-replay=pointer"],
+}
+GATES4 = ["point", "hyst", "schmitt", "oracle"]
+
+
+def a2(name, *extra, d=D):
+    m = side(*I1, *A2[name], *extra, d=d)
+    with torch.no_grad():
+        m.loop.gain_logit.fill_(2.0)
+        if hasattr(m.loop, "ord_E"):                             # zero at init: give the rank feature a value
+            m.loop.ord_E.normal_(0, 1.0)
+    return m
+
+
+@pytest.mark.parametrize("name", list(A2))
+@pytest.mark.parametrize("gate", GATES4)
+@pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
+def test_stage_a2_strictly_causal(name, gate, dtype):
+    """E1: perturbing h and tap 3 from t0 on leaves every output row before t0 bitwise unchanged, for float32 and
+    bf16-rounded input (K = 2: evictions), with every gate."""
+    m = a2(name, "--w1s-K=2", f"--w1s-gate={gate}")
+    T = 200
+    m.oracle_onsets = every(2, T, 13, 5)
+    torch.manual_seed(0)
+    h = torch.randn(2, T, D).to(dtype).float()
+    ex = {3: torch.randn(2, T, D).to(dtype).float()}
+    with torch.no_grad():
+        y = run(m, h, ex)
+        assert (m.loop.last_diag["retained"] >= 0).any()
+        for t0 in (1, 23, 60, 131, 199):
+            h2, e2 = h.clone(), {3: ex[3].clone()}
+            h2[:, t0:] += torch.randn_like(h2[:, t0:]).to(dtype).float()
+            e2[3][:, t0:] += torch.randn_like(e2[3][:, t0:]).to(dtype).float()
+            y2 = run(m, h2, e2)
+            assert torch.equal(y[:, :t0], y2[:, :t0]), (name, t0)
+            assert not torch.equal(y, y2)
+
+
+@pytest.mark.parametrize("name", list(A2))
+@pytest.mark.parametrize("gate", GATES4)
+def test_stage_a2_stream_equals_parallel(name, gate):
+    """E2: the parallel read equals the independent streaming store (K = 2, so slots are evicted): the read, the
+    gate, the slots held at every t and their read weights, and (pointer) the entry read at every t."""
+    m = a2(name, "--w1s-K=2", f"--w1s-gate={gate}", d=16).double()
+    B, T = 2, 170
+    torch.manual_seed(1)
+    h, ex = torch.randn(B, T, 16, dtype=torch.float64), {3: torch.randn(B, T, 16, dtype=torch.float64)}
+    oracle = every(B, T, 11, 3)
+    with torch.no_grad():
+        if m.loop.replay == "pointer":                           # a low null: a slot is read wherever one is held
+            m.loop.null_logit.fill_(-5.0)
+        par = m.loop.read(h, ex, oracle)
+    d = m.loop.last_diag
+    ref = m.loop.stream(h, ex, oracle)
+    torch.testing.assert_close(par, ref["o"], atol=1e-6, rtol=1e-6)
+    torch.testing.assert_close(d["p"], ref["p"], atol=1e-6, rtol=1e-6)
+    assert ref["evictions"] > 0
+    if m.loop.replay == "pointer":
+        assert torch.equal(torch.where(ref["ptr"] >= 0, ref["ptr"] + 1, -1), d["align"])
+        assert (ref["ptr"] >= 0).float().mean() > 0.5                     # the pointer is in use
+    for b in range(B):
+        for t in range(T):
+            held = {int(s) for s in d["retained"][b, t] if s >= 0}
+            assert held == ref["retained"][b][t], (b, t)
+            w = {int(s): float(a) for s, a in zip(d["retained"][b, t], d["read_w"][b, t]) if s >= 0}
+            for s, a in ref["read_w"][b][t].items():
+                assert abs((w[s] if s is not None else float(d["read_w"][b, t, -1])) - a) < 1e-6, (name, b, t, s)
+
+
+@pytest.mark.parametrize("name", ["rope+ordinal", "pointer", "pointer-code", "A11a", "A11k", "A11k-code"])
+def test_stage_a2_state_is_independent_of_T_and_matches_the_analytic_count(name):
+    """E2: the streaming state has the same size at T = 512 and 2048 and equals ``analytic_state`` once the ring
+    and the K slots are full (pointer: one more scalar; a split alignment stream: its codes and keys)."""
+    m = side(*I1, *A2[name], "--w1s-K=2", d=16)
+    sizes = []
+    for T in (512, 2048):
+        torch.manual_seed(2)
+        ref = m.loop.stream(torch.randn(1, T, 16), {3: torch.randn(1, T, 16)})
+        assert ref["evictions"] > 0
+        sizes.append(ref["state_floats"])
+    assert sizes[0] == sizes[1], sizes
+    assert ref["state_components"] == m.loop.analytic_state(16), (ref["state_components"], m.loop.analytic_state(16))
+    base = side(*I1, "--w1s-K=2", d=16).loop.analytic_state(16)
+    comp = ref["state_components"]
+    if name.startswith("pointer"):
+        assert comp["pointer"] == 1
+    if name in ("A11a", "A11k"):                                  # A11k: the lexical key's stream and the code's
+        assert comp["slot_keys"] == base["slot_keys"] + (2 * 16 if name == "A11k" else 0), (comp, base)
+        assert comp["slot_codes"] == base["slot_codes"]
+        ring_len = max(m.loop.delay + m.loop.P + 1, m.loop.delay + m.loop.r + 1, m.loop.pool)
+        assert comp["ring"] == base["ring"] + ring_len * 16 * (name == "A11k"), (comp, base)
+
+
+@pytest.mark.parametrize("name", list(A2))
+def test_stage_a2_budget_and_state_at_qwen_width(name):
+    """E3 and E2 at width 2048: every Stage-A2 arm stays within 4.4M parameters, and its full streaming state within
+    1M floats except A11k with the lexical key: it keeps two 2048-d lexical streams (block 3 for the key, h for the
+    code), so its ring and slot keys hold one more 2048-d vector each: 1.005M (I1: 0.907M). The pointer adds one
+    parameter (κ) and one state scalar."""
+    m = W1sSide(2048, ARGS, split_args([*I1, *A2[name]])[0])
+    i1 = W1sSide(2048, ARGS, split_args(list(I1))[0])
+    n_par = sum(p.numel() for p in m.parameters())
+    assert n_par <= 4_400_000 and sum(b.numel() for b in m.buffers()) <= 1_000_000
+    state, ref = m.state_report()["state_floats"], i1.state_report()["state_floats"]
+    if name.startswith("A11k") and "--w1s-code=learned" not in A2[name]:
+        lp = m.loop
+        ring_len = max(lp.delay + lp.P + 1, lp.delay + lp.r + 1, lp.pool)
+        assert state == ref + (ring_len + lp.K) * 2048, (state, ref)
+    else:
+        assert state <= 1_000_000, m.state_report()
+    if name == "pointer":
+        assert n_par == sum(p.numel() for p in i1.parameters()) + 1
+        assert m.state_report()["state_floats"] == i1.state_report()["state_floats"] + 1
+
+
+def test_stage_a2_defaults_change_nothing():
+    """Regression: the defaults (and values that name the default stream) build the round-10/11 module: no κ, no
+    alignment stream of its own, the same parameters, and bitwise the same output."""
+    w = split_args([])[0]
+    assert (w.w1s_replay, w.w1s_align_stream, w.w1s_time_feat) == ("match", "lex", "none")
+    a11 = ("--w1s-taps=3", "--w1s-key-taps=3,21", "--w1s-key=both")
+    for flags, same in (([], ["--w1s-align-stream=3"]), (list(I1), ["--w1s-align-stream=h"]),
+                        (list(I1), ["--w1s-align-stream=21"]), ([*I1, *a11], ["--w1s-align-stream=3"]),
+                        ([*I1, "--w1s-time-feat=rope"], ["--w1s-replay=match"])):
+        m0, m1 = side(*flags), side(*flags, *same)
+        assert not m0.loop.split_align and not m1.loop.split_align and m1.loop.replay == "match"
+        assert not hasattr(m1.loop, "ptr_kappa") and "pointer" not in m1.loop.analytic_state(D)
+        assert list(m0.state_dict()) == list(m1.state_dict())
+        torch.manual_seed(4)
+        h, ex = torch.randn(2, 150, D), {3: torch.randn(2, 150, D)}
+        with torch.no_grad():
+            assert torch.equal(run(m0, h, ex), run(m1, h, ex)), flags
+
+
+def test_time_feat_list_parses_and_resolves():
+    """--w1s-time-feat takes a comma list (canonical order rope,ordinal); a time feature still defaults the recency
+    form to none, an explicit one is kept; single values are unchanged; unknown names are refused."""
+    for s, canon in (("rope,ordinal", "rope,ordinal"), ("ordinal,rope", "rope,ordinal"), ("rope", "rope"),
+                     ("ordinal", "ordinal"), ("none", "none"), ("rope, ordinal", "rope,ordinal")):
+        w = split_args([f"--w1s-time-feat={s}"])[0]
+        assert w.w1s_time_feat == canon
+        assert w.w1s_recency_form == ("linear" if canon == "none" else "none")
+    assert split_args(["--w1s-time-feat=rope,ordinal", "--w1s-recency-form=linear"])[0].w1s_recency_form == "linear"
+    for bad in ("rope,foo", "learned"):
+        with pytest.raises(SystemExit):
+            split_args([f"--w1s-time-feat={bad}"])
+    m = side(*I1, *A2["rope+ordinal"])
+    assert m.loop.tfeats == {"rope", "ordinal"} and hasattr(m.loop, "ord_E") and m.loop.rope_dims == 8
+    assert side(*I1, "--w1s-time-feat=rope").loop.tfeats == {"rope"}
+    with pytest.raises(ValueError):                              # time features act on the learned key
+        side("--w1s-key=lex", "--w1s-time-feat=rope,ordinal")
+
+
+def test_rope_and_ordinal_are_both_active_together():
+    """With both time features the score is the rotary one plus u_t·E[r_k]: with E = 0 the read is bitwise the
+    rope-only read (the ordinal parameters are created last, so the shared ones are equal), and with E ≠ 0 it
+    differs from both single-feature reads."""
+    flags = ("--w1s-rope-dims=8", "--w1s-rope-periods=4,4096", "--w1s-gate=oracle", "--w1s-K=3")
+    both, rope = side(*I1, "--w1s-time-feat=rope,ordinal", *flags), side(*I1, "--w1s-time-feat=rope", *flags)
+    ordi = side(*I1, "--w1s-time-feat=ordinal", *flags)
+    torch.manual_seed(0)
+    h, o = torch.randn(2, 150, D), every(2, 150, 9, 2)
+    with torch.no_grad():
+        assert torch.equal(both.loop.read(h, None, o), rope.loop.read(h, None, o))
+        both.loop.ord_E.normal_(0, 1.0)
+        ordi.loop.ord_E.copy_(both.loop.ord_E)
+        ordi.loop.ord_u.weight.copy_(both.loop.ord_u.weight)
+        y = both.loop.read(h, None, o)
+        assert not torch.equal(y, rope.loop.read(h, None, o)) and not torch.equal(y, ordi.loop.read(h, None, o))
+
+
+# ------------------------------------------------------------------ pointer replay
+def toy_codes(q, codes, seed=0, query=None):
+    """``toy`` with given 4-digit codes (repeated digits allowed): three facts [name, is, sp, d, d, d, d] in
+    60-token filler gaps with 3 false windows each, then the query for fact q, its digits teacher-forced (or the
+    digits ``query``)."""
+    g = torch.Generator().manual_seed(seed)
+    fill = lambda k: [FILLER[i] for i in torch.randint(len(FILLER), (k,), generator=g)]
+    toks, onsets, facts = [], [], []
+    for i, code in enumerate(codes):
+        onsets += [len(toks) + 10, len(toks) + 22, len(toks) + 34]
+        toks += fill(60)
+        facts.append(dict(name=len(toks), d=[len(toks) + 3 + k for k in range(4)]))
+        onsets.append(len(toks) + 3)
+        toks += [NAMES[i], IS, SP] + list(code)
+    onsets += [len(toks) + 10, len(toks) + 22, len(toks) + 34]
+    toks += fill(60)
+    qpos = len(toks)
+    toks += [NAMES[q], IS, SP] + list(codes[q] if query is None else query)
+    o = torch.zeros(1, len(toks), dtype=torch.bool)
+    o[0, onsets] = True
+    return torch.eye(V)[toks][None], o, facts, qpos
+
+
+def spy_store(monkeypatch):
+    """Capture SlotLoop._read's alignment weights E, entries, candidates and values, and its output r."""
+    out = []
+    real = SlotLoop._read
+
+    def wrapped(self, f, st):
+        r = real(self, f, st)
+        out.append(({k: st[k].detach() for k in ("E", "mem", "s", "v")}, r.detach()))
+        return r
+    monkeypatch.setattr(SlotLoop, "_read", wrapped)
+    return out
+
+
+@pytest.mark.parametrize("code", [(8, 9, 8, 10), (8, 9, 8, 9), (9, 9, 10, 11)])
+def test_pointer_replays_a_code_with_repeated_digits(code, monkeypatch):
+    """One-hot toy: the queried fact's code repeats a digit (half of 4-digit codes do), so at a repeated digit the
+    plain match ties the two stored copies and reads both successors half and half. The pointer, carried from the
+    unambiguous "is" and space, reads the right successor at every teacher-forced digit (alignment weight > 0.9 in
+    the fact's slot, the recalled value closest to the next digit's), and the streaming form agrees."""
+    reads = spy_store(monkeypatch)
+    codes = [(12, 13, 14, 15), code, (16, 17, 12, 13)]
+    x, o, facts, qpos = toy_codes(1, codes)
+    fact, res = facts[1], {}
+    for replay in ("match", "pointer"):
+        m = side(*TOY, "--w1s-key=lex", "--w1s-align=lex", f"--w1s-replay={replay}", d=V, time=False)
+        m.oracle_onsets, m.extra = o, {3: x}
+        with torch.no_grad():
+            m(x)
+        st, r = reads[-1]
+        d = m.loop.last_diag
+        i = int((st["s"][0] == fact["d"][0]).nonzero()[0, 0])     # the fact's candidate
+        vn = torch.nn.functional.normalize(st["v"][0], dim=-1)
+        res[replay] = []
+        for k, t in enumerate(range(qpos + 2, qpos + 6)):         # space, d1, d2, d3 predict d1..d4
+            assert d["retained"][0, t][d["read_w"][0, t, :-1].argmax()] == fact["d"][0], (replay, t)
+            e = st["E"][0, t] * st["mem"][0, i]
+            j = fact["d"][k] - 1                                  # the entry whose successor is digit k + 1
+            res[replay].append(float(e[j] / e.sum()))
+            if replay == "pointer":
+                rec = vn @ torch.nn.functional.normalize(r[0, t], dim=0)
+                assert rec[j + 1] > rec.max() - 1e-6, (t, rec.argmax())       # recalled: the next digit's value
+        if replay == "pointer":
+            assert [int(a) for a in d["align"][0, qpos + 2:qpos + 6]] == fact["d"], res
+            with torch.no_grad():
+                par = m.loop.read(x, {3: x}, o)
+            ref = m.loop.stream(x, {3: x}, o)
+            torch.testing.assert_close(par, ref["o"], atol=1e-5, rtol=1e-5)
+            assert torch.equal(ref["ptr"][0, qpos + 2:qpos + 6] + 1, torch.tensor(fact["d"]))
+    ambiguous = [k for k in range(1, 4) if code[k - 1] in code[:k - 1] + code[k:]]   # the current digit repeats
+    assert ambiguous, code
+    assert all(w > 0.9 for w in res["pointer"]), res
+    assert all(abs(res["match"][k] - 0.5) < 0.1 for k in ambiguous), res
+
+
+def test_pointer_gives_way_to_the_match_when_the_token_is_not_the_successor(monkeypatch):
+    """The pointer advances only while the current token matches the entry it lands on: the query skips the stored
+    third digit (stored 8 9 8 10, query 8 9 10), so at "10" the pointer's entry (the stored 8) does not match and
+    the re-match (the stored 10) carries the alignment; the next pointer continues from there."""
+    reads = spy_store(monkeypatch)
+    x, o, facts, qpos = toy_codes(1, [(12, 13, 14, 15), (8, 9, 8, 10), (16, 17, 12, 13)], query=(8, 9, 10, 11))
+    m = side(*TOY, "--w1s-key=lex", "--w1s-align=lex", "--w1s-replay=pointer", d=V, time=False)
+    m.oracle_onsets, m.extra = o, {3: x}
+    with torch.no_grad():
+        m(x)
+    st, _ = reads[-1]
+    fact = facts[1]
+    i = int((st["s"][0] == fact["d"][0]).nonzero()[0, 0])
+    t = qpos + 5                                                  # the query's "10"
+    e = st["E"][0, t] * st["mem"][0, i]
+    assert m.loop.last_diag["align"][0, t - 1] == fact["d"][2]    # at "9" the replay pointed at the stored 8
+    assert float(e[fact["d"][3]] / e.sum()) > 0.99                # the stored 10 wins: the match, not the pointer
+    assert m.loop.last_diag["align"][0, t] == fact["d"][3] + 1
+
+
+def test_pointer_kappa_and_codes_get_gradients_and_refusals():
+    """κ (from --w1s-ptr-init) is the pointer's only parameter and is trained; with a split alignment stream a
+    learned code's map gets gradient through tap 3. Options that would do nothing are errors: a pointer without an
+    alignment or without additive slots, an alignment stream for a code that is not lexical (or not read), and an
+    unknown stream name."""
+    m = a2("pointer", "--w1s-gate=oracle", "--w1s-ptr-init=2.5").train()
+    assert abs(m.loop.ptr_kappa.item() - 2.5) < 1e-6
+    m.oracle_onsets = every(2, 150, 9, 2)
+    with torch.no_grad():
+        m.loop.null_logit.fill_(-5.0)
+    m(torch.randn(2, 150, D))[0].pow(2).sum().backward()
+    assert m.loop.ptr_kappa.grad is not None and torch.isfinite(m.loop.ptr_kappa.grad) and m.loop.ptr_kappa.grad != 0
+    c = a2("A11a", "--w1s-gate=oracle", "--w1s-code=learned", "--w1s-dc=8").train()
+    c.oracle_onsets, c.extra = every(2, 150, 9, 2), {3: torch.randn(2, 150, D)}
+    c(torch.randn(2, 150, D))[0].pow(2).sum().backward()
+    assert c.loop.wz.weight.grad.abs().sum() > 0 and c.loop.astream == 3
+    for flags in (["--w1s-replay=pointer", "--w1s-align=none"], ["--w1s-replay=pointer", "--w1s-store=superposed"],
+                  ["--w1s-replay=pointer", "--w1s-out=reinstate", "--w1s-taps=3", "--w1s-key-taps=3"],
+                  ["--w1s-taps=3", "--w1s-key-taps=21", "--w1s-align-stream=3", "--w1s-align=learned"],
+                  ["--w1s-taps=3", "--w1s-key-taps=21", "--w1s-align-stream=3", "--w1s-align=none"],
+                  ["--w1s-taps=3", "--w1s-key-taps=21", "--w1s-align-stream=3", "--w1s-store=superposed"],
+                  ["--w1s-taps=1,3", "--w1s-key-taps=1", "--w1s-align-stream=3", "--w1s-out=reinstate"],
+                  ["--w1s-align-stream=block3"]):
+        with pytest.raises(ValueError, match="--w1s-(replay pointer|align-stream)"):
+            side(*I1, *flags)
+
+
+def test_align_stream_reads_the_chosen_stream():
+    """--w1s-align-stream: A11a (gate and key on h, code on tap 3) reads tap 3 although it is not a key tap: the
+    alignment code is LN(tap 3), and changing tap 3 alone changes the read but not the gate, the slots held or their
+    read weights. A11k (gate and key on [3, h], code on h) takes the code from h, the lexical key still from tap 3;
+    an index outside --w1s-taps means the main tap, as in --w1s-key-taps."""
+    m = a2("A11a", "--w1s-gate=point")
+    assert m.taps == (3,) and m.loop.streams == ["h"] and m.loop.lex == "h" and m.loop.astream == 3
+    torch.manual_seed(6)
+    h, ex = torch.randn(2, 150, D), {3: torch.randn(2, 150, D)}
+    with torch.no_grad():
+        f = m.loop._features(m.loop.norm(h), h, ex, None)
+        assert torch.equal(f["xa"], torch.nn.functional.layer_norm(ex[3], (D,)))
+        assert torch.equal(f["x"], torch.nn.functional.layer_norm(h, (D,)))
+        y, d0 = run(m, h, ex), dict(m.loop.last_diag)
+        y2 = run(m, h, {3: ex[3] + torch.randn_like(ex[3])})
+        d1 = m.loop.last_diag
+    assert (d0["retained"] >= 0).any() and not torch.equal(y, y2)
+    for k in ("p", "onsets", "retained", "read_w"):
+        assert torch.equal(d0[k], d1[k]), k
+    k = a2("A11k")
+    assert k.loop.streams == [3, "h"] and k.loop.lex == 3 and k.loop.astream == "h" and k.loop.split_align
+    with torch.no_grad():
+        f = k.loop._features(k.loop.norm(h), h, ex, None)
+        st = k.loop._store(f)
+    assert torch.equal(f["xa"], torch.nn.functional.layer_norm(h, (D,)))
+    assert torch.equal(f["x"], torch.nn.functional.layer_norm(ex[3], (D,))) and "K" in st and "Ka" in st
+    assert side(*I1, "--w1s-taps=3", "--w1s-key-taps=3", "--w1s-align-stream=7").loop.astream == "h"

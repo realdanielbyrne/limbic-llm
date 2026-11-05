@@ -1146,3 +1146,115 @@ def test_paraphrase_keeps_the_last_fact_beyond_the_window():
     task = evolve_run.ScatterNeedleTask(t, 512, 3, 1, min_gap=8, block=64, tail=70, query=q)
     with pytest.raises(ValueError, match="window"):
         task.sample(random.Random(0))
+
+
+# ------------------------------------------------------------------ round-11 Stage A2: stale per sequence, --init-from
+@pytest.mark.parametrize("extra", [[], ["--update-k", "2", "--ctrl-conds"]])
+def test_per_sequence_stale_is_parallel_and_adds_only_that_key(w1s_run, extra):
+    """--update: per_sequence_stale (top level and in each control) is the stale exact per sequence, parallel to
+    per_sequence: its mean is update[cond]["old_exact"]. Nothing else changes; without --update it is absent."""
+    out = w1s_run
+    base = [str(out), "--n", "8", "--batch", "4", "--update", "now"] + extra
+    eval_by_query.main(base + ["--out", str(out.with_suffix(".stale.json"))])
+    res = json.loads(out.with_suffix(".stale.json").read_text())
+    ps = res["per_sequence_stale"]
+    assert len(ps) == len(res["per_sequence"]) == res["n"] and set(ps) <= {0.0, 1.0}
+    assert sum(ps) / len(ps) == pytest.approx(res["update"]["windowed+side"]["old_exact"])
+    for c, v in res["controls"].items():
+        assert len(v["per_sequence_stale"]) == res["n"]
+        assert sum(v["per_sequence_stale"]) / res["n"] == pytest.approx(res["update"][c]["old_exact"])
+    assert set(res["controls"]["windowed"]["per_sequence_stale"]) == {0.0}
+    if "--ctrl-conds" in extra:
+        assert set(res["controls"]["side_empty"]["per_sequence_stale"]) == {0.0}
+    want = PRE_E12_KEYS | E12_KEYS | {"per_sequence_repeat", "task", "update", "per_sequence_stale"}
+    assert set(res) == want | ({"ctrl_conds"} if "--ctrl-conds" in extra else set())
+    assert all(set(c) == PRE_E12_CONTROL_KEYS | E12_KEYS | {"per_sequence_stale"} for c in res["controls"].values())
+    eval_by_query.main([str(out), "--n", "8", "--batch", "4", "--out", str(out.with_suffix(".plain.json"))])
+    assert "per_sequence_stale" not in json.loads(out.with_suffix(".plain.json").read_text())
+
+
+INIT = ["--tiny", "--task", "needle", "--window", "64", "--seq-len", "512", "--pairs", "3", "--batch", "2",
+        "--eval-n", "2", "--device", "cpu", "--needle-scatter", "8"]
+
+
+def test_init_from_loads_fragments_before_training_and_records_them(fake_set, tmp_path):
+    """--init-from: the fragments' values are in the side when training starts (an untrained parameter keeps
+    them; a trained one starts there), they beat --init-gain, and the JSON lists each file's keys."""
+    out0, _ = fake_set
+    assert "init_from" not in json.loads(out0.read_text())        # default: nothing loaded, nothing recorded
+    f1, f2 = tmp_path / "a.pt", tmp_path / "b.pt"
+    torch.save({"loop.log_beta_align": torch.tensor(3.0), "loop.gain_logit": torch.tensor(1.25)}, f1)
+    torch.save({"scale": torch.tensor(2.0, dtype=torch.float64)}, f2)   # cast to the side's dtype on load
+    out = tmp_path / "i.json"
+    evolve_run.main(INIT + ["--steps", "2", "--init-gain", "0.5", "--candidate", "fake_set:FakeSide",
+                            "--init-from", str(f1), "--init-from", str(f2), "--out", str(out)])
+    st = torch.load(out.with_suffix(".pt"))
+    assert st["loop.log_beta_align"].item() == 3.0 and st["loop.gain_logit"].item() == 1.25   # no gradient: kept
+    assert st["scale"].dtype == torch.float32 and abs(st["scale"].item() - 2.0) < 0.01         # trained from 2.0
+    assert abs(torch.load(out0.with_suffix(".pt"))["scale"].item() - 1.0) < 0.01                 # (vs from 1.0)
+    rec = json.loads(out.read_text())
+    assert rec["init_from"] == [{"path": str(f1), "keys": ["loop.gain_logit", "loop.log_beta_align"]},
+                                {"path": str(f2), "keys": ["scale"]}]
+
+
+@pytest.mark.parametrize("frag,flags,msg", [
+    ({"nope": torch.tensor(1.0)}, [], "keys not in the side"),
+    ({"scale": torch.ones(3)}, [], "shapes differ"),
+    ({"scale": torch.tensor(1.0)}, ["--steps", "0"], "--steps > 0"),
+    ({}, [], "non-empty dict"),
+    ({"scale": 1.0}, [], "not tensors"),
+])
+def test_init_from_refusals(fake_set, tmp_path, frag, flags, msg):
+    f = tmp_path / "f.pt"
+    torch.save(frag, f)
+    argv = INIT + ["--steps", "1"] + flags + ["--candidate", "fake_set:FakeSide", "--init-from", str(f),
+                                              "--out", str(tmp_path / "x.json")]
+    with pytest.raises(SystemExit, match=msg):
+        evolve_run.main(argv)
+
+
+def test_init_from_refuses_a_key_in_two_fragments_and_a_missing_file(fake_set, tmp_path):
+    f1, f2 = tmp_path / "a.pt", tmp_path / "b.pt"
+    torch.save({"scale": torch.tensor(2.0)}, f1)
+    torch.save({"scale": torch.tensor(3.0)}, f2)
+    base = INIT + ["--steps", "1", "--candidate", "fake_set:FakeSide", "--out", str(tmp_path / "x.json")]
+    with pytest.raises(SystemExit, match="one source per key"):
+        evolve_run.main(base + ["--init-from", str(f1), "--init-from", str(f2)])
+    with pytest.raises(SystemExit, match="no such file"):
+        evolve_run.main(base + ["--init-from", str(tmp_path / "none.pt")])
+
+
+def test_init_from_w1s_fitted_code_reaches_training(tmp_path, monkeypatch):
+    """C5r's use: a fitted {loop.wz.weight, loop.log_beta_align} fragment into a W1s run with the learned code.
+    The side holds the fragment's values when pl.train starts, the other parameters are the constructor's, and
+    the checkpoint loads into a fresh side with no missing keys."""
+    keep_pl(monkeypatch)
+    from evolve.w1s_slots import W1sSide, split_args
+    flags = ["--w1s-taps", "1", "--w1s-code", "learned", "--w1s-dc", "8"]
+    g = torch.Generator().manual_seed(5)
+    frag = {"loop.wz.weight": torch.randn(8, 64, generator=g), "loop.log_beta_align": torch.tensor(2.5)}
+    f = tmp_path / "wz.pt"
+    torch.save(frag, f)
+    seen = {}
+    orig = evolve_run._train
+
+    def spy(lm, task, args):
+        seen.update({k: v.detach().clone() for k, v in lm.side.state_dict().items()})
+        return orig(lm, task, args)
+    monkeypatch.setattr(evolve_run, "_train", spy)
+
+    def run(out, extra):
+        evolve_run.main(INIT + ["--steps", "1", "--layer", "3", "--candidate", "evolve.w1s_slots:W1sSide"]
+                        + flags + extra + ["--out", str(out)])
+    run(tmp_path / "base.json", [])
+    base = dict(seen)
+    run(tmp_path / "init.json", ["--init-from", str(f)])
+    assert torch.equal(seen["loop.wz.weight"], frag["loop.wz.weight"])
+    assert seen["loop.log_beta_align"].item() == 2.5
+    assert all(torch.equal(seen[k], base[k]) for k in base if k not in frag)   # the rest as constructed
+    assert not torch.equal(base["loop.wz.weight"], frag["loop.wz.weight"])
+    rec = json.loads((tmp_path / "init.json").read_text())
+    assert rec["init_from"] == [{"path": str(f), "keys": ["loop.log_beta_align", "loop.wz.weight"]}]
+    side = W1sSide(64, type("A", (), {"time": True})(), split_args(flags)[0])
+    missing, unexpected = side.load_state_dict(torch.load(tmp_path / "init.pt"), strict=False)
+    assert not missing and not unexpected

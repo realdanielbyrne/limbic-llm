@@ -24,7 +24,8 @@ Variants of the task test generalisation (all need a scattered-layout run):
                    stale (old) code is scored too: digit 1 and exact, NEW against OLD. Forms: same,
                    now, new, changed ("U's code has changed from OLD to NEW"), nowold ("... is now
                    NEW (it used to be OLD)"). ``--update-k K`` restates it K times (the last wins;
-                   the stale code is the one before it)
+                   the stale code is the one before it). ``per_sequence_stale`` (top level, and in each
+                   control) holds the stale exact per sequence, parallel to ``per_sequence``
   --decoys N       N extra code statements for names never queried (ranks count every statement)
   --order KIND     before / next / first / last: the code stated just before or after a named
                    fact, or the first or last code stated (``run.OrderNeedleTask``)
@@ -699,6 +700,11 @@ def main(argv=None):
         out["update"] = {c: dict(zip(("new_digit1", "old_digit1", "new_exact", "old_exact"),
                                      (sum(r[i] for r in v) / max(1, len(v)) for i in range(4))))
                          for c, v in upd.items()}
+        # the stale (old-code) exact per sequence, parallel to per_sequence (whose exact is the new code's), so a
+        # stale rate pairs row by row like exact; in each control too, parallel to the same rows
+        out["per_sequence_stale"] = [r[3] for r in upd["windowed+side"]]
+        for c in out["controls"]:
+            out["controls"][c]["per_sequence_stale"] = [r[3] for r in upd[c]]
     if args.w1s_ctrl != "none":
         out["w1s_ctrl"] = args.w1s_ctrl
     if ctrl_run:

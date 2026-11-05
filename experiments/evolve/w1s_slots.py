@@ -34,6 +34,13 @@ whole window in a slot of its own, in order, and reads it by offset:
     read     a_t = softmax over the retained slots + null of β_lex·ĉos_lex + β_L·cos_L + log p_k − ω·age_k
              (β learned, from 30 and 10). Inside slot k, α = softmax_j β_a cos(z_t, z_j) aligns the
              current token with a stored one, and the value read is the one stored at j + 1
+    replay   match    (default) the alignment above, re-matched at every token
+             pointer  (Stage A2, R-ptr) the entry after the one read at t − 1 (π_{t−1} + 1, in the slot read
+                      most) gets the factor exp κ in the alignment (κ learned, from 4): a replay steps through
+                      the slot while the current token matches the entry it lands on, so a code with a
+                      repeated digit is not re-matched to the wrong copy; otherwise the match wins again
+    time     --w1s-time-feat rope, ordinal or both (rope,ordinal): rotary slot time on the learned key and
+             query, plus the query-chosen rank term u_t·E[r_k]
     output   additive   v = A·LN(h²¹) ∈ ℝ³² is stored, o = B·r goes through W1's CA1 injection
              reinstate  attention at layers ≥ L sees the retained windows' columns with the bias
                         log Σ_k a_{t,k} 1[c ∈ window_k] + b (``reinstate_bias``, applied by
@@ -44,6 +51,17 @@ The drive is divided by its causal running deviation (the plan has w_g·(x_t −
 or a hard threshold means something only against a known noise scale, and with it the initial
 density is 0.12 ± 0.05 at any input scale, with no fitting (``gate_bias``). ``--no-w1s-centre``
 drops the mean subtraction only.
+
+``--w1s-gate-norm init`` (round 11, gate track; needs ``--no-w1s-centre``) calibrates the uncentred
+drive. ``gate_bias`` assumes a drive with mean 0. LayerNormed LM states share an offset direction,
+so w·x_t has a mean of several running deviations, with a sign set by the seed. That moves the point
+gate's p up or down, and leaves the hyst latch and the Schmitt trigger always on or always off. The
+flag subtracts w·μ̂, where μ̂ is each gate stream's mean over the first batch the gate sees
+(``calibrate_gate``). μ̂ is a buffer, saved in the checkpoint and never updated. The initial operating
+point is then that of a centred drive, but the decision stays a fixed function of x_t. It does not
+adapt to the sequence's filler, which is how the running-mean centring failed (P50). The first batch
+sets μ̂ once, from all of its positions: a data-dependent initialisation. E1 is about the forward at
+fixed parameters.
 
 The gate gets its gradient through log p_k in the read softmax (and through the window weights of
 the hysteresis gate); retention and suppression are hard, which is what keeps the parallel form
@@ -60,7 +78,9 @@ max(P, r) + 1) and the gate's scalars, whatever T (``stream`` returns its size: 
 Taps: ``W1sSide.taps`` (block indices, default 3) are read by ``taps.TapLM``, which sets
 ``side.extra = {i: h_i}`` before each call. Without ``extra`` (unit tests, the CPU suite) every tap
 falls back to h. ``--w1s-key-taps`` lists the streams of the gate and the learned key: tap indices,
-plus any other index (21) for the main tap h; the lexical key uses the lowest. With ``--w1s-key native``
+plus any other index (21) for the main tap h; the lexical key uses the lowest, and so does the lexical
+alignment code unless ``--w1s-align-stream`` names another stream (h, or a tap of ``--w1s-taps`` that need not
+be a key tap); the code is then centred on the mean of the retained slots' keys in that stream. With ``--w1s-key native``
 ``W1sSide.attn_taps = (L,)`` and ``extra`` also holds ``("k", L)`` and ``("q", L)`` (B, T, H_kv·d); without
 ``extra`` both fall back to h (a stand-in so the module runs); an ``extra`` that lacks them is an error.
 
@@ -91,11 +111,22 @@ SCHMITT_GAIN = 4.0                                                # p = σ(4(z �
 MAX_BETA = 40.0                                                   # exp(β(cos − 1)) stays above float32's floor
 ALIGN_FLOOR = 1e-12                                               # a slot's alignment normaliser (E shifted to ≤ 1)
 RECENCY_FORMS = ("linear", "none", "log", "ord", "supr", "supw")
+TIME_FEATS = ("rope", "ordinal")                                  # --w1s-time-feat takes any combination
 
 
 def _ints(s: str) -> tuple[int, ...]:
     s = s.strip().lower()
     return () if s in ("", "none") else tuple(int(x) for x in s.split(","))
+
+
+def time_feats(s: str) -> str:
+    """``--w1s-time-feat``: none, or a comma list of rope and ordinal, in the canonical order "rope,ordinal"."""
+    parts = {p.strip().lower() for p in str(s).split(",") if p.strip()}
+    if parts <= {"none"}:
+        return "none"
+    if not parts <= set(TIME_FEATS):
+        raise argparse.ArgumentTypeError(f"--w1s-time-feat {s!r}: none, or a comma list of {', '.join(TIME_FEATS)}")
+    return ",".join(f for f in TIME_FEATS if f in parts)
 
 
 def _opt(w: argparse.Namespace, name: str, default):
@@ -168,8 +199,9 @@ def split_args(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
                     help="age term of the read: linear ω·age (round 10), none, log ω·log(1+age), ord ω·#newer "
                          "slots, supr (read-time supersession), supw (write-time supersession tags). Default: "
                          "linear, or none with a --w1s-time-feat")
-    ap.add_argument("--w1s-time-feat", choices=["none", "rope", "ordinal"], default="none",
-                    help="time as data in the learned-key score: rotary slot time, or a query-chosen ordinal rank")
+    ap.add_argument("--w1s-time-feat", type=time_feats, default="none",
+                    help="time as data in the learned-key score: rotary slot time, a query-chosen ordinal rank, "
+                         "or both (rope,ordinal)")
     ap.add_argument("--w1s-rope-dims", type=int, default=32, help="rope: rotated dims of the learned key and query")
     ap.add_argument("--w1s-rope-periods", default="64,65536", help="rope: shortest,longest period (log-spaced)")
     ap.add_argument("--w1s-ord-dim", type=int, default=16, help="ordinal: width of the rank embedding")
@@ -190,6 +222,19 @@ def split_args(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
                          "caller sets (side.keep_scores / side.keep_pair; evaluation diagnostics only)")
     ap.add_argument("--w1s-keep-init", choices=["zero", "value"], default="zero",
                     help="learned keep: start from 0 (w·x + b only) or from the value norm (‖v_{j+1}‖ + w·x + b; G0.4)")
+    ap.add_argument("--w1s-gate-norm", choices=["none", "init"], default="none",
+                    help="uncentred gate (--no-w1s-centre): init subtracts w·μ̂, μ̂ the gate input's mean over the first "
+                         "batch, fixed thereafter (the initial operating point of a centred drive, no filler adaptation)")
+    # round 11, Stage A2 (research/plans/round11_combination_plan.md, "Code needed"); defaults reproduce the above
+    ap.add_argument("--w1s-replay", choices=["match", "pointer"], default="match",
+                    help="offset alignment at each token: re-match (match), or carry a pointer that advances one "
+                         "entry per token from the previous read, by a learned bias κ in the alignment (pointer)")
+    ap.add_argument("--w1s-ptr-init", type=float, default=4.0,
+                    help="pointer: initial κ (the pointer entry's alignment weight is multiplied by exp κ)")
+    ap.add_argument("--w1s-align-stream", default="lex",
+                    help="stream of the lexical alignment code (and of a learned code's input): lex (the lowest key "
+                         "stream, round 10), h (the main tap), or a block index in --w1s-taps; any other index "
+                         "means the main tap, as in --w1s-key-taps")
     ns, rest = ap.parse_known_args(argv)
     if ns.w1s_recency_form is None:                               # resolved here so the JSON records it
         ns.w1s_recency_form = "linear" if ns.w1s_time_feat == "none" else "none"
@@ -335,7 +380,7 @@ class SlotLoop(GDNLoop):
     ``retained`` lists the K most recent closed windows and ``read_w`` is zero.
     """
 
-    def __init__(self, d_model: int, streams: list, lex, w: argparse.Namespace) -> None:
+    def __init__(self, d_model: int, streams: list, lex, w: argparse.Namespace, astream=None) -> None:
         super().__init__(d_model, heads=1, d_head=1)
         del self.mem
         self.ctx = nn.Identity()                                  # GDNLoop.forward reads through _context_read
@@ -345,6 +390,7 @@ class SlotLoop(GDNLoop):
             raise ValueError("the superposed store has no windows to reinstate, and needs a sparse gate")
         check_ctrl(w.w1s_ctrl, w.w1s_out)
         self.streams, self.lex = list(streams), lex
+        self.astream = lex if astream is None else astream        # the alignment code's stream (--w1s-align-stream)
         self.gate, self.centre, self.store = w.w1s_gate, w.w1s_centre, w.w1s_store
         self.P, self.n, self.r = w.w1s_pre, w.w1s_win, 0 if w.w1s_gate == "dense" else w.w1s_nms
         self.delay = max(self.r, self.n - self.P - 1)              # c_s − s
@@ -370,6 +416,14 @@ class SlotLoop(GDNLoop):
             self.lam_logit = nn.Parameter(torch.tensor(math.log(w.w1s_lam / (1 - w.w1s_lam))))
         if self.gate == "hyst":
             self.latch_c = nn.Parameter(torch.tensor(float(c)))
+        self.gate_norm = _opt(w, "w1s_gate_norm", "none")
+        if self.gate_norm not in ("none", "init"):
+            raise ValueError(f"--w1s-gate-norm {self.gate_norm}")
+        if self.gate_norm == "init":                              # μ̂ per gate stream, NaN until calibrated
+            if self.gate not in ("point", "hyst", "schmitt") or self.centre:
+                raise ValueError("--w1s-gate-norm init calibrates the drive of an uncentred point, hyst or schmitt "
+                                 "gate: it needs --no-w1s-centre (it replaces the running-mean centring)")
+            self.register_buffer("gate_mu", torch.full((M, d_model), float("nan")))
         self.wk = split_linear(w.w1s_dk) if self.use_learned or self.align == "learned" else None
         lex_init, align_init = _opt(w, "w1s_lex_init", None), _opt(w, "w1s_align_init", None)
         lex0 = 30.0 if lex_init is None else math.exp(lex_init)
@@ -399,14 +453,18 @@ class SlotLoop(GDNLoop):
     def _round11(self, d_model: int, w: argparse.Namespace) -> None:
         """Round-11 options (time as data, supersession, compression). Each creates its parameters only
         when it is on, so round-10 checkpoints load with no missing keys under the defaults."""
-        tf = _opt(w, "w1s_time_feat", "none")
+        try:
+            tf = time_feats(_opt(w, "w1s_time_feat", "none"))
+        except argparse.ArgumentTypeError as e:
+            raise ValueError(str(e)) from None
         rf = _opt(w, "w1s_recency_form", None) or ("linear" if tf == "none" else "none")
         self.rform, self.time_feat = rf, tf
+        self.tfeats = frozenset(tf.split(",")) - {"none"}         # rope and/or ordinal, both active together
         self.code, self.keep, self.keep_by = _opt(w, "w1s_code", "lex"), _opt(w, "w1s_keep", 0), _opt(w, "w1s_keep_by", "first")
         self.keep_init = _opt(w, "w1s_keep_init", "zero")
         if self.keep_init != "zero" and self.keep_by != "learned":
             raise ValueError("--w1s-keep-init applies to --w1s-keep-by learned")
-        if rf not in RECENCY_FORMS or tf not in ("none", "rope", "ordinal"):
+        if rf not in RECENCY_FORMS:
             raise ValueError(f"--w1s-recency-form {rf} / --w1s-time-feat {tf}")
         slots_add = self.store == "slots" and self.out == "additive"
         if self.store == "superposed" and (tf != "none" or rf not in ("linear", "none")):
@@ -437,12 +495,12 @@ class SlotLoop(GDNLoop):
             self.log_sup_gamma = nn.Parameter(torch.tensor(math.log(_opt(w, "w1s_sup_gamma", 40.0))))
             self.sup_theta = nn.Parameter(torch.tensor(float(_opt(w, "w1s_sup_theta", 0.9))))
             self.log_sup_omega = nn.Parameter(torch.tensor(math.log(_opt(w, "w1s_sup_omega", 3.0))))
-        if tf == "rope":
+        if "rope" in self.tfeats:
             dk = self.wk[0].out_features
             self.rope_dims = min(_opt(w, "w1s_rope_dims", 32), dk - dk % 2)
             self.rope_periods = _opt(w, "w1s_rope_periods", "64,65536")
             rope_freqs(self.rope_dims, self.rope_periods)          # validate now
-        if tf == "ordinal":
+        if "ordinal" in self.tfeats:
             de = _opt(w, "w1s_ord_dim", 16)
             self.ord_E = nn.Parameter(torch.zeros(self.K, de))    # rank 0 = newest … K − 1
             self.ord_u = nn.Linear(self.wk[0].out_features, de, bias=False)
@@ -457,14 +515,31 @@ class SlotLoop(GDNLoop):
                 self.keep_w.bias.fill_(0.0)
         if self.use_native:                                       # the only parameter of the native key
             self.log_beta_native = nn.Parameter(torch.tensor(math.log(10.0)))
-        # the lexical stream is kept (ring, slot keys, centring) only where something lexical reads it
-        self.need_x = self.use_lex or (self.align == "lex" and self.code == "lex") or self.store == "superposed"
+        # Stage A2: pointer replay and the alignment code's stream
+        self.replay = _opt(w, "w1s_replay", "match")
+        if self.replay not in ("match", "pointer"):
+            raise ValueError(f"--w1s-replay {self.replay}")
+        if self.replay == "pointer":
+            if not slots_add or self.align == "none":
+                raise ValueError("--w1s-replay pointer steps through a slot's aligned entries: needs additive slots "
+                                 "(--w1s-store slots --w1s-out additive) with an alignment (--w1s-align lex or learned)")
+            self.ptr_kappa = nn.Parameter(torch.tensor(float(_opt(w, "w1s_ptr_init", 4.0))))
+        self.split_align = self.astream != self.lex               # the alignment code has a stream of its own
+        if self.split_align and not (slots_add and self.align == "lex"):
+            raise ValueError("--w1s-align-stream moves the lexical alignment code (or a learned code's input) of "
+                             "additive slots: needs --w1s-store slots --w1s-out additive --w1s-align lex")
+        # the lexical stream is kept (ring, slot keys, centring) only where something lexical reads it; with a
+        # split alignment stream, the alignment code and its centring keys come from that stream instead
+        lex_code = self.align == "lex" and self.code == "lex"
+        self.keyed_x = self.use_lex or (lex_code and not self.split_align)    # slots keep a lexical-stream key
+        self.need_x = self.keyed_x or self.store == "superposed"
+        self.need_xa = self.split_align and lex_code              # entries keep codes, slots keys, of that stream
 
     # ------------------------------------------------------------ features
     def _streams(self, h, extra) -> dict:
         """LayerNorm (no affine) of each stream read: tap i from ``extra`` (else h), "h" = the main tap."""
         xs = {}
-        for m in dict.fromkeys(self.streams + [self.lex]):
+        for m in dict.fromkeys(self.streams + [self.lex, self.astream]):
             src = h if m == "h" else (extra or {}).get(m, h)
             if src is None:
                 raise ValueError(f"tap {m} is missing from extra")
@@ -488,6 +563,22 @@ class SlotLoop(GDNLoop):
         self.native_dim = k.shape[-1]
         return k.detach(), q.detach()
 
+    def calibrate_gate(self, xs: dict) -> None:
+        """--w1s-gate-norm init: set μ̂ to each gate stream's mean over every position of ``xs`` (one batch of
+        LayerNormed streams, ``_streams``). ``_gate_offset`` calls it once, on the first batch the gate sees;
+        a checkpoint restores μ̂, so a loaded side is never recalibrated. Call it directly to recalibrate."""
+        with torch.no_grad():
+            for i, m in enumerate(self.streams):
+                x = xs[m]
+                self.gate_mu[i] = x.reshape(-1, x.shape[-1]).mean(0).to(self.gate_mu)
+
+    def _gate_offset(self, xs: dict) -> torch.Tensor:
+        """w·μ̂ (a scalar), the drive's calibrated offset (--w1s-gate-norm init). μ̂ is fixed, and w gets its
+        gradient, so the drive is w·(x_t − μ̂) whatever w becomes."""
+        if torch.isnan(self.gate_mu).any():
+            self.calibrate_gate(xs)
+        return sum(lin(self.gate_mu[i]) for i, lin in enumerate(self.gate_w)).squeeze(-1)
+
     def _gate(self, xs: dict, oracle) -> tuple[torch.Tensor, torch.Tensor]:
         """Onset strength p and on-state g, (B, T) each."""
         x0 = xs[self.lex]
@@ -501,6 +592,8 @@ class SlotLoop(GDNLoop):
             p = torch.sigmoid(self.gate_b).to(dt).expand(B, T)
             return p, p
         y = sum(lin(xs[m]).squeeze(-1) for lin, m in zip(self.gate_w, self.streams))
+        if self.gate_norm == "init":                              # w·(x_t − μ̂), μ̂ fixed at calibration
+            y = y - self._gate_offset(xs)
         d = y - cummean(y) if self.centre else y                  # w·(x_t − m_t) = w·x_t − mean_{s≤t} w·x_s
         if self.gate == "point":
             p = torch.sigmoid(self.gate_a.exp() * d / running_sd(y) + self.gate_b)
@@ -525,8 +618,10 @@ class SlotLoop(GDNLoop):
         f["p"], f["g"] = self._gate(xs, oracle)
         if self.use_native:                                       # layer L's K (store side) and Q (read side)
             f["kn"], f["qn"] = self._native(h, extra)
+        if self.split_align:                                      # --w1s-align-stream: the code's own stream
+            f["xa"] = xs[self.astream].detach()
         if self.code == "learned":                                # z = W_z x, the alignment code
-            f["z"] = self.wz(f["x"])
+            f["z"] = self.wz(f["xa"] if self.split_align else f["x"])
         if self.keep:                                             # each transition j → j+1's keep score
             if self.keep_by == "external":
                 if self.keep_scores is None and self.keep_pair is None:
@@ -578,8 +673,10 @@ class SlotLoop(GDNLoop):
         if self.gate == "hyst":                                   # entries from the onset on weigh g
             gn = F.pad(f["g"][:, 1:], (0, 1))                     # g at the successor position j + 1
             st["wgt"] = torch.where(j + 1 < s[..., None], torch.ones_like(gn[:, None]), gn[:, None])
-        if self.use_lex or (self.align == "lex" and self.code == "lex"):
+        if self.keyed_x:
             st["K"] = _rows(window_mean(x, -self.P, self.pool), s)        # (B, N, D) lexical keys (0 if clipped away)
+        if self.need_xa:                                          # the alignment stream's keys: its centring
+            st["Ka"] = _rows(window_mean(f["xa"], -self.P, self.pool), s)
         if self.wk is not None:
             st["KL"] = _rows(window_mean(f["y"], -self.P, self.pool), s)  # (B, N, dk) learned keys
         if self.use_native:
@@ -638,16 +735,22 @@ class SlotLoop(GDNLoop):
                     cos = kq / (qc.pow(2).sum(-1, keepdim=True).clamp_min(EPS) * kn.clamp_min(EPS)).sqrt()
             if self.use_lex:
                 logit = logit + self.log_beta_lex.exp() * cos
+        if "Ka" in st:                                            # a split alignment stream centres on its own keys
+            with torch.no_grad():
+                m = ret.to(st["Ka"].dtype)
+                cnt = m.sum(-1, keepdim=True)
+                mu = (cnt >= 2).to(m.dtype) * (m @ st["Ka"]) / cnt.clamp_min(1)
+                st["mua"], st["mua2"] = mu, mu.pow(2).sum(-1, keepdim=True)
         if self.use_learned:
             q = F.normalize(window_mean(f["y"], 1 - self.pool, self.pool), dim=-1)
-            if self.time_feat == "rope":                          # the score depends on content and t − s jointly
+            if "rope" in self.tfeats:                             # the score depends on content and t − s jointly
                 fr = rope_freqs(self.rope_dims, self.rope_periods)
                 qr = rotate(q, torch.arange(T, device=s.device).view(1, T), fr)
                 kr = rotate(F.normalize(st["KL"], dim=-1), s, fr)
                 logit = logit + self.log_beta_learned.exp() * (qr @ kr.transpose(1, 2))
             else:
                 logit = logit + self.log_beta_learned.exp() * (q @ F.normalize(st["KL"], dim=-1).transpose(1, 2))
-            if self.time_feat == "ordinal":                       # u_t·E[r_k], r_k = rank among retained (0 = newest)
+            if "ordinal" in self.tfeats:                          # u_t·E[r_k], r_k = rank among retained (0 = newest)
                 rank = newer_sum(ret.to(torch.long)).clamp_max(self.K - 1)
                 U = self.ord_u(q) @ self.ord_E.T                  # (B, T, K)
                 logit = logit + U.gather(-1, rank)
@@ -690,8 +793,11 @@ class SlotLoop(GDNLoop):
             cos = zq @ zs.transpose(1, 2)
         else:
             with torch.no_grad():                                 # lexical: centred on the retained keys
-                Z, mu, mu2 = st["x"], st["mu"], st["mu2"]
-                zc = f["x"] - mu
+                if self.split_align:                              # the alignment stream, centred on its own keys
+                    Z, zq, mu, mu2 = st["xa"], f["xa"], st["mua"], st["mua2"]
+                else:
+                    Z, zq, mu, mu2 = st["x"], f["x"], st["mu"], st["mu2"]
+                zc = zq - mu
                 num = zc @ Z.transpose(1, 2) - (zc * mu).sum(-1, keepdim=True)
                 zn = Z.pow(2).sum(-1)[:, None] - 2 * (mu @ Z.transpose(1, 2)) + mu2
                 cos = num / (zc.pow(2).sum(-1, keepdim=True).clamp_min(EPS) * zn.clamp_min(EPS)).sqrt()
@@ -701,13 +807,50 @@ class SlotLoop(GDNLoop):
             m = torch.where(torch.isfinite(m), m, torch.ones_like(m))
         return torch.exp(beta * (cos - m))
 
+    def ptr_gain(self) -> torch.Tensor:
+        """exp κ, the pointer entry's factor in the alignment weights (κ clamped to ±MAX_BETA)."""
+        return self.ptr_kappa.clamp(-MAX_BETA, MAX_BETA).exp()
+
+    def _pointer(self, E: torch.Tensor, a: torch.Tensor, a_null: torch.Tensor, st: dict) -> torch.Tensor:
+        """Pointer replay (``--w1s-replay pointer``): E'[t, j] = E[t, j]·exp(κ) at j = π_{t−1} + 1, else E[t, j].
+
+        π_t is the entry read at t: in the slot with the largest read weight (none when that is the null), the
+        argmax of E' over the slot's stored entries (ties to the earlier position). So a replay that read entry
+        j at t − 1 is carried to j + 1 at t, and the entry it lands on wins the alignment when the current token
+        matches it (within a factor exp κ of the best match); when it does not (the replay has ended, or the
+        query left the stored sequence), the plain match wins again. The pointer is hard and recursive: one
+        loop over t on detached values chooses π (argmax: no gradient needed through the choice), then E' is
+        formed in one differentiable product, so κ and E get their gradients through the chosen entries.
+        Causal: π_t uses rows ≤ t of E and a, at entries held at t (positions < t). ``stream`` applies the same
+        rule one position at a time. Records ``st["ptr"]`` (B, T), −1 where nothing was read."""
+        B, T, N = a.shape
+        gain = self.ptr_gain().to(E.dtype)
+        with torch.no_grad():
+            k = torch.cat([a, a_null[..., None]], -1).argmax(-1)                  # (B, T); N = the null
+            rows = _rows(st["mem"], k.clamp_max(N - 1)) & (k < N)[..., None]      # (B, T, T) the read slot's entries
+            Ed, g_ = E.detach(), gain.detach()
+            hit = torch.zeros(B, T, T, dtype=torch.bool, device=E.device)        # the pointer's entry at each t
+            ptr = torch.full((B, T), -1, dtype=torch.long, device=E.device)
+            b_, prev = torch.arange(B, device=E.device), torch.full((B,), -1, dtype=torch.long, device=E.device)
+            for t in range(T):
+                hit[b_, t, (prev + 1).clamp_max(T - 1)] = prev >= 0
+                e = Ed[:, t] * torch.where(hit[:, t], g_, torch.ones_like(g_))
+                j = e.masked_fill(~rows[:, t], float("-inf")).argmax(-1)
+                prev = torch.where(rows[:, t].any(-1), j, torch.full_like(j, -1))
+                ptr[:, t] = prev
+        st["ptr"] = ptr
+        return E * torch.where(hit, gain, torch.ones_like(gain))
+
     def _read(self, f: dict, st: dict) -> torch.Tensor:
         """The recalled value r (B, T, dv): slots with offset alignment, or the superposed state."""
         if self.store == "superposed":
             return self._read_superposed(f, st)
         a, a_null = self._select(f, st)
         st["a"], st["a_null"] = a, a_null
-        E = st["E"] = self._alignment(f, st)
+        E = self._alignment(f, st)
+        if E is not None and self.replay == "pointer":
+            E = self._pointer(E, a, a_null, st)
+        st["E"] = E
         mem = st["mem"].to(a.dtype)
         mw = mem * st["wgt"] if "wgt" in st else mem
         if "kscale" in st:                                        # σ(score) of the kept transitions (the scorer's gradient)
@@ -777,6 +920,8 @@ class SlotLoop(GDNLoop):
         st.update(x=sf["x"], y=sf["y"], v=sf["v"], p=sf["p"], g=sf["g"])
         if "z" in sf:
             st["z"] = sf["z"]
+        if "xa" in sf:
+            st["xa"] = sf["xa"]
         return f, st
 
     def _context_read(self, x: torch.Tensor) -> torch.Tensor:
@@ -836,6 +981,9 @@ class SlotLoop(GDNLoop):
         if st["E"] is None:                                       # no alignment (or reinstatement)
             d["align"] = torch.full_like(k, -1)
             return d
+        if "ptr" in st:                                           # pointer replay: the entry it read, + 1
+            d["align"] = torch.where(st["ptr"] >= 0, st["ptr"] + 1, torch.full_like(st["ptr"], -1))
+            return d
         rows = _rows(st["mem"], k.clamp_max(N - 1))               # (B, T, T) positions of the chosen slot
         j = (st["E"].detach() * rows).argmax(-1) + 1
         d["align"] = torch.where(k < N, j, torch.full_like(j, -1))
@@ -857,7 +1005,8 @@ class SlotLoop(GDNLoop):
         Returns ``o`` (B, T, D) (additive) or ``rbias`` (B, T, T) (reinstate), ``p``, ``onsets``,
         ``retained`` (per row and t, the set of held onsets), ``read_w`` (per row and t, onset → weight,
         with the null under None), ``state_floats`` (the state's size at the end, the largest row),
-        ``state_components`` (its parts) and ``evictions``.
+        ``state_components`` (its parts), ``evictions``, and with pointer replay ``ptr`` (B, T), the entry
+        read at each t (−1: none).
         """
         if self.ctrl == "shuffle":
             raise ValueError("stream() has no shuffle control")
@@ -872,27 +1021,35 @@ class SlotLoop(GDNLoop):
         lin = lambda mods, t, b: sum(m_(xs[k][b, t]) for m_, k in zip(mods, self.streams))
         res = dict(p=torch.zeros(B, T, dtype=dt), onsets=torch.zeros(B, T, dtype=torch.bool),
                    retained=[[None] * T for _ in range(B)], read_w=[[None] * T for _ in range(B)], evictions=0)
+        if self.replay == "pointer":                              # the entry read at each t (−1: none)
+            res["ptr"] = torch.full((B, T), -1, dtype=torch.long)
         if self.out == "additive":
             res["o"] = torch.zeros(B, T, xn.shape[-1], dtype=dt)
         else:
             res["rbias"] = torch.full((B, T, T), NEG, dtype=torch.float32)
         cosine = lambda a, b: F.normalize(a, dim=-1) @ F.normalize(b, dim=-1)
-        keyed_x = self.use_lex or (self.align == "lex" and self.code == "lex")   # slots keep a lexical key
-        fr = rope_freqs(self.rope_dims, self.rope_periods) if self.time_feat == "rope" else None
+        keyed_x = self.keyed_x                                    # slots keep a lexical key
+        fr = rope_freqs(self.rope_dims, self.rope_periods) if "rope" in self.tfeats else None
+        gain = self.ptr_gain().to(dt) if self.replay == "pointer" else None
         kscores = self.keep_scores.to(dt) if self.keep and self.keep_by == "external" and self.keep_scores is not None else None
         kpair = self.keep_pair.to(dt) if self.keep and self.keep_by == "external" and self.keep_pair is not None else None
         if self.keep and self.keep_by == "external" and kscores is None and kpair is None:
             raise ValueError("--w1s-keep-by external needs side.keep_scores or side.keep_pair")
+        goff = self._gate_offset(xs) if self.gate_norm == "init" else None   # w·μ̂ (a constant, not state)
         for b in range(B):
             ring, slots, S = deque(maxlen=ring_len), [], None
             ysum = y2sum = u = gprev = usum = u2sum = 0.0
             sprev, xsum = False, torch.zeros(D, dtype=dt)
+            ptr = -1                                              # pointer replay: the entry read at t − 1
             for t in range(T):
                 # ---- ingest position t: features and the gate
                 x = xs[self.lex][b, t]
+                xa = xs[self.astream][b, t] if self.split_align else x   # the alignment code's stream
                 e = dict(t=t)
                 if self.need_x:
                     e["x"] = x
+                if self.need_xa:
+                    e["xa"] = xa
                 if self.store == "superposed":                    # centred codes, running mean at t
                     xsum = xsum + x
                     e["zc"], e["mq"] = F.normalize(x - xsum / (t + 1), dim=-1), xsum / (t + 1)
@@ -901,7 +1058,7 @@ class SlotLoop(GDNLoop):
                 if self.use_native:                               # this position's K (for keys) and Q (for queries)
                     e["kn"], e["qn"] = kn_all[b, t], qn_all[b, t]
                 if self.code == "learned":
-                    e["z"] = self.wz(x)
+                    e["z"] = self.wz(xa)
                 if self.keep and self.keep_by == "value":         # this position's score as a successor
                     e["ks"] = float(e["v"].norm())
                 elif self.keep and self.keep_by == "learned":
@@ -912,6 +1069,8 @@ class SlotLoop(GDNLoop):
                     p = g = torch.sigmoid(self.gate_b).item()
                 else:
                     yg = lin(self.gate_w, t, b).squeeze(-1)
+                    if goff is not None:
+                        yg = yg - goff
                     ysum, y2sum = ysum + yg, y2sum + yg * yg
                     d = yg - ysum / (t + 1) if self.centre else yg
                     sd = lambda s1, s2: ((s2 / (t + 1) - (s1 / (t + 1)) ** 2).clamp_min(0) + 1e-6).sqrt()
@@ -951,7 +1110,8 @@ class SlotLoop(GDNLoop):
                         slot = dict(s=s, w0=w0, w1=w1, pi=lp + self.delta * s, lp=lp, ps=ps, ent=ent, wgt=wgt,
                                     K=hmean("x") if keyed_x or self.store == "superposed" else None,
                                     KL=hmean("y") if self.wk is not None else None,
-                                    KN=hmean("kn") if self.use_native else None, sup=0.0)
+                                    KN=hmean("kn") if self.use_native else None, sup=0.0,
+                                    Ka=hmean("xa") if self.need_xa else None)
                         slot["trans"] = self._stream_transitions(slot, t, b, kscores, kpair)
                         if self.store == "superposed":
                             if self.ctrl != "empty":
@@ -980,6 +1140,11 @@ class SlotLoop(GDNLoop):
                     if keyed_x:
                         mu = (torch.stack([q["K"] for q in slots]).mean(0) if len(slots) >= 2
                               else torch.zeros(D, dtype=dt))
+                    if self.need_xa:                              # the alignment stream's centre, from its own keys
+                        mua = (torch.stack([q["Ka"] for q in slots]).mean(0) if len(slots) >= 2
+                               else torch.zeros_like(xa))
+                    else:
+                        mua = mu
                     logits = []
                     for i, q in enumerate(slots):
                         lg = q["lp"]
@@ -989,13 +1154,13 @@ class SlotLoop(GDNLoop):
                             kn = q["K"] @ q["K"] - 2 * (mu @ q["K"]) + mu @ mu
                             lg = lg + self.log_beta_lex.exp() * kq / (max(qc @ qc, EPS) * max(kn, EPS)) ** 0.5
                         if self.use_learned:
-                            if self.time_feat == "rope":
+                            if "rope" in self.tfeats:
                                 qr = rotate(F.normalize(q_l, dim=-1), torch.tensor(t), fr)
                                 kr = rotate(F.normalize(q["KL"], dim=-1), torch.tensor(q["s"]), fr)
                                 lg = lg + self.log_beta_learned.exp() * (qr @ kr)
                             else:
                                 lg = lg + self.log_beta_learned.exp() * cosine(q_l, q["KL"])
-                            if self.time_feat == "ordinal":
+                            if "ordinal" in self.tfeats:
                                 rank = min(len(slots) - 1 - i, self.K - 1)       # slots are in time order
                                 lg = lg + self.ord_u(F.normalize(q_l, dim=-1)) @ self.ord_E[rank]
                         if self.use_native:
@@ -1027,12 +1192,13 @@ class SlotLoop(GDNLoop):
                             if self.code == "learned":
                                 cs_by[i] = torch.stack([cosine(e["z"], c_) for _, c_, _ in tr])
                             elif self.align == "lex":
-                                zc = x - mu
-                                cs_by[i] = torch.stack([(zc @ c_ - zc @ mu) / (max(zc @ zc, EPS) * max(
-                                    c_ @ c_ - 2 * (mu @ c_) + mu @ mu, EPS)) ** 0.5 for _, c_, _ in tr])
+                                zc = xa - mua
+                                cs_by[i] = torch.stack([(zc @ c_ - zc @ mua) / (max(zc @ zc, EPS) * max(
+                                    c_ @ c_ - 2 * (mua @ c_) + mua @ mua, EPS)) ** 0.5 for _, c_, _ in tr])
                             else:
                                 cs_by[i] = torch.stack([cosine(e["y"], c_) for _, c_, _ in tr])
                     m_t = max((float(v.max()) for v in cs_by.values()), default=1.0)   # the best held match
+                    E_by = {}                                     # each slot's alignment weights (pointer: E')
                     for i, q in enumerate(slots):
                         if self.out == "reinstate":
                             cover[q["w0"]:q["w1"] + 1] += a[i]
@@ -1044,9 +1210,18 @@ class SlotLoop(GDNLoop):
                             al = torch.full((len(tr),), 1.0 / len(tr), dtype=dt)
                         else:
                             E = torch.exp(self.log_beta_align.exp().clamp(max=MAX_BETA) * (cs_by[i] - m_t))
+                            if gain is not None:                  # the entry after the one read at t − 1
+                                E = E * torch.stack([gain if (ptr >= 0 and j_ == ptr + 1) else torch.ones_like(gain)
+                                                     for j_, _, _ in tr])
+                            E_by[i] = E
                             al = E / E.sum().clamp_min(ALIGN_FLOOR)
                         vals = torch.stack([v_ for _, _, v_ in tr])
                         rvec = rvec + a[i] * (al @ vals)
+                    if gain is not None:                          # the entry read at t: in the slot read most
+                        top = int(torch.argmax(a))                # (first maximum: the older slot; the null last)
+                        ptr = (slots[top]["trans"][int(torch.argmax(E_by[top]))][0]
+                               if top < len(slots) and top in E_by else -1)
+                        res["ptr"][b, t] = ptr
                     if self.out == "reinstate":
                         res["rbias"][b, t] = torch.where(cover > 0, torch.log(cover.clamp_min(1e-30)) + self.rbias, NEG)
                 if self.out == "additive":
@@ -1079,7 +1254,8 @@ class SlotLoop(GDNLoop):
         out = []
         for i in kept:
             c_, nx = ent[i], ent[i + 1]
-            code = c_["z"] if self.code == "learned" else c_.get("x") if self.align == "lex" else c_["y"]
+            code = (c_["z"] if self.code == "learned" else c_.get("xa" if self.split_align else "x")
+                    if self.align == "lex" else c_["y"])
             if self.align == "none":
                 code = None
             val = None
@@ -1130,7 +1306,7 @@ class SlotLoop(GDNLoop):
         c = dict(ring=sum(numel(v) for q in ring for k, v in q.items() if k != "t"),
                  slot_keys=0, slot_codes=0, slot_values=0, slot_weights=0, sup_tags=0, superposed=0, gate=0)
         for q in slots:                                           # keys, then per entry: code, value, weight
-            c["slot_keys"] += numel(q["K"]) + numel(q["KL"]) + numel(q["KN"]) + 2
+            c["slot_keys"] += numel(q["K"]) + numel(q["KL"]) + numel(q["KN"]) + numel(q.get("Ka")) + 2
             c["sup_tags"] += 1 if self.rform == "supw" else 0
             if self.keep:                                         # per kept transition: code, value, offset
                 for _, code, val in q["trans"]:
@@ -1139,13 +1315,17 @@ class SlotLoop(GDNLoop):
                     c["slot_weights"] += 1
             else:
                 for c_ in q["ent"]:
-                    c["slot_codes"] += (numel(c_.get("x")) * (self.align == "lex" and self.code == "lex")
+                    lexc = c_.get("xa" if self.split_align else "x")   # the lexical alignment code's stream
+                    c["slot_codes"] += (numel(lexc) * (self.align == "lex" and self.code == "lex")
                                         + numel(c_.get("z")) * (self.code == "learned")
                                         + numel(c_["y"]) * (self.align == "learned"))
                     c["slot_values"] += numel(c_["v"])
                     c["slot_weights"] += 1
         c["superposed"] = S.numel() if S is not None else 0
-        c["gate"] = 7 + (ring[0]["x"].numel() if self.need_x else 0)   # gate state and the lexical running sum
+        lexs = "x" if self.need_x else "xa" if self.need_xa else None   # a lexical stream kept: its running sum
+        c["gate"] = 7 + (ring[0][lexs].numel() if lexs else 0)    # gate state and the lexical running sum
+        if self.replay == "pointer":                              # the entry read at t − 1
+            c["pointer"] = 1
         return c
 
     def _stream_size(self, ring, slots, S) -> int:
@@ -1161,18 +1341,20 @@ class SlotLoop(GDNLoop):
         dc = self.wz.out_features if self.code == "learned" else 0
         dn = (self.native_dim or D) if self.use_native else 0     # native K/Q width (as last seen; h's stand-in)
         ring_len = max(self.delay + self.P + 1, self.delay + self.r + 1, self.pool)
-        per = (D * self.need_x + dk + dv + dc + 2 + (self.keep > 0 and self.keep_by in ("value", "learned"))
-               + 2 * D * (self.store == "superposed") + 2 * dn)
-        keyed_x = self.use_lex or (self.align == "lex" and self.code == "lex")
+        per = (D * self.need_x + D * self.need_xa + dk + dv + dc + 2
+               + (self.keep > 0 and self.keep_by in ("value", "learned")) + 2 * D * (self.store == "superposed") + 2 * dn)
+        keyed_x = self.keyed_x
         code = dc if self.code == "learned" else D if self.align == "lex" else dk if self.align == "learned" else 0
         c = dict(ring=ring_len * per, slot_keys=0, slot_codes=0, slot_values=0, slot_weights=0, sup_tags=0,
-                 superposed=0, gate=7 + D * self.need_x)
+                 superposed=0, gate=7 + D * (self.need_x or self.need_xa))
+        if self.replay == "pointer":
+            c["pointer"] = 1
         if self.store == "superposed":
             kdim = (D if self.use_lex else 0) + (dk if self.use_learned else 0) + (code if self.align != "none" else 0)
             c["superposed"] = dv * kdim
             return c
         m = self.keep if self.keep else self.n                    # entries (or kept transitions) per slot
-        c["slot_keys"] = self.K * (D * keyed_x + dk + dn + 2)
+        c["slot_keys"] = self.K * (D * keyed_x + D * self.need_xa + dk + dn + 2)
         c["slot_codes"] = self.K * m * code
         c["slot_values"] = self.K * m * dv
         c["slot_weights"] = self.K * m
@@ -1214,9 +1396,25 @@ class W1sSide(nn.Module):
             if max(self.taps) >= self.reinstate_L:
                 raise ValueError(f"taps {self.taps} must lie below --w1s-L {self.reinstate_L}")
         lex = min(streams, key=lambda m: math.inf if m == "h" else m)
+        astream = self.align_stream(_opt(w, "w1s_align_stream", "lex"), lex)
         self.time = TimeChannel(d_model) if getattr(args, "time", True) else None
-        self.loop = SlotLoop(d_model, streams, lex, w)
+        self.loop = SlotLoop(d_model, streams, lex, w, astream)
         self.w1s = vars(w)
+
+    def align_stream(self, spec, lex):
+        """The stream of ``--w1s-align-stream``: lex (the lowest key stream), h (the main tap), or a block index:
+        a tap of --w1s-taps (read by ``taps.TapLM`` even when it is not a key tap), any other index the main tap,
+        as in --w1s-key-taps."""
+        spec = str(spec).strip().lower()
+        if spec == "lex":
+            return lex
+        if spec == "h":
+            return "h"
+        try:
+            i = int(spec)
+        except ValueError:
+            raise ValueError(f"--w1s-align-stream {spec!r}: lex, h or a block index") from None
+        return i if i in self.taps else "h"
 
     @property
     def gate(self) -> str:

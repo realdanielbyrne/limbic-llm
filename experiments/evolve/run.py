@@ -31,6 +31,12 @@ Runs ``pretrained_loop.main`` unchanged, with three additions:
                 ``--distill-positions`` positions; ``--admit-target teacher`` (A15, W1s, scattered layout)
                 adds λ·KL(full attention's mass per candidate window ‖ the gate's p). ``train`` below
                 installs them around ``pl.train``; the result JSON records ``distill`` / ``admit``.
+  init-from     ``--init-from PT`` (repeatable; default none) loads a partial state dict (a fragment: a dict of
+                tensors named as in the side's ``state_dict``) into the side channels before the first step,
+                e.g. G0.5's fitted ``{loop.wz.weight, loop.log_beta_align}`` for C5r. Keys not in the side, a
+                key in two fragments, a wrong shape and ``--steps 0`` are refused; the loaded values replace
+                the constructor's (and ``--init-gain``). The result JSON records ``init_from`` (each file and
+                its keys). Without the flag nothing is loaded and training is exactly as before.
 
 The task variants that ``eval_by_query.py`` evaluates live here too: ``UpdateNeedleTask`` (forms
 same/now/new/changed/nowold, ``k`` restatements, decoys), ``OrderNeedleTask`` (before/next/first/last) and
@@ -427,13 +433,58 @@ class OrderNeedleTask(ScatterNeedleTask):
 _train = pl.train
 _teacher_ns = None                                                 # teacher.split_args namespace (set by main)
 _teacher_stats = None                                              # what teacher.training recorded
+_init_from = []                                                    # --init-from: [(path, fragment)], set by main
+_init_loaded = None                                                # what load_init loaded (recorded in the JSON)
+
+
+def read_fragments(paths: list[str]) -> list[tuple[str, dict]]:
+    """``--init-from`` files → [(path, {name: tensor})], refusing what cannot be a state-dict fragment: a
+    missing file, a non-dict, a non-tensor value, an empty fragment, or a key that two fragments share."""
+    out, seen = [], {}
+    for p in paths:
+        if not Path(p).is_file():
+            raise SystemExit(f"--init-from {p}: no such file")
+        frag = torch.load(p, map_location="cpu")
+        if not isinstance(frag, dict) or not frag:
+            raise SystemExit(f"--init-from {p}: expected a non-empty dict of tensors (a state-dict fragment)")
+        bad = sorted(k for k, v in frag.items() if not isinstance(k, str) or not torch.is_tensor(v))
+        if bad:
+            raise SystemExit(f"--init-from {p}: not tensors: {bad}")
+        twice = sorted(k for k in frag if k in seen)
+        if twice:
+            raise SystemExit(f"--init-from {p}: {twice} also in {seen[twice[0]]} (one source per key)")
+        seen.update({k: p for k in frag})
+        out.append((p, frag))
+    return out
+
+
+def load_init(side, fragments: list[tuple[str, dict]]) -> list[dict]:
+    """Load each fragment into ``side`` (strict=False), refusing keys the side does not have and wrong
+    shapes; values are cast to the side's dtype and device by ``load_state_dict``. Returns
+    [{"path", "keys"}] for the result JSON."""
+    sd = side.state_dict()
+    done = []
+    for p, frag in fragments:
+        foreign = sorted(set(frag) - set(sd))
+        if foreign:
+            raise SystemExit(f"--init-from {p}: keys not in the side: {foreign}")
+        shape = sorted(k for k, v in frag.items() if tuple(v.shape) != tuple(sd[k].shape))
+        if shape:
+            raise SystemExit(f"--init-from {p}: shapes differ from the side's: "
+                             + ", ".join(f"{k} {tuple(frag[k].shape)} vs {tuple(sd[k].shape)}" for k in shape))
+        side.load_state_dict(frag, strict=False)
+        done.append({"path": str(p), "keys": sorted(frag)})
+    return done
 
 
 def train(lm, task, args):
     """Activate a task curriculum for the duration of training only. With an A14/A15 flag on, train
     through ``teacher.training`` (a task proxy and a patched ``pl.scores``); with both off, exactly as
-    before: ``pl.train`` gets the task itself and the unpatched ``pl.scores``."""
-    global _teacher_stats
+    before: ``pl.train`` gets the task itself and the unpatched ``pl.scores``. With ``--init-from`` the
+    fragments are loaded into the side first (before the optimiser exists); without it nothing is."""
+    global _teacher_stats, _init_loaded
+    if _init_from:
+        _init_loaded = load_init(lm.side, _init_from)
     task._active = bool(getattr(task, "curriculum", None))
     try:
         if _teacher_ns is None or not teacher.active(_teacher_ns):
@@ -502,6 +553,8 @@ def main(argv=None):
                     help="with --needle-names pool: the pool size (names.syllable_pool(N, 0))")
     ap.add_argument("--needle-tail", type=int, default=256, metavar="T",
                     help="with --needle-scatter: minimum filler between the last fact and the query (> --window)")
+    ap.add_argument("--init-from", action="append", default=[], metavar="PT",
+                    help="a state-dict fragment loaded into the side channels before training (repeatable)")
     own, rest = ap.parse_known_args(argv)
     cand_ns = None
     if own.candidate:                                              # refuse before patching anything
@@ -517,6 +570,13 @@ def main(argv=None):
     tns, rest = teacher.split_args(rest)                           # A14 / A15 (default off)
     teacher.check(tns, pl.parse_args(rest), own.needle_scatter, cand_ns)
     _teacher_ns, _teacher_stats = (tns if teacher.active(tns) else None), None
+    global _init_from, _init_loaded
+    _init_from, _init_loaded = [], None
+    if own.init_from:                                              # refuse before loading the model
+        if pl.parse_args(rest).steps == 0:
+            raise SystemExit("--init-from initialises training: it needs --steps > 0 "
+                             "(evaluate a fragment with eval_by_query.py --w1s-load-extra)")
+        _init_from = read_fragments(own.init_from)
     if own.needle_names != "all" and not own.needle_scatter:
         raise SystemExit("--needle-names needs --needle-scatter")
     if own.needle_tail != 256 and not own.needle_scatter:
@@ -556,7 +616,8 @@ def main(argv=None):
     side = _last_lm.side if _last_lm is not None else None
     state = side.state_report() if hasattr(side, "state_report") else None
     teach = teacher.active(tns)
-    if own.candidate or own.needle_scatter or teach:
+    record = own.candidate or own.needle_scatter or teach or _init_loaded
+    if record:
         rec = json.loads(out.read_text())
     if own.candidate:                                             # record the candidate and its flags
         rec["candidate"] = {"class": own.candidate, "args": vars(cand_ns) if cand_ns else {}}
@@ -573,7 +634,9 @@ def main(argv=None):
             rec["needle_name_pool"] = own.needle_name_pool
     if teach:                                                     # settings and mean losses of A14 / A15
         rec.update(teacher.summary(tns, _teacher_stats))
-    if own.candidate or own.needle_scatter or teach:
+    if _init_loaded:                                              # --init-from: each fragment and its keys
+        rec["init_from"] = _init_loaded
+    if record:
         out.write_text(json.dumps(rec, indent=2))
     if _last_lm is not None:
         torch.save({k: v.cpu() for k, v in _last_lm.side.state_dict().items()}, out.with_suffix(".pt"))
