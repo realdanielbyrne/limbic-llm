@@ -38,7 +38,7 @@ A15  teacher attention-mass admission target (``--admit-target teacher``)
      normalised over those candidates. The student is the gate's p over the same candidates,
      normalised (log p from the store, with its gradient). The loss λ · KL(target ‖ student),
      λ = --admit-weight, averaged over the rows that have a target, is added to the needle loss. Its
-     gradient reaches only the gate (through log p_s). The teacher pass runs before the student pass,
+     gradient reaches the gate (through log p_s) and, through the gate's input, the TimeChannel clock. The teacher pass runs before the student pass,
      so ``lm.last_stats`` (logged by ``pl.train``) is the student's.
 
 How it reaches ``pl.train`` without editing it: ``training`` (a context manager, entered by ``run.train``)
