@@ -25,9 +25,22 @@ whole window in a slot of its own, in order, and reads it by offset:
     keys     lex      mean of LN(h³) over the window's first 8 entries; the query is the mean over the
                       last 8 tokens; centred cosine, centred on the retained keys (no fitted parameters)
              learned  W_k [LN(h³); LN(h²¹)] → 128, one map for keys and queries
+             native   (round 11, A13, RV4.R3) the frozen model's own attention states at one layer L
+                      (``--w1s-native-layer``, default 21), read in the same windowed pass by
+                      ``taps.TapLM`` (``attn_taps``): the key is the mean of K_L (after k_proj, k_norm,
+                      before rotary) over the window's first 8 entries, the query the mean of Q_L (query
+                      heads averaged per KV head) over the last 8 tokens, scored β_N·cos (β_N from 10).
+                      No learned key map; activations only, never the projections (E3)
     read     a_t = softmax over the retained slots + null of β_lex·ĉos_lex + β_L·cos_L + log p_k − ω·age_k
              (β learned, from 30 and 10). Inside slot k, α = softmax_j β_a cos(z_t, z_j) aligns the
              current token with a stored one, and the value read is the one stored at j + 1
+    replay   match    (default) the alignment above, re-matched at every token
+             pointer  (Stage A2, R-ptr) the entry after the one read at t − 1 (π_{t−1} + 1, in the slot read
+                      most) gets the factor exp κ in the alignment (κ learned, from 4): a replay steps through
+                      the slot while the current token matches the entry it lands on, so a code with a
+                      repeated digit is not re-matched to the wrong copy; otherwise the match wins again
+    time     --w1s-time-feat rope, ordinal or both (rope,ordinal): rotary slot time on the learned key and
+             query, plus the query-chosen rank term u_t·E[r_k]
     output   additive   v = A·LN(h²¹) ∈ ℝ³² is stored, o = B·r goes through W1's CA1 injection
              reinstate  attention at layers ≥ L sees the retained windows' columns with the bias
                         log Σ_k a_{t,k} 1[c ∈ window_k] + b (``reinstate_bias``, applied by
@@ -38,6 +51,39 @@ The drive is divided by its causal running deviation (the plan has w_g·(x_t −
 or a hard threshold means something only against a known noise scale, and with it the initial
 density is 0.12 ± 0.05 at any input scale, with no fitting (``gate_bias``). ``--no-w1s-centre``
 drops the mean subtraction only.
+
+``--w1s-gate-norm`` (round 11, gate track; needs ``--no-w1s-centre``) calibrates the uncentred drive.
+``gate_bias`` assumes a drive with mean 0. LayerNormed LM states share an offset direction, so w·x_t
+has a mean of several running deviations, with a sign set by the seed. That moves the point gate's p
+up or down, and leaves the hyst latch and the Schmitt trigger always on or always off.
+
+  init  subtracts w·μ̂, where μ̂ is each gate stream's mean over the first batch the gate sees
+        (``calibrate_gate``; ``state_report`` records where it came from, and a batch the caller marks
+        ``side.batch_kind = "distill"`` is refused). μ̂ is a buffer, saved in the checkpoint and never
+        updated: a data-dependent initialisation (E1 is about the forward at fixed parameters). It
+        removes only the offset SHARED by the sequences. A sequence whose own mean differs from μ̂ along
+        w by c moves the point gate's argument by c/sd (sd of the drive), but the hyst/schmitt drive by
+        about √((1+λ)/(1−λ)) ≈ 3 times that (λ = 0.8): z = u/sd(u), and the leaky integral u keeps the
+        offset whole while it shrinks the noise. Per-sequence offsets therefore still start some
+        sequences with the latch always on or off (synthetic states with a per-sequence offset c = 0.3:
+        13–24% of the sequences, c = 0.6 about 40%; the centred drive none). The scale is not fixed
+        either: the drive is divided by the causal running deviation of the sequence's own history
+        (causal, so E1 holds). The running variance is seeded with a calibrated prior, ``GATE_PRIOR_N``
+        pseudo-positions of σ̂² = Σ‖w‖²(D − ‖μ̂‖²)/D (the drive's variance for LayerNormed x with an
+        isotropic covariance), so the first positions are not divided by the 1e-3 floor (without it
+        |z_0| ≈ 1000|d_0|: p_0 was 0 or 1, and a p_0 = 1 slot at s = 0 was never evicted at δ = 0).
+  seq   subtracts each sequence's OWN offset, estimated causally from its first W tokens only (W =
+        ``--w1s-gate-norm-window``, 64): d_t = w·x_t − mean_{s ≤ min(t, W−1)} w·x_s. For t < W this is the
+        running-mean centring; from W on the estimate is frozen, so the decision is a fixed function of
+        x_t for the rest of the sequence: later filler, the facts and the query never enter it, and it
+        does not drift over long contexts. d_0 = 0, so position 0 is neutral. No calibration, no buffer;
+        one more streaming scalar. The frozen estimate has an error of its own (≈ σ/√W, amplified like any
+        offset by the latches): on synthetic states 2–4 of 96 sequences start just below 0.03 at W = 64
+        (none pinned), 0–1 at W = 128. Caveat: what P50's reading blames ("the gate's centring adapts to the
+        filler") is the subtraction of the sequence's filler mean, and seq does subtract it: on
+        stationary filler (random tokens) the first-W mean equals the running mean up to sampling noise
+        (≈ σ/√W), so seq may share P50's random-filler failure. What it removes is the drift and the
+        facts' own pull on the mean. It is an opt-in arm, to be read on random-filler retention first.
 
 The gate gets its gradient through log p_k in the read softmax (and through the window weights of
 the hysteresis gate); retention and suppression are hard, which is what keeps the parallel form
@@ -54,7 +100,11 @@ max(P, r) + 1) and the gate's scalars, whatever T (``stream`` returns its size: 
 Taps: ``W1sSide.taps`` (block indices, default 3) are read by ``taps.TapLM``, which sets
 ``side.extra = {i: h_i}`` before each call. Without ``extra`` (unit tests, the CPU suite) every tap
 falls back to h. ``--w1s-key-taps`` lists the streams of the gate and the learned key: tap indices,
-plus any other index (21) for the main tap h; the lexical key uses the lowest.
+plus any other index (21) for the main tap h; the lexical key uses the lowest, and so does the lexical
+alignment code unless ``--w1s-align-stream`` names another stream (h, or a tap of ``--w1s-taps`` that need not
+be a key tap); the code is then centred on the mean of the retained slots' keys in that stream. With ``--w1s-key native``
+``W1sSide.attn_taps = (L,)`` and ``extra`` also holds ``("k", L)`` and ``("q", L)`` (B, T, H_kv·d); without
+``extra`` both fall back to h (a stand-in so the module runs); an ``extra`` that lacks them is an error.
 
 Run with ``experiments/evolve/run.py --candidate evolve.w1s_slots:W1sSide``; flags below.
 """
@@ -81,11 +131,58 @@ NEG = -1e4                                                        # reinstatemen
 EPS = 1e-8                                                        # floor of squared norms in the cosines
 SCHMITT_GAIN = 4.0                                                # p = σ(4(z − θ_on)) at a Schmitt onset
 MAX_BETA = 40.0                                                   # exp(β(cos − 1)) stays above float32's floor
+ALIGN_FLOOR = 1e-12                                               # a slot's alignment normaliser (E shifted to ≤ 1)
+RECENCY_FORMS = ("linear", "none", "log", "ord", "supr", "supw")
+TIME_FEATS = ("rope", "ordinal")                                  # --w1s-time-feat takes any combination
+GATE_NORMS = ("none", "init", "seq")                              # --w1s-gate-norm
+GATE_PRIOR_N = 8.0                                                # init: pseudo-positions of the calibrated variance
+PTR_TIE = 1e-5                                                    # pointer: weights within this (relative) of the max tie
 
 
 def _ints(s: str) -> tuple[int, ...]:
     s = s.strip().lower()
     return () if s in ("", "none") else tuple(int(x) for x in s.split(","))
+
+
+def time_feats(s: str) -> str:
+    """``--w1s-time-feat``: none, or a comma list of rope and ordinal, in the canonical order "rope,ordinal"."""
+    parts = {p.strip().lower() for p in str(s).split(",") if p.strip()}
+    if parts <= {"none"}:
+        return "none"
+    if not parts <= set(TIME_FEATS):
+        raise argparse.ArgumentTypeError(f"--w1s-time-feat {s!r}: none, or a comma list of {', '.join(TIME_FEATS)}")
+    return ",".join(f for f in TIME_FEATS if f in parts)
+
+
+def _opt(w: argparse.Namespace, name: str, default):
+    """A round-11 flag, or its default for namespaces built before it existed."""
+    v = getattr(w, name, default)
+    return default if v is None and default is not None else v
+
+
+def rope_freqs(dims: int, periods: str) -> torch.Tensor:
+    """Angular frequencies (float64) of the rotated pairs: periods log-spaced from the shortest to the longest."""
+    lo, hi = (float(x) for x in periods.split(","))
+    if dims % 2 or dims < 2:
+        raise ValueError("--w1s-rope-dims must be even and ≥ 2")
+    per = torch.logspace(math.log10(lo), math.log10(hi), dims // 2, dtype=torch.float64)
+    return 2 * math.pi / per
+
+
+def rotate(x: torch.Tensor, pos: torch.Tensor, freqs: torch.Tensor) -> torch.Tensor:
+    """Partial rotary encoding: pairs (2f, 2f+1) of the first 2·len(freqs) dims of x (..., d) turn by
+    pos·ω_f; the other dims are unchanged. pos (...) holds integer positions; angles are float64 (E5)."""
+    R = 2 * len(freqs)
+    ang = pos.to(torch.float64)[..., None] * freqs.to(pos.device)
+    c, s_ = ang.cos().to(x.dtype), ang.sin().to(x.dtype)
+    x1, x2 = x[..., 0:R:2], x[..., 1:R:2]
+    rot = torch.stack([x1 * c - x2 * s_, x1 * s_ + x2 * c], -1).flatten(-2)
+    return torch.cat([rot, x[..., R:]], -1)
+
+
+def newer_sum(x: torch.Tensor) -> torch.Tensor:
+    """Σ_{k > i} x[..., k] along the last dim (candidates in time order: the mass of newer ones)."""
+    return F.pad(x.flip(-1).cumsum(-1).flip(-1)[..., 1:], (0, 1))
 
 
 def split_args(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
@@ -106,7 +203,10 @@ def split_args(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
     ap.add_argument("--w1s-store", choices=["slots", "superposed"], default="slots")
     ap.add_argument("--w1s-K", type=int, default=16, help="slots")
     ap.add_argument("--w1s-delta", type=float, default=0.0, help="δ in π_s = log p_s + δ·s (large = FIFO)")
-    ap.add_argument("--w1s-key", choices=["lex", "learned", "both"], default="both")
+    ap.add_argument("--w1s-key", choices=["lex", "learned", "both", "native"], default="both",
+                    help="native (A13): the frozen model's own pre-rotary K/Q at --w1s-native-layer")
+    ap.add_argument("--w1s-native-layer", type=int, default=21,
+                    help="native keys: the attention layer whose K/Q are read (≤ the main tap --layer)")
     ap.add_argument("--w1s-key-taps", default=None,
                     help="streams of the gate and learned key (default: the taps, plus 21 = h when additive)")
     ap.add_argument("--w1s-pool", type=int, default=8, help="entries pooled into a key, and tokens into a query")
@@ -119,7 +219,55 @@ def split_args(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
     ap.add_argument("--w1s-L", type=int, default=4, help="reinstate: first attention layer that sees the slots")
     ap.add_argument("--w1s-ctrl", choices=["none", "empty", "shuffle"], default="none",
                     help="evaluation controls: store forced empty, or slots taken from another batch row")
-    return ap.parse_known_args(argv)
+    # round 11 (research/plans/round11_runbook.md §3); every default reproduces round 10
+    ap.add_argument("--w1s-recency-form", choices=RECENCY_FORMS, default=None,
+                    help="age term of the read: linear ω·age (round 10), none, log ω·log(1+age), ord ω·#newer "
+                         "slots, supr (read-time supersession), supw (write-time supersession tags). Default: "
+                         "linear, or none with a --w1s-time-feat")
+    ap.add_argument("--w1s-time-feat", type=time_feats, default="none",
+                    help="time as data in the learned-key score: rotary slot time, a query-chosen ordinal rank, "
+                         "or both (rope,ordinal)")
+    ap.add_argument("--w1s-rope-dims", type=int, default=32, help="rope: rotated dims of the learned key and query")
+    ap.add_argument("--w1s-rope-periods", default="64,65536", help="rope: shortest,longest period (log-spaced)")
+    ap.add_argument("--w1s-ord-dim", type=int, default=16, help="ordinal: width of the rank embedding")
+    ap.add_argument("--w1s-sup-w", type=float, default=3.0, help="supr: initial w_s (logits per unit of newer mass)")
+    ap.add_argument("--w1s-sup-gamma", type=float, default=40.0, help="supw: initial γ (sharpness of the match)")
+    ap.add_argument("--w1s-sup-theta", type=float, default=0.9, help="supw: initial θ (key cosine of a match)")
+    ap.add_argument("--w1s-sup-omega", type=float, default=3.0, help="supw: initial ω_s (logits per unit of tag)")
+    ap.add_argument("--w1s-lex-init", type=float, default=None, help="initial log β_lex (default log 30)")
+    ap.add_argument("--w1s-align-init", type=float, default=None,
+                    help="initial log β_align (default log 30 for lex alignment, log 10 for learned)")
+    ap.add_argument("--w1s-code", choices=["lex", "learned"], default="lex",
+                    help="alignment code: the lexical state (centred cosine) or z = W_z·x (plain cosine)")
+    ap.add_argument("--w1s-dc", type=int, default=64, help="learned alignment code width")
+    ap.add_argument("--w1s-keep", type=int, default=0, help="keep M transitions per window (0 = all)")
+    ap.add_argument("--w1s-keep-by", choices=["first", "value", "learned", "external"], default="first",
+                    help="which M: the first, top value norm ‖v_{j+1}‖, a learned score w·x_{j+1} + b of the "
+                         "successor (like the value norm, it scores the token whose value is stored), or scores the "
+                         "caller sets (side.keep_scores / side.keep_pair; evaluation diagnostics only)")
+    ap.add_argument("--w1s-keep-init", choices=["zero", "value"], default="zero",
+                    help="learned keep: start from 0 (w·x + b only) or from the value norm (‖v_{j+1}‖ + w·x + b; G0.4)")
+    ap.add_argument("--w1s-gate-norm", choices=list(GATE_NORMS), default="none",
+                    help="uncentred gate (--no-w1s-centre): init subtracts w·μ̂, μ̂ the gate input's mean over the first "
+                         "batch, fixed thereafter (removes the offset shared by sequences, not a sequence's own); seq "
+                         "subtracts the sequence's own causal mean over its first --w1s-gate-norm-window tokens, "
+                         "frozen after them")
+    ap.add_argument("--w1s-gate-norm-window", type=int, default=64,
+                    help="--w1s-gate-norm seq: W, the first tokens whose mean is the sequence's offset")
+    # round 11, Stage A2 (research/plans/round11_combination_plan.md, "Code needed"); defaults reproduce the above
+    ap.add_argument("--w1s-replay", choices=["match", "pointer"], default="match",
+                    help="offset alignment at each token: re-match (match), or carry a pointer that advances one "
+                         "entry per token from the previous read, by a learned bias κ in the alignment (pointer)")
+    ap.add_argument("--w1s-ptr-init", type=float, default=4.0,
+                    help="pointer: initial κ (the pointer entry's alignment weight is multiplied by exp κ)")
+    ap.add_argument("--w1s-align-stream", default="lex",
+                    help="stream of the lexical alignment code (and of a learned code's input): lex (the lowest key "
+                         "stream, round 10), h (the main tap), or a block index in --w1s-taps (or the main tap's "
+                         "--layer); any other index is an error")
+    ns, rest = ap.parse_known_args(argv)
+    if ns.w1s_recency_form is None:                               # resolved here so the JSON records it
+        ns.w1s_recency_form = "linear" if ns.w1s_time_feat == "none" else "none"
+    return ns, rest
 
 
 # ----------------------------------------------------------------------- helpers
@@ -148,10 +296,34 @@ def strict_peaks(p: torch.Tensor, r: int) -> torch.Tensor:
     return (p > w[:, :T].amax(-1)) & (p > w[:, r + 1:r + 1 + T].amax(-1))
 
 
-def running_sd(u: torch.Tensor) -> torch.Tensor:
-    """Causal running standard deviation of u (B, T), about its running mean."""
+def running_sd(u: torch.Tensor, prior: torch.Tensor | None = None, n0: float = GATE_PRIOR_N) -> torch.Tensor:
+    """Causal running standard deviation of u (B, T), about its running mean.
+
+    With ``prior`` (a variance, scalar), the running variance is seeded with ``n0`` pseudo-positions of it:
+    (n0·prior + (t + 1)·var_t) / (n0 + t + 1), so position 0 has sd ≈ √prior instead of the 1e-3 floor."""
     m, m2 = cummean(u), cummean(u * u)
-    return ((m2 - m * m).clamp_min(0) + 1e-6).sqrt()
+    if prior is None:
+        return ((m2 - m * m).clamp_min(0) + 1e-6).sqrt()
+    n = torch.arange(1, u.shape[1] + 1, device=u.device, dtype=u.dtype)
+    return ((n0 * prior.to(u.dtype) + n * (m2 - m * m).clamp_min(0)) / (n0 + n) + 1e-6).sqrt()
+
+
+def first_mean(y: torch.Tensor, W: int) -> torch.Tensor:
+    """Causal mean of y (B, T) over its first min(t + 1, W) positions: the running mean, frozen from t = W − 1."""
+    T = y.shape[1]
+    return cummean(y)[:, torch.arange(T, device=y.device).clamp_max(W - 1)]
+
+
+def first_max(x: torch.Tensor) -> torch.Tensor:
+    """Index along the last dim of the FIRST entry within a relative ``PTR_TIE`` of the maximum (pointer replay).
+
+    The parallel and streaming forms compute the same mathematical weights in different orders, so an exact tie
+    (identical slots or entries) comes out ordered by rounding; both forms use this rule, which takes the
+    earliest (older slot, earlier entry) of the entries tied up to the tolerance."""
+    m = x.amax(-1, keepdim=True)
+    ok = x >= m - PTR_TIE * m.abs()
+    idx = torch.arange(x.shape[-1], device=x.device)
+    return torch.where(ok, idx, torch.full_like(idx, x.shape[-1])).amin(-1)
 
 
 def schmitt(z: torch.Tensor, on: float, off: float) -> torch.Tensor:
@@ -261,7 +433,7 @@ class SlotLoop(GDNLoop):
     ``retained`` lists the K most recent closed windows and ``read_w`` is zero.
     """
 
-    def __init__(self, d_model: int, streams: list, lex, w: argparse.Namespace) -> None:
+    def __init__(self, d_model: int, streams: list, lex, w: argparse.Namespace, astream=None) -> None:
         super().__init__(d_model, heads=1, d_head=1)
         del self.mem
         self.ctx = nn.Identity()                                  # GDNLoop.forward reads through _context_read
@@ -271,12 +443,14 @@ class SlotLoop(GDNLoop):
             raise ValueError("the superposed store has no windows to reinstate, and needs a sparse gate")
         check_ctrl(w.w1s_ctrl, w.w1s_out)
         self.streams, self.lex = list(streams), lex
+        self.astream = lex if astream is None else astream        # the alignment code's stream (--w1s-align-stream)
         self.gate, self.centre, self.store = w.w1s_gate, w.w1s_centre, w.w1s_store
         self.P, self.n, self.r = w.w1s_pre, w.w1s_win, 0 if w.w1s_gate == "dense" else w.w1s_nms
         self.delay = max(self.r, self.n - self.P - 1)              # c_s − s
         self.K, self.delta, self.pool = w.w1s_K, w.w1s_delta, min(w.w1s_pool, w.w1s_win)
         self.key, self.align, self.out, self.ctrl = w.w1s_key, w.w1s_align, w.w1s_out, w.w1s_ctrl
         self.use_lex, self.use_learned = self.key in ("lex", "both"), self.key in ("learned", "both")
+        self.use_native = self.key == "native"
         self.thresholds = tuple(w.w1s_schmitt)
         M, rho = len(streams), w.w1s_density
         c = w.w1s_latch if self.gate == "hyst" else 0.0
@@ -295,34 +469,198 @@ class SlotLoop(GDNLoop):
             self.lam_logit = nn.Parameter(torch.tensor(math.log(w.w1s_lam / (1 - w.w1s_lam))))
         if self.gate == "hyst":
             self.latch_c = nn.Parameter(torch.tensor(float(c)))
+        self.gate_norm = _opt(w, "w1s_gate_norm", "none")
+        self.gate_norm_window = int(_opt(w, "w1s_gate_norm_window", 64))
+        if self.gate_norm not in GATE_NORMS:
+            raise ValueError(f"--w1s-gate-norm {self.gate_norm}")
+        if self.gate_norm_window != 64 and self.gate_norm != "seq":
+            raise ValueError("--w1s-gate-norm-window applies to --w1s-gate-norm seq")
+        if self.gate_norm_window < 1:
+            raise ValueError("--w1s-gate-norm-window must be ≥ 1")
+        if self.gate_norm != "none" and (self.gate not in ("point", "hyst", "schmitt") or self.centre):
+            raise ValueError(f"--w1s-gate-norm {self.gate_norm} calibrates the drive of an uncentred point, hyst or "
+                             "schmitt gate: it needs --no-w1s-centre (it replaces the running-mean centring)")
+        self.batch_kind = None                                    # set by the caller ("distill": μ̂ is not taken from it)
+        self.gate_mu_src = None                                   # where μ̂ came from (state_report)
+        self.calls = 0                                            # forwards and streams run (μ̂'s provenance)
+        if self.gate_norm == "init":                              # μ̂ per gate stream, NaN until calibrated
+            self.register_buffer("gate_mu", torch.full((M, d_model), float("nan")))
         self.wk = split_linear(w.w1s_dk) if self.use_learned or self.align == "learned" else None
-        self.log_beta_lex = nn.Parameter(torch.tensor(math.log(30.0))) if self.use_lex else None
+        lex_init, align_init = _opt(w, "w1s_lex_init", None), _opt(w, "w1s_align_init", None)
+        lex0 = 30.0 if lex_init is None else math.exp(lex_init)
+        self.log_beta_lex = (nn.Parameter(torch.tensor(math.log(30.0) if lex_init is None else float(lex_init)))
+                             if self.use_lex else None)
         self.log_beta_learned = nn.Parameter(torch.tensor(math.log(10.0))) if self.use_learned else None
-        self.log_beta_align = (nn.Parameter(torch.tensor(math.log(30.0 if self.align == "lex" else 10.0)))
+        self.log_beta_align = (nn.Parameter(torch.tensor(math.log(30.0 if self.align == "lex" else 10.0)
+                                                         if align_init is None else float(align_init)))
                                if self.align != "none" else None)
         # null threshold: a centred lexical cosine of 0.3. On frozen-Qwen layer-3 states (merit captures,
         # oracle onsets, 3 facts + 12 false windows) the queried fact's window scores 0.53 on average
-        # (10th percentile 0.43) and the best other window 0.45: a higher null would win at initialisation
-        self.null_logit = nn.Parameter(torch.tensor(0.3 * (30.0 * self.use_lex + 10.0 * self.use_learned)))
+        # (10th percentile 0.43) and the best other window 0.45: a higher null would win at initialisation.
+        # It scales with the initial β_lex, so a lexical key started near off (--w1s-lex-init) is not outvoted.
+        # A native key (from β_N = 10) adds what a learned one does: its null threshold is a cosine of 0.3 too
+        self.null_logit = nn.Parameter(torch.tensor(0.3 * (lex0 * self.use_lex + 10.0 * self.use_learned
+                                                           + 10.0 * self.use_native)))
         self.log_omega = nn.Parameter(torch.tensor(math.log(w.w1s_recency))) if w.w1s_recency > 0 else None
         if self.out == "additive":
             self.wa = nn.Linear(d_model, w.w1s_dv, bias=False)    # v = A LN(h²¹)
             self.wb = nn.Linear(w.w1s_dv, d_model, bias=False)    # o = B r
         else:
             self.rbias = nn.Parameter(torch.tensor(0.0))
+        self._round11(d_model, w)                                 # after every round-10 module (same init)
         self._in = None
         self.last_diag: dict = {}
+
+    def _round11(self, d_model: int, w: argparse.Namespace) -> None:
+        """Round-11 options (time as data, supersession, compression). Each creates its parameters only
+        when it is on, so round-10 checkpoints load with no missing keys under the defaults."""
+        try:
+            tf = time_feats(_opt(w, "w1s_time_feat", "none"))
+        except argparse.ArgumentTypeError as e:
+            raise ValueError(str(e)) from None
+        rf = _opt(w, "w1s_recency_form", None) or ("linear" if tf == "none" else "none")
+        self.rform, self.time_feat = rf, tf
+        self.tfeats = frozenset(tf.split(",")) - {"none"}         # rope and/or ordinal, both active together
+        self.code, self.keep, self.keep_by = _opt(w, "w1s_code", "lex"), _opt(w, "w1s_keep", 0), _opt(w, "w1s_keep_by", "first")
+        self.keep_init = _opt(w, "w1s_keep_init", "zero")
+        if self.keep_init != "zero" and self.keep_by != "learned":
+            raise ValueError("--w1s-keep-init applies to --w1s-keep-by learned")
+        if rf not in RECENCY_FORMS:
+            raise ValueError(f"--w1s-recency-form {rf} / --w1s-time-feat {tf}")
+        slots_add = self.store == "slots" and self.out == "additive"
+        if self.store == "superposed" and (tf != "none" or rf not in ("linear", "none")):
+            raise ValueError("--w1s-time-feat and --w1s-recency-form act on the slot read; the superposed store "
+                             "reads no slots")
+        if self.keep_by != "first" and not self.keep:
+            raise ValueError(f"--w1s-keep-by {self.keep_by} needs --w1s-keep M > 0")
+        if tf != "none" and not self.use_learned:
+            raise ValueError("--w1s-time-feat acts on the learned key: needs --w1s-key learned or both")
+        if rf == "supw" and not (self.use_learned or self.use_lex or self.use_native):
+            raise ValueError("supw needs keys")
+        self.native_layer, self.native_dim = int(_opt(w, "w1s_native_layer", 21)), None
+        if self.use_native and not slots_add:                     # A13 (RV4.R3)
+            raise ValueError("--w1s-key native keys the additive slot read (--w1s-store slots --w1s-out additive): "
+                             "the superposed store has no slot keys, and the reinstatement bias is computed from "
+                             "the taps before layer 21's attention runs")
+        if self.code == "learned" and not (slots_add and self.align == "lex"):
+            raise ValueError("--w1s-code learned replaces the lexical alignment code of additive slots "
+                             "(--w1s-store slots --w1s-out additive --w1s-align lex)")
+        if self.keep and not slots_add:
+            raise ValueError("--w1s-keep needs additive slots")
+        if self.keep < 0 or self.keep >= self.n:
+            raise ValueError("--w1s-keep must be in [0, --w1s-win)")
+        self.keep_scores = self.keep_pair = None                  # external keep scores, set by the caller
+        if rf == "supr":
+            self.log_sup_w = nn.Parameter(torch.tensor(math.log(_opt(w, "w1s_sup_w", 3.0))))
+        if rf == "supw":
+            self.log_sup_gamma = nn.Parameter(torch.tensor(math.log(_opt(w, "w1s_sup_gamma", 40.0))))
+            self.sup_theta = nn.Parameter(torch.tensor(float(_opt(w, "w1s_sup_theta", 0.9))))
+            self.log_sup_omega = nn.Parameter(torch.tensor(math.log(_opt(w, "w1s_sup_omega", 3.0))))
+        if "rope" in self.tfeats:
+            dk = self.wk[0].out_features
+            self.rope_dims = min(_opt(w, "w1s_rope_dims", 32), dk - dk % 2)
+            self.rope_periods = _opt(w, "w1s_rope_periods", "64,65536")
+            rope_freqs(self.rope_dims, self.rope_periods)          # validate now
+        if "ordinal" in self.tfeats:
+            de = _opt(w, "w1s_ord_dim", 16)
+            self.ord_E = nn.Parameter(torch.zeros(self.K, de))    # rank 0 = newest … K − 1
+            self.ord_u = nn.Linear(self.wk[0].out_features, de, bias=False)
+            with torch.no_grad():
+                self.ord_u.weight.normal_(0, 0.1)
+        if self.code == "learned":
+            self.wz = nn.Linear(d_model, _opt(w, "w1s_dc", 64), bias=False)
+        if self.keep and self.keep_by == "learned":
+            self.keep_w = nn.Linear(d_model, 1)
+            with torch.no_grad():
+                self.keep_w.weight.normal_(0, 0.02)
+                self.keep_w.bias.fill_(0.0)
+        if self.use_native:                                       # the only parameter of the native key
+            self.log_beta_native = nn.Parameter(torch.tensor(math.log(10.0)))
+        # Stage A2: pointer replay and the alignment code's stream
+        self.replay = _opt(w, "w1s_replay", "match")
+        if self.replay not in ("match", "pointer"):
+            raise ValueError(f"--w1s-replay {self.replay}")
+        if self.replay == "pointer":
+            if not slots_add or self.align == "none":
+                raise ValueError("--w1s-replay pointer steps through a slot's aligned entries: needs additive slots "
+                                 "(--w1s-store slots --w1s-out additive) with an alignment (--w1s-align lex or learned)")
+            self.ptr_kappa = nn.Parameter(torch.tensor(float(_opt(w, "w1s_ptr_init", 4.0))))
+        self.split_align = self.astream != self.lex               # the alignment code has a stream of its own
+        if self.split_align and not (slots_add and self.align == "lex"):
+            raise ValueError("--w1s-align-stream moves the lexical alignment code (or a learned code's input) of "
+                             "additive slots: needs --w1s-store slots --w1s-out additive --w1s-align lex")
+        # the lexical stream is kept (ring, slot keys, centring) only where something lexical reads it; with a
+        # split alignment stream, the alignment code and its centring keys come from that stream instead
+        lex_code = self.align == "lex" and self.code == "lex"
+        self.keyed_x = self.use_lex or (lex_code and not self.split_align)    # slots keep a lexical-stream key
+        self.need_x = self.keyed_x or self.store == "superposed"
+        self.need_xa = self.split_align and lex_code              # entries keep codes, slots keys, of that stream
 
     # ------------------------------------------------------------ features
     def _streams(self, h, extra) -> dict:
         """LayerNorm (no affine) of each stream read: tap i from ``extra`` (else h), "h" = the main tap."""
         xs = {}
-        for m in dict.fromkeys(self.streams + [self.lex]):
+        for m in dict.fromkeys(self.streams + [self.lex, self.astream]):
             src = h if m == "h" else (extra or {}).get(m, h)
             if src is None:
                 raise ValueError(f"tap {m} is missing from extra")
             xs[m] = F.layer_norm(src, src.shape[-1:])
         return xs
+
+    def _native(self, h, extra) -> tuple[torch.Tensor, torch.Tensor]:
+        """The native key and query streams (B, T, dn): layer L's pre-rotary K and Q from ``extra``
+        (``taps.TapLM``), detached (frozen-model activations, nothing fitted). Without ``extra`` (unit
+        tests, the CPU suite) both are h, a stand-in so the module runs; an ``extra`` without them is an
+        error, so a GPU run cannot silently key on h. Records ``native_dim`` for ``state_report``."""
+        L = self.native_layer
+        if extra is None:
+            k = q = h
+        else:
+            k, q = extra.get(("k", L)), extra.get(("q", L))
+            if k is None or q is None:
+                raise ValueError(f"--w1s-key native: extra lacks layer {L}'s attention states (TapLM attn_taps)")
+        if k.shape != q.shape:
+            raise ValueError(f"native K {tuple(k.shape)} and Q {tuple(q.shape)} must have the same shape")
+        self.native_dim = k.shape[-1]
+        return k.detach(), q.detach()
+
+    def calibrate_gate(self, xs: dict, source: str = "explicit") -> None:
+        """--w1s-gate-norm init: set μ̂ to each gate stream's mean over every position of ``xs`` (one batch of
+        LayerNormed streams, ``_streams``). ``_gate_offset`` calls it once, on the first batch the gate sees;
+        a checkpoint restores μ̂, so a loaded side is never recalibrated. Call it directly to recalibrate.
+
+        Provenance (``gate_mu_src``, reported by ``W1sSide.state_report`` and so in run.py's ``w1s_state``): the
+        batch's size, whether the module was training, how many forwards/streams ran before (0 in training =
+        the first training step, whose kind is ``distill.step_kinds[0]`` under A14) and ``batch_kind``. A batch
+        the caller marks ``batch_kind = "distill"`` (an A14 text window, maybe another corpus) is refused:
+        μ̂ must come from the task's own states."""
+        if self.batch_kind == "distill":
+            raise RuntimeError("--w1s-gate-norm init: refusing to calibrate μ̂ on an A14 distillation text batch "
+                               "(side.batch_kind = 'distill'); calibrate on a needle batch first")
+        x0 = xs[self.streams[0]]
+        with torch.no_grad():
+            for i, m in enumerate(self.streams):
+                x = xs[m]
+                self.gate_mu[i] = x.reshape(-1, x.shape[-1]).mean(0).to(self.gate_mu)
+        self.gate_mu_src = dict(source=source, batch=int(x0.shape[0]), positions=int(x0.shape[1]),
+                                training=bool(self.training), calls_before=int(self.calls),
+                                kind=self.batch_kind or "unknown")
+
+    def _gate_offset(self, xs: dict) -> torch.Tensor:
+        """w·μ̂ (a scalar), the drive's calibrated offset (--w1s-gate-norm init). μ̂ is fixed, and w gets its
+        gradient, so the drive is w·(x_t − μ̂) whatever w becomes."""
+        if torch.isnan(self.gate_mu).any():
+            self.calibrate_gate(xs, "first batch seen")
+        return sum(lin(self.gate_mu[i]) for i, lin in enumerate(self.gate_w)).squeeze(-1)
+
+    def _gate_prior(self) -> torch.Tensor:
+        """σ̂², the init drive's calibrated variance (detached): Σ_streams ‖w‖²·(D − ‖μ̂‖²)/D. For LayerNormed x
+        (no affine) ‖x‖² = D, so the calibration batch's total variance is D − ‖μ̂‖²; spread evenly over the
+        dimensions, a drive w·x has variance ‖w‖² times its share. It follows w through training."""
+        with torch.no_grad():
+            D = self.gate_mu.shape[-1]
+            return sum(lin.weight.pow(2).sum() * (D - self.gate_mu[i].pow(2).sum()).clamp_min(0) / D
+                       for i, lin in enumerate(self.gate_w))
 
     def _gate(self, xs: dict, oracle) -> tuple[torch.Tensor, torch.Tensor]:
         """Onset strength p and on-state g, (B, T) each."""
@@ -337,13 +675,23 @@ class SlotLoop(GDNLoop):
             p = torch.sigmoid(self.gate_b).to(dt).expand(B, T)
             return p, p
         y = sum(lin(xs[m]).squeeze(-1) for lin, m in zip(self.gate_w, self.streams))
-        d = y - cummean(y) if self.centre else y                  # w·(x_t − m_t) = w·x_t − mean_{s≤t} w·x_s
+        prior = prior_u = None
+        if self.gate_norm == "init":                              # w·(x_t − μ̂), μ̂ fixed at calibration
+            y = y - self._gate_offset(xs)
+            prior = self._gate_prior()                            # seeds the running variances (no t = 0 blow-up)
+        if self.gate_norm == "seq":                               # w·x_t − the mean over the first W tokens
+            d = y - first_mean(y, self.gate_norm_window)
+        else:
+            d = y - cummean(y) if self.centre else y              # w·(x_t − m_t) = w·x_t − mean_{s≤t} w·x_s
         if self.gate == "point":
-            p = torch.sigmoid(self.gate_a.exp() * d / running_sd(y) + self.gate_b)
+            p = torch.sigmoid(self.gate_a.exp() * d / running_sd(y, prior) + self.gate_b)
             return p, p
         lam = torch.sigmoid(self.lam_logit)
         u = d @ (causal_decay(T, lam[None], d.device)[0].to(dt) * (1 - lam)).T   # leaky integrator
-        z = u / running_sd(u)
+        if prior is not None:                                     # a white drive's variance after the integrator
+            lam_ = lam.detach()
+            prior_u = prior * (1 - lam_) / (1 + lam_)
+        z = u / running_sd(u, prior_u)
         if self.gate == "hyst":
             g = latch(self.gate_a.exp() * z + self.gate_b, self.latch_c)
             return g * (1 - F.pad(g[:, :-1], (1, 0))), g
@@ -359,6 +707,23 @@ class SlotLoop(GDNLoop):
         f["y"] = sum(lin(xs[m]) for lin, m in zip(self.wk, self.streams)) if self.wk is not None else None
         f["v"] = self.wa(x) if x is not None and self.out == "additive" else None
         f["p"], f["g"] = self._gate(xs, oracle)
+        if self.use_native:                                       # layer L's K (store side) and Q (read side)
+            f["kn"], f["qn"] = self._native(h, extra)
+        if self.split_align:                                      # --w1s-align-stream: the code's own stream
+            f["xa"] = xs[self.astream].detach()
+        if self.code == "learned":                                # z = W_z x, the alignment code
+            f["z"] = self.wz(f["xa"] if self.split_align else f["x"])
+        if self.keep:                                             # each transition j → j+1's keep score
+            if self.keep_by == "external":
+                if self.keep_scores is None and self.keep_pair is None:
+                    raise ValueError("--w1s-keep-by external needs side.keep_scores or side.keep_pair")
+                f["ks"] = self.keep_scores.to(f["x"]) if self.keep_scores is not None else None
+                f["kp"] = self.keep_pair.to(f["x"]) if self.keep_pair is not None else None
+            elif self.keep_by in ("value", "learned"):            # scored at the successor j + 1
+                sc = f["v"].norm(dim=-1) if self.keep_by == "value" else self.keep_w(f["x"]).squeeze(-1)
+                if self.keep_by == "learned" and self.keep_init == "value":    # starts as value-norm keep
+                    sc = sc + f["v"].norm(dim=-1)
+                f["ks"] = F.pad(sc[:, 1:], (0, 1))
         return f
 
     # --------------------------------------------------------------- store
@@ -391,15 +756,56 @@ class SlotLoop(GDNLoop):
         w1 = (s - self.P + self.n - 1).clamp_max(T - 1)[..., None]
         win = valid[..., None] & (j >= w0) & (j <= w1)            # (B, N, T) window positions
         mem = win & (j < w1)                                      # positions whose successor is stored
+        if self.keep:                                             # keep M transitions per window
+            mem = mem & self._keep_mask(f, s, w0, w1, mem)
         st = dict(s=s, valid=valid, ps=ps, lp=lp, onsets=onsets, closed=closed, ret=ret, win=win, mem=mem)
+        if self.keep and self.keep_by == "learned":               # the scorer's gradient: σ(score) on kept values
+            st["kscale"] = torch.sigmoid(f["ks"])
         if self.gate == "hyst":                                   # entries from the onset on weigh g
             gn = F.pad(f["g"][:, 1:], (0, 1))                     # g at the successor position j + 1
             st["wgt"] = torch.where(j + 1 < s[..., None], torch.ones_like(gn[:, None]), gn[:, None])
-        if self.use_lex or self.align == "lex":
+        if self.keyed_x:
             st["K"] = _rows(window_mean(x, -self.P, self.pool), s)        # (B, N, D) lexical keys (0 if clipped away)
+        if self.need_xa:                                          # the alignment stream's keys: its centring
+            st["Ka"] = _rows(window_mean(f["xa"], -self.P, self.pool), s)
         if self.wk is not None:
             st["KL"] = _rows(window_mean(f["y"], -self.P, self.pool), s)  # (B, N, dk) learned keys
+        if self.use_native:
+            st["KN"] = _rows(window_mean(f["kn"], -self.P, self.pool), s)  # (B, N, dn) native keys (layer-L K)
+        if self.rform == "supw":                                  # S[i, j]: newer candidate j matches i
+            Kc = F.normalize(self._slot_key(st), dim=-1)
+            later = valid[:, None, :] & valid[:, :, None] & (s[:, None, :] > s[:, :, None])
+            S = torch.sigmoid(self.log_sup_gamma.exp() * (Kc @ Kc.transpose(1, 2) - self.sup_theta)) * later
+            st["sup"] = closed.to(S.dtype) @ S.transpose(1, 2)   # (B, T, N): tags from candidates closed by t
         return st
+
+    def _slot_key(self, q: dict):
+        """The key that supersession tags and diagnostics compare: native, else learned, else lexical. ``q``
+        is the parallel store (keys (B, N, ·)) or one streaming slot."""
+        return q["KN"] if self.use_native else q["KL"] if self.use_learned else q["K"]
+
+    def _keep_mask(self, f: dict, s, w0, w1, mem) -> torch.Tensor:
+        """(B, N, T) bool: the M transitions kept in each window. ``first``: the first M; otherwise the top M
+        by score, ties to the earlier position (a stable sort over time-ordered positions). Scores of a
+        window are known when it closes (successors ≤ w1 ≤ c_s); ``keep_pair`` sums the attention a
+        successor received from queries up to the window's close c_s only."""
+        B, N, T = mem.shape
+        M, j = self.keep, torch.arange(T, device=mem.device).view(1, 1, T)
+        if self.keep_by == "first":
+            return j < w0 + M
+        if f.get("kp") is not None:                               # received attention of j + 1 from (j + 1, c_s]
+            C = f["kp"].cumsum(1)                                 # C[b, q, k] = Σ_{q' ≤ q} R[b, q', k]
+            c = (s + self.delay).clamp_max(T - 1)
+            rows = _rows(C, c)                                    # (B, N, T): Σ_{q ≤ c_s} R[q, k]
+            diag = C.diagonal(dim1=1, dim2=2)                     # Σ_{q ≤ k} R[q, k]
+            got = rows - diag[:, None, :]
+            sc = F.pad(got[..., 1:], (0, 1))                      # transition j scored by its successor j + 1
+        else:
+            sc = f["ks"][:, None, :].expand(B, N, T)
+        key = torch.where(mem, sc.detach(), torch.full_like(sc, float("-inf")))
+        idx = key.sort(dim=-1, descending=True, stable=True).indices[..., :M]
+        keep = torch.zeros_like(mem).scatter(-1, idx, True)
+        return keep
 
     def _select(self, f: dict, st: dict) -> tuple[torch.Tensor, torch.Tensor]:
         """Read weights over the candidates (B, T, N), zero unless retained, and the null weight (B, T)."""
@@ -420,31 +826,114 @@ class SlotLoop(GDNLoop):
                     cos = kq / (qc.pow(2).sum(-1, keepdim=True).clamp_min(EPS) * kn.clamp_min(EPS)).sqrt()
             if self.use_lex:
                 logit = logit + self.log_beta_lex.exp() * cos
+        if "Ka" in st:                                            # a split alignment stream centres on its own keys
+            with torch.no_grad():
+                m = ret.to(st["Ka"].dtype)
+                cnt = m.sum(-1, keepdim=True)
+                mu = (cnt >= 2).to(m.dtype) * (m @ st["Ka"]) / cnt.clamp_min(1)
+                st["mua"], st["mua2"] = mu, mu.pow(2).sum(-1, keepdim=True)
         if self.use_learned:
             q = F.normalize(window_mean(f["y"], 1 - self.pool, self.pool), dim=-1)
-            logit = logit + self.log_beta_learned.exp() * (q @ F.normalize(st["KL"], dim=-1).transpose(1, 2))
-        if self.log_omega is not None:
+            if "rope" in self.tfeats:                             # the score depends on content and t − s jointly
+                fr = rope_freqs(self.rope_dims, self.rope_periods)
+                qr = rotate(q, torch.arange(T, device=s.device).view(1, T), fr)
+                kr = rotate(F.normalize(st["KL"], dim=-1), s, fr)
+                logit = logit + self.log_beta_learned.exp() * (qr @ kr.transpose(1, 2))
+            else:
+                logit = logit + self.log_beta_learned.exp() * (q @ F.normalize(st["KL"], dim=-1).transpose(1, 2))
+            if "ordinal" in self.tfeats:                          # u_t·E[r_k], r_k = rank among retained (0 = newest)
+                rank = newer_sum(ret.to(torch.long)).clamp_max(self.K - 1)
+                U = self.ord_u(q) @ self.ord_E.T                  # (B, T, K)
+                logit = logit + U.gather(-1, rank)
+        if self.use_native:                                       # β_N cos(mean Q over the last pool, the slot's K)
+            qn = F.normalize(window_mean(f["qn"], 1 - self.pool, self.pool), dim=-1)
+            logit = logit + self.log_beta_native.exp() * (qn @ F.normalize(st["KN"], dim=-1).transpose(1, 2))
+        if self.log_omega is not None and self.rform == "linear":
             age = torch.arange(T, device=s.device).view(1, T, 1) - s[:, None, :]
             logit = logit - self.log_omega.exp() * age.to(logit.dtype)
+        elif self.log_omega is not None and self.rform == "log":
+            age = torch.arange(T, device=s.device).view(1, T, 1) - s[:, None, :]
+            logit = logit - self.log_omega.exp() * torch.log1p(age.clamp_min(0).to(logit.dtype))
+        elif self.log_omega is not None and self.rform == "ord":
+            logit = logit - self.log_omega.exp() * newer_sum(ret.to(logit.dtype))
+        elif self.rform == "supw":
+            logit = logit - self.log_sup_omega.exp() * st["sup"]
         logit = torch.cat([logit.masked_fill(~ret, float("-inf")), self.null_logit.to(logit.dtype).expand(B, T, 1)], -1)
         a = torch.softmax(logit, -1)
+        if self.rform == "supr":                                  # less weight where newer matching slots carry mass
+            mass = newer_sum(a[..., :N].masked_fill(~ret, 0.0))
+            logit = torch.cat([logit[..., :N] - self.log_sup_w.exp() * mass, logit[..., N:]], -1)
+            a = torch.softmax(logit, -1)
         return a[..., :N], a[..., N]
 
     def _alignment(self, f: dict, st: dict) -> torch.Tensor | None:
-        """E[t, j] = exp(β_a (cos(z_t, z_j) − 1)), (B, T, T); None without alignment."""
+        """E[t, j] = exp(β_a (cos(z_t, z_j) − m_t)), (B, T, T); None without alignment.
+
+        m_t is the best cosine among the entries held at t (detached). Within a slot the read normalises
+        E over the slot's entries, so the shift changes nothing mathematically; it keeps the best-matching
+        slot's normaliser ≥ 1, where exp(β(cos − 1)) underflowed and its division's backward overflowed
+        to NaN (CPU suite, 4 Nov 2026). ``stream`` applies the same rule."""
         if self.align == "none":
             return None
         beta = self.log_beta_align.exp().clamp(max=MAX_BETA)
-        if self.align == "learned":
+        if self.code == "learned":                                # z = W_z x, plain cosine (no centring)
+            zq, zs = F.normalize(f["z"], dim=-1), F.normalize(st["z"], dim=-1)
+            cos = zq @ zs.transpose(1, 2)
+        elif self.align == "learned":
             zq, zs = F.normalize(f["y"], dim=-1), F.normalize(st["y"], dim=-1)
-            return torch.exp(beta * (zq @ zs.transpose(1, 2) - 1))
-        with torch.no_grad():                                     # lexical: centred on the retained keys
-            Z, mu, mu2 = st["x"], st["mu"], st["mu2"]
-            zc = f["x"] - mu
-            num = zc @ Z.transpose(1, 2) - (zc * mu).sum(-1, keepdim=True)
-            zn = Z.pow(2).sum(-1)[:, None] - 2 * (mu @ Z.transpose(1, 2)) + mu2
-            cos = num / (zc.pow(2).sum(-1, keepdim=True).clamp_min(EPS) * zn.clamp_min(EPS)).sqrt()
-        return torch.exp(beta * (cos - 1))
+            cos = zq @ zs.transpose(1, 2)
+        else:
+            with torch.no_grad():                                 # lexical: centred on the retained keys
+                if self.split_align:                              # the alignment stream, centred on its own keys
+                    Z, zq, mu, mu2 = st["xa"], f["xa"], st["mua"], st["mua2"]
+                else:
+                    Z, zq, mu, mu2 = st["x"], f["x"], st["mu"], st["mu2"]
+                zc = zq - mu
+                num = zc @ Z.transpose(1, 2) - (zc * mu).sum(-1, keepdim=True)
+                zn = Z.pow(2).sum(-1)[:, None] - 2 * (mu @ Z.transpose(1, 2)) + mu2
+                cos = num / (zc.pow(2).sum(-1, keepdim=True).clamp_min(EPS) * zn.clamp_min(EPS)).sqrt()
+        with torch.no_grad():                                     # the best match among the entries held at t
+            held = (st["ret"].to(cos.dtype) @ st["mem"].to(cos.dtype)) > 0
+            m = cos.detach().masked_fill(~held, float("-inf")).amax(-1, keepdim=True)
+            m = torch.where(torch.isfinite(m), m, torch.ones_like(m))
+        return torch.exp(beta * (cos - m))
+
+    def ptr_gain(self) -> torch.Tensor:
+        """exp κ, the pointer entry's factor in the alignment weights (κ clamped to ±MAX_BETA)."""
+        return self.ptr_kappa.clamp(-MAX_BETA, MAX_BETA).exp()
+
+    def _pointer(self, E: torch.Tensor, a: torch.Tensor, a_null: torch.Tensor, st: dict) -> torch.Tensor:
+        """Pointer replay (``--w1s-replay pointer``): E'[t, j] = E[t, j]·exp(κ) at j = π_{t−1} + 1, else E[t, j].
+
+        π_t is the entry read at t: in the slot with the largest read weight (none when that is the null), the
+        argmax of E' over the slot's stored entries. Ties go to the older slot and the earlier entry, where a tie
+        is a weight within a relative ``PTR_TIE`` of the maximum (``first_max``): mathematically equal weights
+        (identical slots or codes) come out of the two forms in different rounding, and an exact argmax would
+        then pick by the last ulp, differently in each, with an O(1) effect on the read. So a replay that read entry
+        j at t − 1 is carried to j + 1 at t, and the entry it lands on wins the alignment when the current token
+        matches it (within a factor exp κ of the best match); when it does not (the replay has ended, or the
+        query left the stored sequence), the plain match wins again. The pointer is hard and recursive: one
+        loop over t on detached values chooses π (argmax: no gradient needed through the choice), then E' is
+        formed in one differentiable product, so κ and E get their gradients through the chosen entries.
+        Causal: π_t uses rows ≤ t of E and a, at entries held at t (positions < t). ``stream`` applies the same
+        rule one position at a time. Records ``st["ptr"]`` (B, T), −1 where nothing was read."""
+        B, T, N = a.shape
+        gain = self.ptr_gain().to(E.dtype)
+        with torch.no_grad():
+            k = first_max(torch.cat([a, a_null[..., None]], -1))                 # (B, T); N = the null
+            rows = _rows(st["mem"], k.clamp_max(N - 1)) & (k < N)[..., None]      # (B, T, T) the read slot's entries
+            Ed, g_ = E.detach(), gain.detach()
+            hit = torch.zeros(B, T, T, dtype=torch.bool, device=E.device)        # the pointer's entry at each t
+            ptr = torch.full((B, T), -1, dtype=torch.long, device=E.device)
+            b_, prev = torch.arange(B, device=E.device), torch.full((B,), -1, dtype=torch.long, device=E.device)
+            for t in range(T):
+                hit[b_, t, (prev + 1).clamp_max(T - 1)] = prev >= 0
+                e = Ed[:, t] * torch.where(hit[:, t], g_, torch.ones_like(g_))
+                j = first_max(e.masked_fill(~rows[:, t], float("-inf")))
+                prev = torch.where(rows[:, t].any(-1), j, torch.full_like(j, -1))
+                ptr[:, t] = prev
+        st["ptr"] = ptr
+        return E * torch.where(hit, gain, torch.ones_like(gain))
 
     def _read(self, f: dict, st: dict) -> torch.Tensor:
         """The recalled value r (B, T, dv): slots with offset alignment, or the superposed state."""
@@ -452,13 +941,18 @@ class SlotLoop(GDNLoop):
             return self._read_superposed(f, st)
         a, a_null = self._select(f, st)
         st["a"], st["a_null"] = a, a_null
-        E = st["E"] = self._alignment(f, st)
+        E = self._alignment(f, st)
+        if E is not None and self.replay == "pointer":
+            E = self._pointer(E, a, a_null, st)
+        st["E"] = E
         mem = st["mem"].to(a.dtype)
         mw = mem * st["wgt"] if "wgt" in st else mem
+        if "kscale" in st:                                        # σ(score) of the kept transitions (the scorer's gradient)
+            mw = mw * st["kscale"][:, None, :]
         if E is None:                                             # the window's values, averaged
             A = (a / mem.sum(-1).clamp_min(1)[:, None, :]) @ mw
         else:                                                     # α_{t,k,j} = E[t, j] / Σ_{j ∈ k} E[t, j]
-            A = E * ((a / (E @ mem.transpose(1, 2)).clamp_min(1e-30)) @ mw)
+            A = E * ((a / (E @ mem.transpose(1, 2)).clamp_min(ALIGN_FLOOR)) @ mw)
         v = st["v"]
         return A @ F.pad(v[:, 1:], (0, 0, 0, 1))                  # the value stored at j + 1
 
@@ -512,12 +1006,19 @@ class SlotLoop(GDNLoop):
 
     # ------------------------------------------------------------- outputs
     def _run_store(self, x, h, extra, oracle) -> tuple[dict, dict]:
-        f = self._features(x, h, extra, oracle)
+        try:
+            f = self._features(x, h, extra, oracle)
+        finally:
+            self.calls += 1
         if self.ctrl == "shuffle" and f["p"].shape[0] < 2:
             raise ValueError("--w1s-ctrl shuffle needs a batch of ≥ 2 rows (one row would read its own store)")
         sf = {k: (v.roll(1, 0) if v is not None else None) for k, v in f.items()} if self.ctrl == "shuffle" else f
         st = self._store(sf)
         st.update(x=sf["x"], y=sf["y"], v=sf["v"], p=sf["p"], g=sf["g"])
+        if "z" in sf:
+            st["z"] = sf["z"]
+        if "xa" in sf:
+            st["xa"] = sf["xa"]
         return f, st
 
     def _context_read(self, x: torch.Tensor) -> torch.Tensor:
@@ -563,6 +1064,9 @@ class SlotLoop(GDNLoop):
             held = F.pad(held, (0, self.K - N), value=-1)
         top = held.topk(self.K, -1)
         d = dict(p=st["p"].detach(), g=st["g"].detach(), onsets=st["onsets"], retained=top.values)
+        if "KL" in st or "K" in st or "KN" in st:                 # candidates' keys (supw fire diagnostics, G0.3)
+            d["cand_s"] = s.where(st["valid"], torch.full_like(s, -1))
+            d["cand_key"] = F.normalize(self._slot_key(st).detach(), dim=-1)
         if "a" not in st:                                         # superposed: no slot read
             d["read_w"] = torch.zeros(B, T, self.K + 1, device=s.device)
             d["align"] = torch.full((B, T), -1, device=s.device, dtype=torch.long)
@@ -573,6 +1077,9 @@ class SlotLoop(GDNLoop):
         k = torch.cat([st["a"].detach(), st["a_null"].detach()[..., None]], -1).argmax(-1)    # (B, T)
         if st["E"] is None:                                       # no alignment (or reinstatement)
             d["align"] = torch.full_like(k, -1)
+            return d
+        if "ptr" in st:                                           # pointer replay: the entry it read, + 1
+            d["align"] = torch.where(st["ptr"] >= 0, st["ptr"] + 1, torch.full_like(st["ptr"], -1))
             return d
         rows = _rows(st["mem"], k.clamp_max(N - 1))               # (B, T, T) positions of the chosen slot
         j = (st["E"].detach() * rows).argmax(-1) + 1
@@ -585,10 +1092,18 @@ class SlotLoop(GDNLoop):
                oracle: torch.Tensor | None = None) -> dict:
         """Pure-Python streaming reference (rule E2): one position at a time, a ring buffer of recent
         entries, K slots that evict the lowest priority (or one delta-rule state when superposed).
+        It never calls the parallel code (``_store``, ``_select``, ``_read``), only the shared maps.
+
+        A slot holds its key(s) and the transitions it keeps, each (offset j, code_j, w·v_{j+1}): the
+        alignment code of entry j (the lexical state, z = W_z x, or the learned code) and the weighted
+        successor value. With ``--w1s-keep M`` only M transitions are kept, chosen when the window
+        closes; without it, every transition of the window.
 
         Returns ``o`` (B, T, D) (additive) or ``rbias`` (B, T, T) (reinstate), ``p``, ``onsets``,
         ``retained`` (per row and t, the set of held onsets), ``read_w`` (per row and t, onset → weight,
-        with the null under None), ``state_floats`` (the state's size at the end) and ``evictions``.
+        with the null under None), ``state_floats`` (the state's size at the end, the largest row),
+        ``state_components`` (its parts), ``evictions``, and with pointer replay ``ptr`` (B, T), the entry
+        read at each t (−1: none).
         """
         if self.ctrl == "shuffle":
             raise ValueError("stream() has no shuffle control")
@@ -596,45 +1111,85 @@ class SlotLoop(GDNLoop):
         x0 = xs[self.lex]
         (B, T, D), dt = x0.shape, x0.dtype
         xn = self.norm(h) if self.out == "additive" else None
+        kn_all, qn_all = self._native(h, extra) if self.use_native else (None, None)   # layer-L K, Q (B, T, dn)
+        skey = lambda q: q["KN"] if self.use_native else q["KL"] if self.use_learned else q["K"]   # supw's key
         P, n, r, delay, pool = self.P, self.n, self.r, self.delay, self.pool
         ring_len = max(delay + P + 1, delay + r + 1, pool)
         lin = lambda mods, t, b: sum(m_(xs[k][b, t]) for m_, k in zip(mods, self.streams))
         res = dict(p=torch.zeros(B, T, dtype=dt), onsets=torch.zeros(B, T, dtype=torch.bool),
                    retained=[[None] * T for _ in range(B)], read_w=[[None] * T for _ in range(B)], evictions=0)
+        if self.replay == "pointer":                              # the entry read at each t (−1: none)
+            res["ptr"] = torch.full((B, T), -1, dtype=torch.long)
         if self.out == "additive":
             res["o"] = torch.zeros(B, T, xn.shape[-1], dtype=dt)
         else:
             res["rbias"] = torch.full((B, T, T), NEG, dtype=torch.float32)
         cosine = lambda a, b: F.normalize(a, dim=-1) @ F.normalize(b, dim=-1)
+        keyed_x = self.keyed_x                                    # slots keep a lexical key
+        fr = rope_freqs(self.rope_dims, self.rope_periods) if "rope" in self.tfeats else None
+        gain = self.ptr_gain().to(dt) if self.replay == "pointer" else None
+        kscores = self.keep_scores.to(dt) if self.keep and self.keep_by == "external" and self.keep_scores is not None else None
+        kpair = self.keep_pair.to(dt) if self.keep and self.keep_by == "external" and self.keep_pair is not None else None
+        if self.keep and self.keep_by == "external" and kscores is None and kpair is None:
+            raise ValueError("--w1s-keep-by external needs side.keep_scores or side.keep_pair")
+        goff = self._gate_offset(xs) if self.gate_norm == "init" else None   # w·μ̂ (a constant, not state)
+        prior = self._gate_prior() if self.gate_norm == "init" else None     # σ̂², likewise a constant
+        Wg = self.gate_norm_window
+        self.calls += 1
         for b in range(B):
             ring, slots, S = deque(maxlen=ring_len), [], None
-            ysum = y2sum = u = gprev = usum = u2sum = 0.0
+            ysum = y2sum = u = gprev = usum = u2sum = ywsum = 0.0
             sprev, xsum = False, torch.zeros(D, dtype=dt)
+            ptr = -1                                              # pointer replay: the entry read at t − 1
             for t in range(T):
                 # ---- ingest position t: features and the gate
                 x = xs[self.lex][b, t]
-                xsum = xsum + x
-                e = dict(t=t, x=x)
+                xa = xs[self.astream][b, t] if self.split_align else x   # the alignment code's stream
+                e = dict(t=t)
+                if self.need_x:
+                    e["x"] = x
+                if self.need_xa:
+                    e["xa"] = xa
                 if self.store == "superposed":                    # centred codes, running mean at t
+                    xsum = xsum + x
                     e["zc"], e["mq"] = F.normalize(x - xsum / (t + 1), dim=-1), xsum / (t + 1)
                 e["y"] = lin(self.wk, t, b) if self.wk is not None else None
                 e["v"] = self.wa(xn[b, t]) if xn is not None else None
+                if self.use_native:                               # this position's K (for keys) and Q (for queries)
+                    e["kn"], e["qn"] = kn_all[b, t], qn_all[b, t]
+                if self.code == "learned":
+                    e["z"] = self.wz(xa)
+                if self.keep and self.keep_by == "value":         # this position's score as a successor
+                    e["ks"] = float(e["v"].norm())
+                elif self.keep and self.keep_by == "learned":
+                    e["ks"] = float(self.keep_w(x).squeeze(-1)) + (float(e["v"].norm()) if self.keep_init == "value" else 0.0)
                 if self.gate == "oracle":
                     p = g = float(oracle[b, t])
                 elif self.gate == "dense":
                     p = g = torch.sigmoid(self.gate_b).item()
                 else:
                     yg = lin(self.gate_w, t, b).squeeze(-1)
+                    if goff is not None:
+                        yg = yg - goff
                     ysum, y2sum = ysum + yg, y2sum + yg * yg
-                    d = yg - ysum / (t + 1) if self.centre else yg
-                    sd = lambda s1, s2: ((s2 / (t + 1) - (s1 / (t + 1)) ** 2).clamp_min(0) + 1e-6).sqrt()
+                    if self.gate_norm == "seq":                   # the mean over the first W tokens, then frozen
+                        if t < Wg:
+                            ywsum = ywsum + yg
+                        d = yg - ywsum / min(t + 1, Wg)
+                    else:
+                        d = yg - ysum / (t + 1) if self.centre else yg
+                    def sd(s1, s2, pv):                           # pv: init's prior variance (else None)
+                        var = (s2 / (t + 1) - (s1 / (t + 1)) ** 2).clamp_min(0)
+                        if pv is None:
+                            return (var + 1e-6).sqrt()
+                        return ((GATE_PRIOR_N * pv + (t + 1) * var) / (GATE_PRIOR_N + t + 1) + 1e-6).sqrt()
                     if self.gate == "point":
-                        p = g = torch.sigmoid(self.gate_a.exp() * d / sd(ysum, y2sum) + self.gate_b)
+                        p = g = torch.sigmoid(self.gate_a.exp() * d / sd(ysum, y2sum, prior) + self.gate_b)
                     else:
                         lam = torch.sigmoid(self.lam_logit)
                         u = lam * u + (1 - lam) * d
                         usum, u2sum = usum + u, u2sum + u * u
-                        z = u / sd(usum, u2sum)
+                        z = u / sd(usum, u2sum, None if prior is None else prior * (1 - lam) / (1 + lam))
                         if self.gate == "hyst":
                             g = torch.sigmoid(self.gate_a.exp() * z + self.gate_b + self.latch_c * (gprev - 0.5))
                             p, gprev = g * (1 - gprev), g
@@ -659,28 +1214,48 @@ class SlotLoop(GDNLoop):
                         wgt = [1.0 if (self.gate != "hyst" or q["t"] < s) else q["g"] for q in ent]
                         lp = math.log(max(ps, 1e-30))
                         # a head clipped away at position 0 gives a zero key, as window_mean does
-                        hmean = lambda k: torch.stack([q[k] for q in head]).mean(0) if head else torch.zeros_like(e[k])
+                        hmean = lambda k: (torch.stack([q[k] for q in head]).mean(0) if head
+                                           else torch.zeros_like(e[k]))
                         slot = dict(s=s, w0=w0, w1=w1, pi=lp + self.delta * s, lp=lp, ps=ps, ent=ent, wgt=wgt,
-                                    K=hmean("x"), KL=hmean("y") if self.wk is not None else None)
+                                    K=hmean("x") if keyed_x or self.store == "superposed" else None,
+                                    KL=hmean("y") if self.wk is not None else None,
+                                    KN=hmean("kn") if self.use_native else None, sup=0.0,
+                                    Ka=hmean("xa") if self.need_xa else None)
+                        slot["trans"] = self._stream_transitions(slot, t, b, kscores, kpair)
                         if self.store == "superposed":
                             if self.ctrl != "empty":
                                 S = self._stream_write(S, slot, e)
                         elif self.ctrl != "empty":
+                            if self.rform == "supw":              # tag every held (older) slot this one matches
+                                kn = skey(slot)
+                                for q in slots:
+                                    ko = skey(q)
+                                    q["sup"] = q["sup"] + torch.sigmoid(
+                                        self.log_sup_gamma.exp() * (cosine(ko, kn) - self.sup_theta))
                             slots.append(slot)
                             if len(slots) > self.K:               # evict the lowest priority (older on ties)
                                 slots.remove(min(slots, key=lambda q: (q["pi"], q["s"])))
                                 res["evictions"] += 1
                 # ---- read at t
                 win = list(ring)[-pool:]
-                q_lex = torch.stack([q["x"] for q in win]).mean(0)
+                q_lex = torch.stack([q["x"] for q in win]).mean(0) if self.need_x else None
                 q_l = torch.stack([q["y"] for q in win]).mean(0) if self.wk is not None else None
+                q_n = torch.stack([q["qn"] for q in win]).mean(0) if self.use_native else None
                 if self.store == "superposed":
                     rvec = self._stream_read(S, e, q_lex, q_l)
                     res["retained"][b][t], res["read_w"][b][t] = set(), {None: 0.0}
                 else:
-                    mu = (torch.stack([q["K"] for q in slots]).mean(0) if len(slots) >= 2 else torch.zeros(D, dtype=dt))
+                    mu = None
+                    if keyed_x:
+                        mu = (torch.stack([q["K"] for q in slots]).mean(0) if len(slots) >= 2
+                              else torch.zeros(D, dtype=dt))
+                    if self.need_xa:                              # the alignment stream's centre, from its own keys
+                        mua = (torch.stack([q["Ka"] for q in slots]).mean(0) if len(slots) >= 2
+                               else torch.zeros_like(xa))
+                    else:
+                        mua = mu
                     logits = []
-                    for q in slots:
+                    for i, q in enumerate(slots):
                         lg = q["lp"]
                         if self.use_lex:
                             qc = q_lex - mu
@@ -688,41 +1263,117 @@ class SlotLoop(GDNLoop):
                             kn = q["K"] @ q["K"] - 2 * (mu @ q["K"]) + mu @ mu
                             lg = lg + self.log_beta_lex.exp() * kq / (max(qc @ qc, EPS) * max(kn, EPS)) ** 0.5
                         if self.use_learned:
-                            lg = lg + self.log_beta_learned.exp() * cosine(q_l, q["KL"])
-                        if self.log_omega is not None:
+                            if "rope" in self.tfeats:
+                                qr = rotate(F.normalize(q_l, dim=-1), torch.tensor(t), fr)
+                                kr = rotate(F.normalize(q["KL"], dim=-1), torch.tensor(q["s"]), fr)
+                                lg = lg + self.log_beta_learned.exp() * (qr @ kr)
+                            else:
+                                lg = lg + self.log_beta_learned.exp() * cosine(q_l, q["KL"])
+                            if "ordinal" in self.tfeats:
+                                rank = min(len(slots) - 1 - i, self.K - 1)       # slots are in time order
+                                lg = lg + self.ord_u(F.normalize(q_l, dim=-1)) @ self.ord_E[rank]
+                        if self.use_native:
+                            lg = lg + self.log_beta_native.exp() * cosine(q_n, q["KN"])
+                        if self.log_omega is not None and self.rform == "linear":
                             lg = lg - self.log_omega.exp() * (t - q["s"])
+                        elif self.log_omega is not None and self.rform == "log":
+                            lg = lg - self.log_omega.exp() * math.log1p(t - q["s"])
+                        elif self.log_omega is not None and self.rform == "ord":
+                            lg = lg - self.log_omega.exp() * (len(slots) - 1 - i)
+                        elif self.rform == "supw":
+                            lg = lg - self.log_sup_omega.exp() * q["sup"]
                         logits.append(torch.as_tensor(lg, dtype=dt))
                     a = torch.softmax(torch.stack(logits + [self.null_logit.to(dt)]), 0)
+                    if self.rform == "supr":                      # second pass: newer slots' first-pass mass
+                        lg2 = [logits[i] - self.log_sup_w.exp() * sum(a[k] for k in range(i + 1, len(slots)))
+                               for i in range(len(slots))]
+                        a = torch.softmax(torch.stack([torch.as_tensor(v, dtype=dt) for v in lg2]
+                                                      + [self.null_logit.to(dt)]), 0)
                     res["retained"][b][t] = {q["s"] for q in slots}
                     res["read_w"][b][t] = {**{q["s"]: float(a[i]) for i, q in enumerate(slots)}, None: float(a[-1])}
                     rvec, cover = 0.0, torch.zeros(T, dtype=dt)
+                    cs_by = {}                                    # each slot's cosines to the current token
+                    if self.out == "additive" and self.align != "none":
+                        for i, q in enumerate(slots):
+                            tr = q["trans"]
+                            if not tr:
+                                continue
+                            if self.code == "learned":
+                                cs_by[i] = torch.stack([cosine(e["z"], c_) for _, c_, _ in tr])
+                            elif self.align == "lex":
+                                zc = xa - mua
+                                cs_by[i] = torch.stack([(zc @ c_ - zc @ mua) / (max(zc @ zc, EPS) * max(
+                                    c_ @ c_ - 2 * (mua @ c_) + mua @ mua, EPS)) ** 0.5 for _, c_, _ in tr])
+                            else:
+                                cs_by[i] = torch.stack([cosine(e["y"], c_) for _, c_, _ in tr])
+                    m_t = max((float(v.max()) for v in cs_by.values()), default=1.0)   # the best held match
+                    E_by = {}                                     # each slot's alignment weights (pointer: E')
                     for i, q in enumerate(slots):
-                        ent = q["ent"]
                         if self.out == "reinstate":
                             cover[q["w0"]:q["w1"] + 1] += a[i]
                             continue
-                        if len(ent) < 2:                          # clipped at 0: no entry has a stored successor
+                        tr = q["trans"]
+                        if not tr:                                # clipped at 0: no entry has a stored successor
                             continue
                         if self.align == "none":
-                            al = torch.full((len(ent) - 1,), 1.0 / (len(ent) - 1), dtype=dt)
+                            al = torch.full((len(tr),), 1.0 / len(tr), dtype=dt)
                         else:
-                            if self.align == "lex":
-                                zc = x - mu
-                                cs = torch.stack([(zc @ c_["x"] - zc @ mu) / (max(zc @ zc, EPS) * max(
-                                    c_["x"] @ c_["x"] - 2 * (mu @ c_["x"]) + mu @ mu, EPS)) ** 0.5 for c_ in ent[:-1]])
-                            else:
-                                cs = torch.stack([cosine(e["y"], c_["y"]) for c_ in ent[:-1]])
-                            E = torch.exp(self.log_beta_align.exp().clamp(max=MAX_BETA) * (cs - 1))
-                            al = E / E.sum()
-                        vals = torch.stack([w_ * c_["v"] for w_, c_ in zip(q["wgt"][1:], ent[1:])])
+                            E = torch.exp(self.log_beta_align.exp().clamp(max=MAX_BETA) * (cs_by[i] - m_t))
+                            if gain is not None:                  # the entry after the one read at t − 1
+                                E = E * torch.stack([gain if (ptr >= 0 and j_ == ptr + 1) else torch.ones_like(gain)
+                                                     for j_, _, _ in tr])
+                            E_by[i] = E
+                            al = E / E.sum().clamp_min(ALIGN_FLOOR)
+                        vals = torch.stack([v_ for _, _, v_ in tr])
                         rvec = rvec + a[i] * (al @ vals)
+                    if gain is not None:                          # the entry read at t: in the slot read most
+                        top = int(first_max(a))                   # (ties, up to PTR_TIE: the older slot; the null last)
+                        ptr = (slots[top]["trans"][int(first_max(E_by[top]))][0]
+                               if top < len(slots) and top in E_by else -1)
+                        res["ptr"][b, t] = ptr
                     if self.out == "reinstate":
                         res["rbias"][b, t] = torch.where(cover > 0, torch.log(cover.clamp_min(1e-30)) + self.rbias, NEG)
                 if self.out == "additive":
                     res["o"][b, t] = self.wb(rvec) if torch.is_tensor(rvec) else 0.0
-            res.setdefault("state_floats", 0)
-            res["state_floats"] = max(res["state_floats"], self._stream_size(ring, slots, S))
+            comp = self._stream_components(ring, slots, S)
+            if sum(comp.values()) >= res.get("state_floats", -1):
+                res["state_floats"], res["state_components"] = sum(comp.values()), comp
         return res
+
+    def _stream_transitions(self, slot: dict, t: int, b: int, kscores, kpair) -> list:
+        """The transitions a closing window keeps: (offset j, code_j, w_{j+1}·v_{j+1}) in time order. With
+        --w1s-keep M, the first M or the top M by score (ties to the earlier offset); a learned score
+        also scales the kept value by σ(score). Values are None for reinstatement (nothing is replayed)."""
+        ent, wgt = slot["ent"], slot["wgt"]
+        idx = list(range(len(ent) - 1))                           # transition i: ent[i] → ent[i + 1]
+        if self.keep:
+            if self.keep_by == "first":
+                kept = [i for i in idx if ent[i]["t"] < slot["w0"] + self.keep]
+            else:
+                if self.keep_by in ("value", "learned"):
+                    sc = [ent[i + 1]["ks"] for i in idx]
+                elif kpair is not None:                           # attention received by j + 1 from (j + 1, t]
+                    sc = [float(sum(kpair[b, q_, ent[i + 1]["t"]] for q_ in range(ent[i + 1]["t"] + 1, t + 1)))
+                          for i in idx]
+                else:
+                    sc = [float(kscores[b, ent[i]["t"]]) for i in idx]
+                kept = sorted(sorted(idx, key=lambda i: (-sc[i], i))[:self.keep])
+        else:
+            kept = idx
+        out = []
+        for i in kept:
+            c_, nx = ent[i], ent[i + 1]
+            code = (c_["z"] if self.code == "learned" else c_.get("xa" if self.split_align else "x")
+                    if self.align == "lex" else c_["y"])
+            if self.align == "none":
+                code = None
+            val = None
+            if nx["v"] is not None:
+                val = wgt[i + 1] * nx["v"]
+                if self.keep and self.keep_by == "learned":
+                    val = torch.sigmoid(torch.tensor(nx["ks"], dtype=val.dtype)) * val
+            out.append((c_["t"], code, val))
+        return out
 
     def _stream_write(self, S, slot, e):
         """Superposed store: write slot's entries (key [κ; ζ_j], value v_{j+1}) by the delta rule."""
@@ -755,25 +1406,79 @@ class SlotLoop(GDNLoop):
             q = torch.cat([q, z]) / math.sqrt(2)
         return S @ q if S is not None else q.new_zeros(self.wa.out_features)
 
-    def _stream_size(self, ring, slots, S) -> int:
-        """Floats held by the streaming state: ring buffer, slots (or S), gate scalars and running sums."""
+    def _stream_components(self, ring, slots, S) -> dict:
+        """Floats held by the streaming state, by part: the ring buffer, the slots' keys, their stored
+        codes and values (per entry, or per kept transition with its offset), supersession tags, the
+        superposed state, and the gate's scalars with the lexical running sum."""
         def numel(v):
             return v.numel() if torch.is_tensor(v) else (1 if isinstance(v, float) else 0)
-        size = sum(numel(v) for q in ring for k, v in q.items() if k != "t")
+        c = dict(ring=sum(numel(v) for q in ring for k, v in q.items() if k != "t"),
+                 slot_keys=0, slot_codes=0, slot_values=0, slot_weights=0, sup_tags=0, superposed=0, gate=0)
         for q in slots:                                           # keys, then per entry: code, value, weight
-            size += numel(q["K"]) + numel(q["KL"]) + 2
-            size += sum(numel(c_["x"]) * (self.align == "lex") + numel(c_["y"]) * (self.align == "learned")
-                        + numel(c_["v"]) + 1 for c_ in q["ent"])
-        size += S.numel() if S is not None else 0
-        return size + 7 + ring[0]["x"].numel()                   # gate state and the lexical running sum
+            c["slot_keys"] += numel(q["K"]) + numel(q["KL"]) + numel(q["KN"]) + numel(q.get("Ka")) + 2
+            c["sup_tags"] += 1 if self.rform == "supw" else 0
+            if self.keep:                                         # per kept transition: code, value, offset
+                for _, code, val in q["trans"]:
+                    c["slot_codes"] += numel(code)
+                    c["slot_values"] += numel(val)
+                    c["slot_weights"] += 1
+            else:
+                for c_ in q["ent"]:
+                    lexc = c_.get("xa" if self.split_align else "x")   # the lexical alignment code's stream
+                    c["slot_codes"] += (numel(lexc) * (self.align == "lex" and self.code == "lex")
+                                        + numel(c_.get("z")) * (self.code == "learned")
+                                        + numel(c_["y"]) * (self.align == "learned"))
+                    c["slot_values"] += numel(c_["v"])
+                    c["slot_weights"] += 1
+        c["superposed"] = S.numel() if S is not None else 0
+        lexs = "x" if self.need_x else "xa" if self.need_xa else None   # a lexical stream kept: its running sum
+        c["gate"] = 7 + (ring[0][lexs].numel() if lexs else 0)    # gate state and the lexical running sum
+        c["gate"] += self.gate_norm == "seq"                      # the first-W sum of the drive
+        if self.replay == "pointer":                              # the entry read at t − 1
+            c["pointer"] = 1
+        return c
+
+    def _stream_size(self, ring, slots, S) -> int:
+        """Floats held by the streaming state: ring buffer, slots (or S), gate scalars and running sums."""
+        return sum(self._stream_components(ring, slots, S).values())
+
+    def analytic_state(self, d_model: int) -> dict:
+        """The streaming state at full occupancy (a full ring, K full slots of unclipped windows), by part,
+        without running ``stream``: what ``_stream_components`` reports once the store is full."""
+        D = d_model
+        dk = self.wk[0].out_features if self.wk is not None else 0
+        dv = self.wa.out_features if self.out == "additive" else 0
+        dc = self.wz.out_features if self.code == "learned" else 0
+        dn = (self.native_dim or D) if self.use_native else 0     # native K/Q width (as last seen; h's stand-in)
+        ring_len = max(self.delay + self.P + 1, self.delay + self.r + 1, self.pool)
+        per = (D * self.need_x + D * self.need_xa + dk + dv + dc + 2
+               + (self.keep > 0 and self.keep_by in ("value", "learned")) + 2 * D * (self.store == "superposed") + 2 * dn)
+        keyed_x = self.keyed_x
+        code = dc if self.code == "learned" else D if self.align == "lex" else dk if self.align == "learned" else 0
+        c = dict(ring=ring_len * per, slot_keys=0, slot_codes=0, slot_values=0, slot_weights=0, sup_tags=0,
+                 superposed=0, gate=7 + D * (self.need_x or self.need_xa) + (self.gate_norm == "seq"))
+        if self.replay == "pointer":
+            c["pointer"] = 1
+        if self.store == "superposed":
+            kdim = (D if self.use_lex else 0) + (dk if self.use_learned else 0) + (code if self.align != "none" else 0)
+            c["superposed"] = dv * kdim
+            return c
+        m = self.keep if self.keep else self.n                    # entries (or kept transitions) per slot
+        c["slot_keys"] = self.K * (D * keyed_x + D * self.need_xa + dk + dn + 2)
+        c["slot_codes"] = self.K * m * code
+        c["slot_values"] = self.K * m * dv
+        c["slot_weights"] = self.K * m
+        c["sup_tags"] = self.K * (self.rform == "supw")
+        return c
 
 
 # ----------------------------------------------------------------------- side
 class W1sSide(nn.Module):
     """TimeChannel then SlotLoop; the ``SideChannels`` interface used by ``pretrained_loop``, with taps.
 
-    ``extra`` ({block: (B, T, D) float32, sink stripped}) and ``oracle_onsets`` ((B, T) bool, side
-    coordinates) are set by the caller before each forward. In reinstate mode the forward returns h
+    ``extra`` ({block: (B, T, D) float32, sink stripped}, plus {("k", L), ("q", L): (B, T, H_kv·d)} for the
+    native key's ``attn_taps``) and ``oracle_onsets`` ((B, T) bool, side coordinates) are set by the caller
+    before each forward. In reinstate mode the forward returns h
     unchanged and the read happens in ``reinstate_bias``, called by ``taps.TapLM`` once the taps ran.
     """
 
@@ -781,6 +1486,8 @@ class W1sSide(nn.Module):
         super().__init__()
         w = w or split_args([])[0]
         self.taps = _ints(w.w1s_taps)
+        # A13: the attention layer whose pre-rotary K/Q ``taps.TapLM`` captures into extra (empty: none)
+        self.attn_taps = (int(_opt(w, "w1s_native_layer", 21)),) if w.w1s_key == "native" else ()
         self.out_mode, self.reinstate_L = w.w1s_out, w.w1s_L
         self.extra: dict | None = None
         self.oracle_onsets: torch.Tensor | None = None
@@ -799,9 +1506,43 @@ class W1sSide(nn.Module):
             if max(self.taps) >= self.reinstate_L:
                 raise ValueError(f"taps {self.taps} must lie below --w1s-L {self.reinstate_L}")
         lex = min(streams, key=lambda m: math.inf if m == "h" else m)
+        layer = getattr(args, "layer", None)                      # the main tap's block, when --layer was given
+        self.align_spec = str(_opt(w, "w1s_align_stream", "lex")).strip().lower()
+        astream = self.align_stream(self.align_spec, lex, layer if isinstance(layer, int) else None)
         self.time = TimeChannel(d_model) if getattr(args, "time", True) else None
-        self.loop = SlotLoop(d_model, streams, lex, w)
+        self.loop = SlotLoop(d_model, streams, lex, w, astream)
         self.w1s = vars(w)
+
+    def align_stream(self, spec, lex, main: int | None = None):
+        """The stream of ``--w1s-align-stream``: lex (the lowest key stream), h (the main tap), or a block index:
+        a tap of --w1s-taps (read by ``taps.TapLM`` even when it is not a key tap), or ``main``, the main tap's
+        block (``--layer``, when given). Any other index is an error: unlike --w1s-key-taps, a block that is not
+        tapped would silently become the main tap, often the lexical stream itself (no split, the run = I1)."""
+        spec = str(spec).strip().lower()
+        if spec == "lex":
+            return lex
+        if spec == "h":
+            return "h"
+        try:
+            i = int(spec)
+        except ValueError:
+            raise ValueError(f"--w1s-align-stream {spec!r}: lex, h or a block index") from None
+        if i in self.taps:
+            return i
+        if main is not None and i == main:
+            return "h"
+        raise ValueError(f"--w1s-align-stream {i}: block {i} is not in --w1s-taps {list(self.taps)}"
+                         + (f" and is not the main tap (--layer {main})" if main is not None else "")
+                         + "; add it to --w1s-taps, or give h for the main tap")
+
+    @property
+    def batch_kind(self) -> str | None:
+        """What the caller says the current batch is (``"distill"``: an A14 text batch, which μ̂ is not taken from)."""
+        return self.loop.batch_kind
+
+    @batch_kind.setter
+    def batch_kind(self, value: str | None) -> None:
+        self.loop.batch_kind = value
 
     @property
     def gate(self) -> str:
@@ -816,6 +1557,53 @@ class W1sSide(nn.Module):
     def ctrl(self, value: str) -> None:
         check_ctrl(value, self.out_mode)
         self.loop.ctrl = value
+
+    @property
+    def keep_scores(self) -> torch.Tensor | None:
+        """(B, T) score of each transition j → j+1 for ``--w1s-keep-by external`` (evaluation diagnostics)."""
+        return self.loop.keep_scores
+
+    @keep_scores.setter
+    def keep_scores(self, value: torch.Tensor | None) -> None:
+        self.loop.keep_scores = value
+
+    @property
+    def keep_pair(self) -> torch.Tensor | None:
+        """(B, T, T) R[b, q, k], attention key k received from query q (side coordinates), for
+        ``--w1s-keep-by external``: a transition is scored by what its successor received up to the close."""
+        return self.loop.keep_pair
+
+    @keep_pair.setter
+    def keep_pair(self, value: torch.Tensor | None) -> None:
+        self.loop.keep_pair = value
+
+    def state_report(self) -> dict:
+        """The streaming state at full occupancy (T-independent, rule E2) by part, and the trainable parameters.
+        Native keys count their K/Q width as last seen (``loop.native_dim``), or the model width before any call."""
+        comp = self.loop.analytic_state(self.loop.wb.out_features if self.out_mode == "additive"
+                                        else self.loop.gate_w[0].in_features)
+        out = dict(state_floats=sum(comp.values()), state_components=comp,
+                   params=sum(p.numel() for p in self.parameters() if p.requires_grad))
+        if self.loop.use_native and self.loop.native_dim is None:  # K/Q width not seen yet: an overcount (review R0)
+            out["provisional"] = "native K/Q width unknown before a forward with captured activations"
+        lp = self.loop
+        if lp.gate_norm != "none":                                # the calibration and where μ̂ came from
+            g = {"mode": lp.gate_norm}
+            if lp.gate_norm == "seq":
+                g["window"] = lp.gate_norm_window
+            else:
+                ok = bool(torch.isfinite(lp.gate_mu).all())
+                g["mu_source"] = (lp.gate_mu_src if lp.gate_mu_src is not None else
+                                  {"source": "loaded (checkpoint or set directly)" if ok else "not calibrated"})
+                if ok:
+                    g["mu_norm"] = [round(x, 4) for x in lp.gate_mu.norm(dim=-1).tolist()]
+                    g["prior_var"] = float(lp._gate_prior())
+                g["prior_positions"] = GATE_PRIOR_N
+            out["gate_norm"] = g
+        if self.align_spec != "lex":                              # what --w1s-align-stream resolved to
+            out["align_stream"] = {"spec": self.align_spec, "stream": str(lp.astream), "lex": str(lp.lex),
+                                   "split": bool(lp.split_align)}
+        return out
 
     def forward(self, h: torch.Tensor) -> tuple[torch.Tensor, LoopStats]:
         if self.out_mode == "reinstate":                          # the read went into attention

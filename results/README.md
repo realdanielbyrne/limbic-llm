@@ -10,7 +10,7 @@ results/
     round0/         round-0 diagnostic arms g0–g7 (planned; not created yet)
     round1/         round-1 runs through experiments/evolve/run.py (P7–P12)
     round2/         round-2 runs (W1b), in progress
-  alignment/        alignment track (A1, A2, A6); labels and scores only (A1, references, A6 done; P59-P62)
+  alignment/        alignment track (A1, A2, A6); labels and scores only (A1, references, A6 done; P77-P80)
 ```
 
 ## synthetic/
@@ -110,17 +110,17 @@ Written by `experiments/alignment/run.py` as `results/alignment/<--name>.json` (
 
 **Data rule.** Only judge scores, refusal labels and aggregate metrics may be committed here. Raw completions to harmful prompts go to `--private-dir`, outside the repository. Review finding RV1.A6 (an absolute or `../` `--name` could bypass the check) is **fixed**: `judge.safe_name` and `judge.private_file` validate the resolved path (`test_run_names_cannot_contain_paths`, `test_private_files_cannot_escape_the_private_dir`).
 
-A1 (layer sweep, 3 models), the two references, and A6 (gain/cap sweep, 2 models) are done, single seed, at block 14 (`research/NOTEBOOK.md`, "Alignment track: A1 and A6 on Qwen3-1.7B"; register P59–P62). A2, A7, A8 and the A9 follow-on are not started.
+A1 (layer sweep, 3 models), the two references, and A6 (gain/cap sweep, 2 models) are done, single seed, at block 14 (`research/NOTEBOOK.md`, "Alignment track: A1 and A6 on Qwen3-1.7B"; register P77–P80). A2, A7, A8 and the A9 follow-on are not started.
 
 | File | Script and arguments | Register |
 |---|---|---|
-| `a1_abliterated` | `run.py --model mlabonne/Qwen3-1.7B-abliterated --dtype bfloat16 --device cuda --layer-sweep --arms none` | P59 |
-| `a1_aligned` | `run.py --model Qwen/Qwen3-1.7B --dtype bfloat16 --device cuda --layer-sweep --arms none` | P59 |
-| `a1_base` | `run.py --model Qwen/Qwen3-1.7B-Base --dtype bfloat16 --device cuda --layer-sweep --arms none` | P59 |
-| `ref_qwen3_aligned` | `run.py --model Qwen/Qwen3-1.7B --arms none --layer 14 --n-eval 100 --max-new-tokens 96 --ppl-data hf:Salesforce/wikitext:wikitext-2-raw-v1:test:text` | P60 |
-| `ref_abliterated_none` | `run.py --model mlabonne/Qwen3-1.7B-abliterated --arms none --layer 14 --n-eval 100 --max-new-tokens 96 --ppl-data hf:Salesforce/wikitext:wikitext-2-raw-v1:test:text` | P60 |
-| `a6_qwen3_abliterated` | `run.py --model mlabonne/Qwen3-1.7B-abliterated --direction-from Qwen/Qwen3-1.7B --layer 14 --n-eval 100 --max-new-tokens 96 --gains 0.1,0.2,0.3,0.4,0.5 --caps 0.2,0.3,0.4,0.5,0.6 --target-refusal 0.8 --ppl-data hf:Salesforce/wikitext:wikitext-2-raw-v1:test:text` | P61 |
-| `a6_qwen3_base` | `run.py --model Qwen/Qwen3-1.7B-Base --direction-from Qwen/Qwen3-1.7B --layer 14 --n-eval 100 --max-new-tokens 96 --gains 0.1,0.2,0.3,0.4,0.5 --caps 0.2,0.3,0.4,0.5,0.6 --target-refusal 0.8 --ppl-data hf:Salesforce/wikitext:wikitext-2-raw-v1:test:text` | P62 |
+| `a1_abliterated` | `run.py --model mlabonne/Qwen3-1.7B-abliterated --dtype bfloat16 --device cuda --layer-sweep --arms none` | P77 |
+| `a1_aligned` | `run.py --model Qwen/Qwen3-1.7B --dtype bfloat16 --device cuda --layer-sweep --arms none` | P77 |
+| `a1_base` | `run.py --model Qwen/Qwen3-1.7B-Base --dtype bfloat16 --device cuda --layer-sweep --arms none` | P77 |
+| `ref_qwen3_aligned` | `run.py --model Qwen/Qwen3-1.7B --arms none --layer 14 --n-eval 100 --max-new-tokens 96 --ppl-data hf:Salesforce/wikitext:wikitext-2-raw-v1:test:text` | P78 |
+| `ref_abliterated_none` | `run.py --model mlabonne/Qwen3-1.7B-abliterated --arms none --layer 14 --n-eval 100 --max-new-tokens 96 --ppl-data hf:Salesforce/wikitext:wikitext-2-raw-v1:test:text` | P78 |
+| `a6_qwen3_abliterated` | `run.py --model mlabonne/Qwen3-1.7B-abliterated --direction-from Qwen/Qwen3-1.7B --layer 14 --n-eval 100 --max-new-tokens 96 --gains 0.1,0.2,0.3,0.4,0.5 --caps 0.2,0.3,0.4,0.5,0.6 --target-refusal 0.8 --ppl-data hf:Salesforce/wikitext:wikitext-2-raw-v1:test:text` | P79 |
+| `a6_qwen3_base` | `run.py --model Qwen/Qwen3-1.7B-Base --direction-from Qwen/Qwen3-1.7B --layer 14 --n-eval 100 --max-new-tokens 96 --gains 0.1,0.2,0.3,0.4,0.5 --caps 0.2,0.3,0.4,0.5,0.6 --target-refusal 0.8 --ppl-data hf:Salesforce/wikitext:wikitext-2-raw-v1:test:text` | P80 |
 
 ## Naming conventions
 

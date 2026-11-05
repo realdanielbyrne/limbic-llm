@@ -1,0 +1,3 @@
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 14690.92it/s]
+{"n": 128, "full_exact": 1.0, "auc": {"fact_vs_filler": 0.9491326256362768, "queried_vs_filler": 0.9724739845188627, "queried_vs_other_facts": 0.6495150731614798}, "queried": 0.0553, "other": 0.0757, "filler": 0.3096, "sink": 0.3827, "queried_share": 0.1294, "top_fact_rate": 0.5625, "a15_target": {"target_on_queried": 0.17404352786252275, "gate_on_queried": 0.1260023103095591, "queried_in_candidates": 1.0, "kl_target_gate": 0.35607054154388607, "covered": 0.7850886671803892, "n_eligible": 26.5390625, "n": 128}}
+saved results/evolve/round11/diag_teacher_attention_I1_s4.json

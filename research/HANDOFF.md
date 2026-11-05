@@ -9,6 +9,8 @@ This note coordinates the Claude sessions working on this repository: branches, 
 
 At Daniel's request, PR #2 (`feat/temporal-loop` → `main`) was merged. Since then the GPU session works on **`feat/round1-side-memory`**, branched from `main` after the merge. It pushes round results, code under `experiments/evolve/`, and updates to this note there. PR #3 (`feat/qwen3-actadd-notebook`, the Qwen3 activation-additions notebook) was merged into this branch (`82b8fca`). `feat/temporal-loop` is kept, not deleted. Pull `feat/round1-side-memory` to see round-1 results.
 
+**PR #5 (4 Nov 2026, round-11 GPU session):** the rounds 1–10 checkpoint (`4d1c271`) proposed into `main` from the snapshot branch `snapshot/rounds-1-10`, so that round-11 pushes do not join it. Daniel reviews and merges. Work continues on `feat/round1-side-memory`.
+
 ## File ownership
 
 | Session | Files |
@@ -54,6 +56,8 @@ The scripts now default to this layout: the CPU scripts write to `results/synthe
   - Decisions: DEC4–DEC7 (DEC5: no pre-fit directions).
   - Plan: the round-10 plan entry in the NOTEBOOK.
 - **Stage B done (P54–P58):** I1 learns 3 of 5 seeds (seed 1 at 0.94) with grid means 0.93–0.96 on the learned seeds, fails on held-out names (0.58–0.74), and A2, I1K and RI do not beat it. Round 11 (runbook revision 2) follows.
+- **Round 11 Stage 0 done (P59–P67; NOTEBOOK "Round 11 Stage 0"):** evaluation-time gates on the round-10 checkpoints, outputs in `results/evolve/round11/stage0/`. At evaluation time the age penalty, not alignment, limits long-range recall. No update or order task has a full-attention ceiling. supw is dropped. Value-norm keep and a 64-d code are free. Ordinal time generalises in the CPU toy. The round-11 code (`8a0319a`) adds `eval_by_query.py --w1s-set/--w1s-param/--w1s-load-extra/--ctrl-conds/--keep-oracle`, update forms `changed`/`nowold`, `--update-k`, `--decoys`, `--order`, and `run.py --needle-names pool --needle-tail`. **Stage A waits for Daniel**, who also has RV4 §6's proposed reordering.
+- **Round 11 Stage A done (P68–P76; NOTEBOOK "Round 11 Stage A").** The teacher attention target for the gate (A15) is the only single change better or tied on every group on both seeds. Seed-4 gains are mostly rescue. Results are in `results/evolve/round11/` (`r11_*`, `eval/e11_*`, `e11ref_*`), read with `experiments/evolve/analyse_round.py`. Stage A2 (DEC14, `plans/round11_combination_plan.md`) is queued, then the tap sweep (DEC13).
 - **New tools:**
   - `experiments/evolve/taps.py` (`TapLM`: extra taps, reinstatement);
   - `eval_by_query.py` flags `--jitter`, `--update`, `--heldout-names` and `--w1s-ctrl`;
@@ -72,6 +76,31 @@ Daniel approved the round-11 plan (DEC9) and asked for it to be executed by anot
 - the evaluations, the pre-registered rules, the record-keeping, and Daniel's checkpoints.
 
 The design and its evidence are in [`plans/round11_plan.md`](plans/round11_plan.md).
+
+## Side-memory review RV4 (4 Nov 2026)
+
+A Claude Science session reviewed rounds 1–10 of the side-memory track against the literature, at Daniel's request: [`reviews/2026-11-04_side_memory/README.md`](reviews/2026-11-04_side_memory/README.md); open findings RV4.E1–E12 in the register. **Before running round 11, read §6 of the review.** It recommends:
+- closing the Stage-B gaps first: E8 and the CPU suite for I1, I1-superposed and I1-no-align, and eval-only paraphrase and repeated-digit cells;
+- 10 seeds for finalists;
+- putting the name-generalisation and training-signal arms (A10, A11, new A13–A15) ahead of compression and time;
+- scoring updates against ground truth;
+- a 128-token and a partially windowed hybrid configuration in Stage C;
+- W16 on an equal-byte axis (the W1s state equals about 31 KV tokens).
+
+It added 25 bibliography entries (16 new, 9 promoted from RV2's `new_refs.bib`) to `docs/references.bib` and REFERENCES.md.
+
+## Side channels for the alignment track (Daniel, 4 Nov 2026)
+
+Daniel wants a working full-model side-channel module (register W18) and, from it, a windowed intent memory for the alignment track (register A9).
+- The alignment probes now read single-token snapshots, which miss jailbreaks that talk around a harmful topic.
+- A W1s-style episodic memory over the conversation, possibly with a CA1-style comparator, would let the CA2 controller act on intent integrated over many tokens.
+- Both follow round 11. The alignment session should know they are coming; nothing is built yet.
+
+## Register IDs: allocate from the latest pull (5 Nov 2026)
+
+The round-11 session (on `feat/round1-side-memory`) and the alignment session (on `feat/alignment-a1-a6`, merged into `main` as PR #7) both used P59–P62 independently, and both added an A9 row for the same windowed-intent-memory idea. In PR #8 the alignment rows were renumbered **P77–P80** (round 11 had used P59–P67 first, on 4 Nov), with every reference updated and a note on each row. The two A9 rows were merged into one.
+- **Next free result ID: P81.** Before allocating IDs (P, DEC, W, A, RV), pull both `main` and `feat/round1-side-memory` and take the next free number across both.
+- Round 11's P59–P76 and DEC9–DEC14 are on `feat/round1-side-memory`; the alignment track's P77–P80 come from `main`.
 
 ## How to run a round
 
@@ -116,7 +145,7 @@ A8 and R6 need new modes in `steering.py`, and neither is built yet. The noteboo
 
 A1 (layer sweep, 3 models), the two references, and A6 (gain/cap sweep, 2 models) are **done**,
 single seed, at block 14 (`research/NOTEBOOK.md`, "Alignment track: A1 and A6 on Qwen3-1.7B";
-register P59–P62; `results/alignment/`). Run locally on an RTX 4070 SUPER, not geof — this
+register P77–P80; `results/alignment/`). Run locally on an RTX 4070 SUPER, not geof — this
 particular session had no path to geof, so it ran the track on its own machine instead, with
 Daniel's approval. Headline: nothing restores refusal close to the aligned reference (peak 0.20 of
 0.77); the proposed `graded`/`conditional` controllers are safer than `static` addition but much
