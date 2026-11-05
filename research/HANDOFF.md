@@ -112,6 +112,32 @@ A Claude Science session reviewed the four research tracks against the literatur
 
 A8 and R6 need new modes in `steering.py`, and neither is built yet. The notebook reads `summary()`'s new keys (`s_gen_mean` replaces `s_mean`). **Do not commit this notebook with outputs from the alignment preset** (data rule): clear them with `jupyter nbconvert --clear-output --inplace`.
 
+## Alignment track status (5 Nov 2026)
+
+A1 (layer sweep, 3 models), the two references, and A6 (gain/cap sweep, 2 models) are **done**,
+single seed, at block 14 (`research/NOTEBOOK.md`, "Alignment track: A1 and A6 on Qwen3-1.7B";
+register P59–P62; `results/alignment/`). Run locally on an RTX 4070 SUPER, not geof — this
+particular session had no path to geof, so it ran the track on its own machine instead, with
+Daniel's approval. Headline: nothing restores refusal close to the aligned reference (peak 0.20 of
+0.77); the proposed `graded`/`conditional` controllers are safer than `static` addition but much
+weaker (A6.H2 not supported as built); the never-aligned base model's near-identical peak number is
+mostly degeneration noise, not real restoration (A6.H3 supported) — the sibling's refusal direction
+is nearly orthogonal to its own harm direction. Full mechanism write-up in the NOTEBOOK entry.
+
+Found and fixed a real bug along the way: `layer_sweep` (`run.py`) was wrapped in a `@torch.no_grad()`
+that broke its own probe-training loop, so `--layer-sweep` crashed every time (untested by the
+44-test suite; now 45). Also added `accelerate` to the `pretrained` extra (`pyproject.toml`) —
+newer `transformers`' `device_map="auto"` needs it; does not affect CI.
+
+Opened **A9** (REGISTER §4.4, NOTEBOOK proposal): a windowed, memory-based intent signal — reusing
+this repo's own side-channel modules (`HippocampalLoop`/CA3, `gated_delta.py`) rather than a new
+mechanism — as a candidate fix for the "controller cannot touch the prompt encoding without
+`static`'s instability" finding above. Explicitly **blocked on the round-11 (or later) side-memory
+track** landing a selection mechanism that generalizes past held-out names (P54, P55); not started.
+
+**Not started**: A2, A3, A4, A5, A7, A8, R6, S1/S9, J1, or any reasoning runner. Do not start these
+without Daniel's separate go-ahead, per the original scope.
+
 ## Earlier contents
 
 Earlier versions of this note carried the result tables of the pretrained and round-1 runs. Every number from them is now in `results/README.md` (per-file tables), the register (P1–P12) or RESULTS.md (§4.7–4.8). The GPU session's review of the coordinating session's 2 Nov additions was applied (NOTEBOOK, "Corrections from the GPU session's review"); that review also checked that Zhao et al. 2025 (arXiv 2507.11878) and the four A6/A7 models exist. The full earlier text is in git history (`53caa77`).

@@ -253,10 +253,10 @@ Abliteration removes the refusal direction ([Arditi et al. 2024](https://arxiv.o
 - whether it works on the **never-aligned base model**, where alignment was never a single removable direction.
 
 **Hypotheses**
-- **H1.** Harmfulness stays linearly decodable at the tap in abliterated and base models: probe AUROC well above chance, near the aligned model's.
-- **H2.** The controller cuts attack success on the abliterated model to near the aligned reference, with less over-refusal than static addition.
-- **H3.** On the base model it restores less, because the refusal behaviour itself was never trained.
-- **H4.** Escalation via $E_t$ blocks persistent multi-turn attempts better than per-turn steering, and recovers on benign turns.
+- **H1.** Harmfulness stays linearly decodable at the tap in abliterated and base models: probe AUROC well above chance, near the aligned model's. [**Supported**, 5 Nov 2026: A1, P59 — prompt-token AUROC ≈1.0 on all three models.]
+- **H2.** The controller cuts attack success on the abliterated model to near the aligned reference, with less over-refusal than static addition. [**Not supported as built**, 5 Nov 2026: A6, P61 — nothing approaches the aligned reference (peak 0.20 of 0.77), and `static` is the *strongest* arm tested, not the weakest; `graded`/`conditional` are more stable (≈0 degeneration throughout their sweep) but far weaker (peak ≈0.09), because they spare the prompt's own encoding that `static` perturbs. See "Alignment track: A1 and A6 on Qwen3-1.7B (5 Nov 2026)" below.]
+- **H3.** On the base model it restores less, because the refusal behaviour itself was never trained. [**Supported**, 5 Nov 2026: A6, P62 — the sibling's refusal direction is nearly orthogonal to the base model's own harm direction (cos 0.06, against 0.60 for the abliterated model); its apparent peak refusal (0.19) rides on 0.60–0.87 degeneration, not coherent behaviour.]
+- **H4.** Escalation via $E_t$ blocks persistent multi-turn attempts better than per-turn steering, and recovers on benign turns. [**Open**, 5 Nov 2026: untested — A6 is single-turn only; this needs A3's multi-turn runner, not built yet.]
 
 **Metrics**
 - Attack success on HarmBench, judged by its classifier.
@@ -1490,4 +1490,88 @@ until that track lands something stable enough to repurpose.
   activations and scores only, never raw text.
 
 Recorded as **A9** (REGISTER §4.4).
+
+---
+
+## Alignment track: A1 and A6 on Qwen3-1.7B (5 Nov 2026)
+
+Run on a local RTX 4070 SUPER (12 GB), not geof — a separate session's machine, with no CUDA
+GPU of its own in the task as originally written; adapted to run locally with Daniel's approval.
+Single seed throughout (seed 0); per protocol, treat as provisional until a deciding comparison is
+rerun at `--seed 1`.
+
+**Layer choice.** A1's by-layer sweep (`--layer-sweep`) saturates to prompt-token AUROC ≈1.0 by
+layer 2–4 on all three models and stays there through layer 26, so there is no AUROC-based reason
+to prefer a later layer. Kept the default, `n_layers // 2` = **block 14** of 28, matching N3's
+earlier spot-check choice.
+
+**A1 results** (held-out probe AUROC/ECE at block 14; `results/alignment/a1_*.json`):
+
+| Model | prompt AUROC | prompt ECE | gen-token AUROC (in-dist) | gen-token AUROC (XSTest) |
+|---|---|---|---|---|
+| `mlabonne/Qwen3-1.7B-abliterated` | 1.000 | 0.0004 | 0.851 | 0.680 |
+| `Qwen/Qwen3-1.7B` (aligned) | 1.000 | ~0 | 0.829 | 0.710 |
+| `Qwen/Qwen3-1.7B-Base` | 0.999 | 0.025 | 0.611 | 0.511 (chance) |
+
+Harmfulness stays linearly decodable at the prompt token after abliteration, indistinguishable
+from the aligned model (**A6.H1 supported**). The base model is the outlier on generated-token
+calibration, barely above chance on XSTest — consistent with it never having had a reason to keep
+"this is harmful" legible through its own (frequently degenerate) continuations.
+
+**References** (`ref_qwen3_aligned.json`, `ref_abliterated_none.json`): the aligned model refuses
+0.77 harmful / 0.54 contrast / 0.05 borderline / 0.00 harmless (ppl 19.92) — the target behaviour.
+The abliterated floor is 0.02 / 0.01 / 0.00 / 0.00 (ppl 20.38) — nearly identical perplexity to the
+aligned model, so abliteration does not touch the capability floor, only the refusal behaviour.
+
+**A6 results** (full sweep: `static`, `static_random`, `conditional`, `graded`, `graded_self`;
+gains 0.1–0.5, caps 0.2–0.6; n-eval 100, 96 new tokens; `a6_qwen3_abliterated.json`,
+`a6_qwen3_base.json`). None of the 50 swept configs (25 per model) reach `--target-refusal` 0.8, so
+RV1.D1's matched-rate comparison has no crossing point to report on either model; peaks instead:
+
+| Model | Peak harmful refusal | Arm | Degeneration there | Direction cos to self |
+|---|---|---|---|---|
+| Abliterated | 0.20 | `static@0.2` | 0.00 | 0.603 |
+| Base | 0.19 | `static@0.2` | 0.60–0.87 | 0.059 |
+
+**What it shows.**
+1. **Nothing comes close to the aligned reference** (0.20–0.19 of 0.77) at any swept gain/cap, on
+   either model.
+2. **The mechanism behind why the controllers underperform `static`.** On the harmful set,
+   `conditional@0.5` and `graded@0.6` apply near-full gain through essentially the whole response
+   (`gain_mean` 0.50 / 0.59, abliterated) yet barely move refusal (0.09), because they deliberately
+   leave the prompt's own encoding alone (`gain_prompt_mean` 0.02 / 0.01) to avoid `static`'s
+   instability. `static` is the only arm that injects into the prompt encoding
+   (`gain_prompt_mean` ≈ its nominal gain), and the only one that moves refusal meaningfully — at
+   the cost of over-refusing borderline/harmless prompts (0.13 / 0.16 at gain 0.2) and degenerating
+   at higher gain (0.37–0.77 by gain 0.4–0.5). **A6.H2 is not supported as built**: the proposed
+   graded controller is safer than static addition, as hoped, but weaker, not stronger.
+3. **Direction-specificity is real but the destructive mode is not.** `static` beats its
+   matched-norm control `static_random` at low–mid gain on the abliterated model (0.20 against 0.02
+   at gain 0.2), but at high gain both collapse into degeneration at similar rates (static_random
+   harder: 0.86–1.00 against 0.37–0.77) — large enough perturbation breaks the model regardless of
+   direction.
+4. **The base model's near-identical peak number (0.19) is not comparable to the abliterated
+   model's (0.20).** It rides on 0.60–0.87 degeneration (against 0.00–0.01), i.e. it is mostly noise
+   over collapsed generations. The causal reason is geometric: the aligned sibling's refusal
+   direction has cosine similarity 0.603 with the abliterated model's own harm direction but only
+   0.059 (orthogonal) with the base model's — a model that never learned to refuse has no
+   refusal-adjacent direction for the borrowed vector to align with. **A6.H3 supported.**
+5. **A6.H4 stays Open.** A6 is single-turn only; the multi-turn escalation/recovery claim needs
+   A3's runner, which isn't built.
+6. **Sanity checks all passed**: `none` matches `ref_abliterated_none` exactly on both runs;
+   `conditional`'s `ppl_gain_mean = 0.000` on the base model's WikiText pass was investigated and is
+   not a bug — the controller stats on the harmful set show it firing normally there (`gain_mean`
+   0.10–0.49 across the sweep); the probe correctly never judges benign WikiText as harmful enough
+   to trigger.
+
+**Bug found and fixed along the way**: `layer_sweep` (`run.py`) was wrapped in a redundant and
+broken `@torch.no_grad()` that disabled autograd for the probe's own training loop, so
+`--layer-sweep` crashed every time (untested by the 44-test suite). Fixed, with a regression test
+added (suite is now 45 tests). Also added `accelerate` to the `pretrained` extra
+(`pyproject.toml`) — newer `transformers`' `device_map="auto"` path needs it; CI is unaffected (it
+never installs the `pretrained` extra).
+
+**Follow-on**: opened **A9** (above) — a windowed, memory-based intent signal (reusing this
+repo's own side-channel modules) as a candidate fix for finding 2, blocked on the round-11
+side-memory track landing a generalizing mechanism.
 
