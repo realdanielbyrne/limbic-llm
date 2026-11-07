@@ -1,0 +1,277 @@
+{
+  "args": {
+    "model": "Qwen/Qwen3-1.7B-Base",
+    "tiny": false,
+    "tiny_arch": "gpt2",
+    "dtype": "bfloat16",
+    "device": "cuda",
+    "attn_impl": "sdpa",
+    "grad_checkpointing": false,
+    "layer": 25,
+    "window": 64,
+    "window_mode": "block",
+    "window_layers": "all",
+    "sink": true,
+    "memory": true,
+    "time": true,
+    "kernel": "osc",
+    "rho": 0.7,
+    "tau": 16,
+    "amp": 1.0,
+    "loop": "open",
+    "ca1_control": true,
+    "contrast": true,
+    "dg_keys": false,
+    "d_key": 32,
+    "loop_arg": [],
+    "init_gain": null,
+    "task": "needle",
+    "text_file": "/home/realdanielbyrne/limbic-data/wikitext103_train.txt",
+    "dataset": null,
+    "max_chars": 5000000,
+    "pairs": 3,
+    "seq_len": 512,
+    "steps": 6000,
+    "lr": 0.001,
+    "batch": 8,
+    "eval_n": 128,
+    "log_every": 0,
+    "seed": 4,
+    "out": "results/evolve/round11/taps/t_I1_L25_s4.json"
+  },
+  "model": {
+    "blocks": 28,
+    "linear_layers": 0,
+    "tap_layer": 25,
+    "windowed_layers": 28,
+    "reach": 63,
+    "window_check": "ok (block 0: far 0.0e+00 vs near 1.2e+01)",
+    "trainable_params": 450569,
+    "base_params": 1720574976,
+    "transformers": "5.22.1",
+    "gap_range": [
+      267,
+      501
+    ]
+  },
+  "curve": [
+    {
+      "step": 600,
+      "loss": 0.0038297597784549,
+      "token_acc": 1.0,
+      "inj_ratio": 0.25648751854896545
+    },
+    {
+      "step": 1200,
+      "loss": 0.04971754923462868,
+      "token_acc": 1.0,
+      "inj_ratio": 0.26751452684402466
+    },
+    {
+      "step": 1800,
+      "loss": 0.016071030870079994,
+      "token_acc": 1.0,
+      "inj_ratio": 0.2800648808479309
+    },
+    {
+      "step": 2400,
+      "loss": 0.0026739344466477633,
+      "token_acc": 1.0,
+      "inj_ratio": 0.291230708360672
+    },
+    {
+      "step": 3000,
+      "loss": 0.0003901929594576359,
+      "token_acc": 1.0,
+      "inj_ratio": 0.2990053594112396
+    },
+    {
+      "step": 3600,
+      "loss": 0.004725712351500988,
+      "token_acc": 1.0,
+      "inj_ratio": 0.3036996126174927
+    },
+    {
+      "step": 4200,
+      "loss": 0.0010198557283729315,
+      "token_acc": 1.0,
+      "inj_ratio": 0.3077811598777771
+    },
+    {
+      "step": 4800,
+      "loss": 0.0014804555103182793,
+      "token_acc": 1.0,
+      "inj_ratio": 0.30956655740737915
+    },
+    {
+      "step": 5400,
+      "loss": 0.08720700442790985,
+      "token_acc": 0.9750000238418579,
+      "inj_ratio": 0.3085990846157074
+    },
+    {
+      "step": 6000,
+      "loss": 0.02129029855132103,
+      "token_acc": 1.0,
+      "inj_ratio": 0.31037914752960205
+    }
+  ],
+  "results": {
+    "windowed": {
+      "loss": 2.77082222700119,
+      "token_acc": 0.15625,
+      "exact": 0.0,
+      "per_pos": [
+        {
+          "loss": 2.817532539367676,
+          "acc": 0.5
+        },
+        {
+          "loss": 2.538362979888916,
+          "acc": 0.1015625
+        },
+        {
+          "loss": 2.762453079223633,
+          "acc": 0.0703125
+        },
+        {
+          "loss": 2.750749349594116,
+          "acc": 0.078125
+        },
+        {
+          "loss": 2.985013484954834,
+          "acc": 0.03125
+        }
+      ]
+    },
+    "windowed+side": {
+      "loss": 0.022459830246225464,
+      "token_acc": 0.99375,
+      "exact": 0.96875,
+      "inj_ratio": 0.30023577995598316,
+      "per_pos": [
+        {
+          "loss": 6.941239553270862e-05,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.0797942504286766,
+          "acc": 0.984375
+        },
+        {
+          "loss": 0.008403928950428963,
+          "acc": 0.9921875
+        },
+        {
+          "loss": 0.019833587110042572,
+          "acc": 0.9921875
+        },
+        {
+          "loss": 0.004197981674224138,
+          "acc": 1.0
+        }
+      ]
+    },
+    "full": {
+      "loss": 0.1248240765184164,
+      "token_acc": 0.9984375,
+      "exact": 0.9921875,
+      "per_pos": [
+        {
+          "loss": 0.010480188764631748,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.37925851345062256,
+          "acc": 0.9921875
+        },
+        {
+          "loss": 0.13285735249519348,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.05121130496263504,
+          "acc": 1.0
+        },
+        {
+          "loss": 0.05031301826238632,
+          "acc": 1.0
+        }
+      ]
+    },
+    "gain": 0.35722672939300537
+  },
+  "seconds": 660.9912326335907,
+  "candidate": {
+    "class": "evolve.w1s_slots:W1sSide",
+    "args": {
+      "w1s_taps": "",
+      "w1s_gate": "point",
+      "w1s_centre": false,
+      "w1s_density": 0.12,
+      "w1s_lam": 0.8,
+      "w1s_latch": 6.0,
+      "w1s_schmitt": [
+        1.2,
+        0.8
+      ],
+      "w1s_pre": 0,
+      "w1s_win": 24,
+      "w1s_nms": 8,
+      "w1s_store": "slots",
+      "w1s_K": 16,
+      "w1s_delta": 0.0,
+      "w1s_key": "learned",
+      "w1s_native_layer": 21,
+      "w1s_key_taps": null,
+      "w1s_pool": 8,
+      "w1s_dk": 128,
+      "w1s_dv": 32,
+      "w1s_align": "lex",
+      "w1s_recency": 0.002,
+      "w1s_out": "additive",
+      "w1s_L": 4,
+      "w1s_ctrl": "none",
+      "w1s_recency_form": "linear",
+      "w1s_time_feat": "none",
+      "w1s_rope_dims": 32,
+      "w1s_rope_periods": "64,65536",
+      "w1s_ord_dim": 16,
+      "w1s_sup_w": 3.0,
+      "w1s_sup_gamma": 40.0,
+      "w1s_sup_theta": 0.9,
+      "w1s_sup_omega": 3.0,
+      "w1s_lex_init": null,
+      "w1s_align_init": null,
+      "w1s_code": "lex",
+      "w1s_dc": 64,
+      "w1s_keep": 0,
+      "w1s_keep_by": "first",
+      "w1s_keep_init": "zero",
+      "w1s_gate_norm": "none",
+      "w1s_gate_norm_window": 64,
+      "w1s_replay": "match",
+      "w1s_ptr_init": 4.0,
+      "w1s_align_stream": "lex"
+    }
+  },
+  "w1s_state": {
+    "state_floats": 906727,
+    "state_components": {
+      "ring": 70720,
+      "slot_keys": 34848,
+      "slot_codes": 786432,
+      "slot_values": 12288,
+      "slot_weights": 384,
+      "sup_tags": 0,
+      "superposed": 0,
+      "gate": 2055
+    },
+    "params": 450569
+  },
+  "needle_scatter": 8,
+  "needle_mix": 1.0,
+  "needle_curriculum": "1:1500,2:1500",
+  "needle_tail": 256,
+  "needle_names": "train"
+}

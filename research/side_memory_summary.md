@@ -40,7 +40,12 @@ Sixteen single changes to the slot memory were each trained twice and compared w
 - **Shrinking the memory works when done by rule** (shorter stored phrases), not when the memory has to learn what to drop.
 - **New names are still the main weakness** (about 70%).
 
-The next step (Stage A2) combines the best changes, retrains the original to measure run-to-run luck, and tests the alternative write gates (hysteresis and Schmitt), alternative replay, and a sweep of where the memory taps the model.
+**Stage A2 (6 Nov) changed the reading again.** When the original memory was retrained with the same code as the changes, the run that had failed now worked and a different one failed. About 1 run in 5 fails, and which one is luck. Against those fair re-runs, no single change is better beyond that run-to-run noise. Three useful results:
+- the simple write trigger beats the on/off (hysteresis) triggers;
+- the memory can be made 19× smaller with no loss if its matching code starts from a fitted one;
+- it works as well tapping layer 7 as layer 21, and at layer 7 it barely disturbs ordinary text.
+
+The next step (Stage A2's factorial) combines the best changes, retrains the original to measure run-to-run luck, and tests the alternative write gates (hysteresis and Schmitt), alternative replay, and a sweep of where the memory taps the model.
 
 ## What doesn't work yet
 
