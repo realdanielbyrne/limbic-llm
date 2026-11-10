@@ -1,0 +1,34 @@
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 14320.86it/s]
+step 0: kl 0.7122, log beta 2.651
+step 100: kl 0.1474, log beta 2.592
+step 200: kl 0.1373, log beta 2.567
+step 300: kl 0.1460, log beta 2.539
+step 400: kl 0.1319, log beta 2.510
+step 500: kl 0.1312, log beta 2.480
+step 600: kl 0.1270, log beta 2.449
+step 700: kl 0.1231, log beta 2.418
+step 800: kl 0.1286, log beta 2.387
+step 900: kl 0.1223, log beta 2.357
+step 1000: kl 0.1239, log beta 2.326
+step 1100: kl 0.1207, log beta 2.298
+step 1200: kl 0.1209, log beta 2.274
+step 1300: kl 0.1217, log beta 2.249
+step 1400: kl 0.1205, log beta 2.229
+step 1500: kl 0.1212, log beta 2.208
+step 1600: kl 0.1193, log beta 2.190
+step 1700: kl 0.1189, log beta 2.181
+step 1800: kl 0.1165, log beta 2.169
+step 1900: kl 0.1177, log beta 2.162
+step 2000: kl 0.1218, log beta 2.157
+step 2100: kl 0.1184, log beta 2.149
+step 2200: kl 0.1199, log beta 2.151
+step 2300: kl 0.1177, log beta 2.145
+step 2400: kl 0.1130, log beta 2.143
+step 2500: kl 0.1170, log beta 2.137
+step 2600: kl 0.1184, log beta 2.143
+step 2700: kl 0.1175, log beta 2.145
+step 2800: kl 0.1162, log beta 2.137
+step 2900: kl 0.1153, log beta 2.143
+step 2999: kl 0.1081, log beta 2.137
+{"dc": 64, "fit_loss_init": 0.7447205609049421, "fit_loss": 0.11788280444778283, "heldout_kl_init": 0.7332066763369799, "heldout_kl": 0.15165280570753603, "heldout_agree_answer": 0.98828125, "heldout_agree_digit1": 0.96875}
+saved /tmp/claude-1000/-home-realdanielbyrne-limbic-llm/4145cb2e-e3ec-40a3-8ee3-9766827d2fb6/scratchpad/r11/g05/I1_s2_wz.dc64.pt

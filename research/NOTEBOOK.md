@@ -1683,3 +1683,36 @@ never installs the `pretrained` extra).
 repo's own side-channel modules) as a candidate fix for finding 2, blocked on the round-11
 side-memory track landing a generalizing mechanism.
 
+
+---
+
+## Round 11 Stage A2, phases 0–2, and the tap sweep: no single change beats I1; the point gate wins; tap 7 and a fitted code are the useful finds (6 Nov 2026)
+
+**Setup** (DEC13, DEC14):
+- **Phase 0:** evaluation-time ablations, and a gate diagnostic on real states.
+- **Phase 1:** I1 retrained under the current code: seeds 1–4, plus seed 4 with another initialisation.
+- **Phase 2:** 13 decomposition and gate arms, and the six top Stage-A arms on seed 2.
+- **Tap sweep:** odd blocks 1–27, needle on seeds 1 and 4, and E8 for I1 and the O(T) loop.
+- **Reading:** `analyse_round.py`, at the recipe level: three seeds, with intervals that include run-to-run noise (s_seed from the five I1 runs).
+- **Void:** 2 evaluations (P89). Register P81–P89.
+
+| Finding | Numbers | Register |
+|---|---|---|
+| **Which seed fails is luck.** Retrained under the current code, I1 seed 4 learns and seed 3 fails | grid 0.967 / 0.932 / **0.830** / 0.956 / 0.947 | P81 |
+| **No single change beats current-code I1** on grid, names or paraphrase once run-to-run noise is counted | all top arms tie, \|Δ grid\| ≤ 0.04 | P85 |
+| **The point gate is the best gate.** Hysteresis and Schmitt lose even with calibration | grid −0.25 to −0.85 | P83, P84 |
+| **The age penalty is a trade-off**, not a bug: removing it buys more facts and length, costs updates | updates −0.14 / −0.17; robustness +0.25 | P85 |
+| A11's lexical key is nearly unused; A1b's rank adds nothing | ablations ≈ 0 | P82 |
+| **A fitted 64-d alignment code (C5r)** ties I1 at 19× less memory, and helps updates | updates +0.085; state 47k against 907k | P86 |
+| **Tap:** 7, 17, 21, 23 and 25 work on both seeds; tap 7 also has much better perplexity | E8 11.55 against 12.35 at tap 21 | P87, P88 |
+| **E8 met:** I1 is no worse than the O(T) loop at the same tap (3–25) | tap 21: 12.35 against 12.70 | P88 |
+
+**What it shows**
+1. **Run-to-run luck, not the recipe, now dominates.** Stage A's large gains were partly rescue and partly a code-version difference in the references. Against current-code I1, the best single changes are within noise (about ±0.03).
+2. **Reliability is the open problem.** About 1 run in 5 fails (P81), and no single change visibly fixes that. Phase 3's factorial pools 48 runs and is the right instrument for small effects. Stage B (10 seeds) measures reliability directly.
+3. **"Point gates seem fragile"** (Daniel): the point gate fails about 1 run in 5, but the latch gates fail more, on every seed. The gate fragility is a training-trajectory problem, not the gate's form.
+4. **Two useful levers came out of this phase:**
+   - the fitted-code start, which shrinks the state 19× with no loss;
+   - tap 7, with recall as at tap 21 and better language modelling.
+
+**Next.** Phase 3 (the factorial, DEC14). Phase 0–2 results trim the factor list, and add two candidates (the fitted code; tap 7 against 21) that need Daniel's approval: see the checkpoint report.

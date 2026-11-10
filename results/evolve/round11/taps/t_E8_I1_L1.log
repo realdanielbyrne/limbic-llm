@@ -1,0 +1,26 @@
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 14793.21it/s]
+Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'wikitext-103-raw-v1' at /home/realdanielbyrne/.cache/huggingface/datasets/Salesforce___wikitext/wikitext-103-raw-v1/0.0.0/b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Mon Nov  2 16:48:50 2026).
+Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'wikitext-103-raw-v1' at /home/realdanielbyrne/.cache/huggingface/datasets/Salesforce___wikitext/wikitext-103-raw-v1/0.0.0/b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Mon Nov  2 16:48:50 2026).
+Qwen/Qwen3-1.7B-Base: 28 blocks (0 linear-attention), d_model 2048, tap block 1, 28 windowed, block window 256, reach 255
+window check: ok (block 0: far 0.0e+00 vs near 1.4e+01)
+trainable side-channel parameters 450,569 (base 1,720,574,976, frozen)
+lm: 1,155,524 train / 116,893 eval tokens, 114 eval sequences
+step   100 loss 2.864 token_acc 0.451 inj 0.234 (30s)
+step   200 loss 2.325 token_acc 0.528 inj 0.232 (59s)
+step   300 loss 2.771 token_acc 0.466 inj 0.236 (89s)
+step   400 loss 2.507 token_acc 0.492 inj 0.240 (119s)
+step   500 loss 2.650 token_acc 0.466 inj 0.248 (148s)
+step   600 loss 2.418 token_acc 0.508 inj 0.252 (178s)
+step   700 loss 2.721 token_acc 0.460 inj 0.256 (208s)
+step   800 loss 2.203 token_acc 0.527 inj 0.258 (237s)
+step   900 loss 2.593 token_acc 0.492 inj 0.258 (267s)
+step  1000 loss 2.712 token_acc 0.472 inj 0.258 (297s)
+
+condition       window side      ppl  tok_acc    loss    inj
+windowed           256  off   14.623    0.472   2.683      -
+windowed+side      256   on   12.041    0.492   2.488  0.254
+full                 0  off    9.012    0.527   2.199      -
+saved results/evolve/round11/taps/t_E8_I1_L1.json
+saved results/evolve/round11/taps/t_E8_I1_L1.pt

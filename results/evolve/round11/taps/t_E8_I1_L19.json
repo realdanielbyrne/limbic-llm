@@ -1,0 +1,202 @@
+{
+  "args": {
+    "model": "Qwen/Qwen3-1.7B-Base",
+    "tiny": false,
+    "tiny_arch": "gpt2",
+    "dtype": "bfloat16",
+    "device": "cuda",
+    "attn_impl": "sdpa",
+    "grad_checkpointing": false,
+    "layer": 19,
+    "window": 256,
+    "window_mode": "block",
+    "window_layers": "all",
+    "sink": true,
+    "memory": true,
+    "time": true,
+    "kernel": "osc",
+    "rho": 0.7,
+    "tau": 16,
+    "amp": 1.0,
+    "loop": "open",
+    "ca1_control": true,
+    "contrast": true,
+    "dg_keys": false,
+    "d_key": 32,
+    "loop_arg": [],
+    "init_gain": null,
+    "task": "lm",
+    "text_file": null,
+    "dataset": "wikitext-103",
+    "max_chars": 5000000,
+    "pairs": 1,
+    "seq_len": 1024,
+    "steps": 1000,
+    "lr": 0.001,
+    "batch": 4,
+    "eval_n": 128,
+    "log_every": 0,
+    "seed": 0,
+    "out": "results/evolve/round11/taps/t_E8_I1_L19.json"
+  },
+  "model": {
+    "blocks": 28,
+    "linear_layers": 0,
+    "tap_layer": 19,
+    "windowed_layers": 28,
+    "reach": 255,
+    "window_check": "ok (block 0: far 0.0e+00 vs near 1.4e+01)",
+    "trainable_params": 450569,
+    "base_params": 1720574976,
+    "transformers": "5.22.1"
+  },
+  "curve": [
+    {
+      "step": 100,
+      "loss": 2.8935840129852295,
+      "token_acc": 0.4423076808452606,
+      "inj_ratio": 0.23585626482963562
+    },
+    {
+      "step": 200,
+      "loss": 2.3137784004211426,
+      "token_acc": 0.5244458913803101,
+      "inj_ratio": 0.24087467789649963
+    },
+    {
+      "step": 300,
+      "loss": 2.7791337966918945,
+      "token_acc": 0.46382007002830505,
+      "inj_ratio": 0.2487531304359436
+    },
+    {
+      "step": 400,
+      "loss": 2.4940662384033203,
+      "token_acc": 0.48891785740852356,
+      "inj_ratio": 0.25557592511177063
+    },
+    {
+      "step": 500,
+      "loss": 2.6737899780273438,
+      "token_acc": 0.4631681740283966,
+      "inj_ratio": 0.2608613669872284
+    },
+    {
+      "step": 600,
+      "loss": 2.419189214706421,
+      "token_acc": 0.5009778141975403,
+      "inj_ratio": 0.2667671740055084
+    },
+    {
+      "step": 700,
+      "loss": 2.743741750717163,
+      "token_acc": 0.4566492736339569,
+      "inj_ratio": 0.26802608370780945
+    },
+    {
+      "step": 800,
+      "loss": 2.2078964710235596,
+      "token_acc": 0.5306388735771179,
+      "inj_ratio": 0.26912811398506165
+    },
+    {
+      "step": 900,
+      "loss": 2.6353485584259033,
+      "token_acc": 0.4817470610141754,
+      "inj_ratio": 0.269108384847641
+    },
+    {
+      "step": 1000,
+      "loss": 2.687406063079834,
+      "token_acc": 0.4621903598308563,
+      "inj_ratio": 0.2703603208065033
+    }
+  ],
+  "results": {
+    "windowed": {
+      "loss": 2.6826259995475366,
+      "token_acc": 0.4716484823532103,
+      "ppl": 14.623444076804718
+    },
+    "windowed+side": {
+      "loss": 2.4962230352462247,
+      "token_acc": 0.4865047233468286,
+      "ppl": 12.136567895561843,
+      "inj_ratio": 0.26660895450361843
+    },
+    "full": {
+      "loss": 2.198605681668725,
+      "token_acc": 0.5270134266566024,
+      "ppl": 9.012438526466793
+    },
+    "gain": 0.3050917387008667
+  },
+  "seconds": 201.81561946868896,
+  "candidate": {
+    "class": "evolve.w1s_slots:W1sSide",
+    "args": {
+      "w1s_taps": "",
+      "w1s_gate": "point",
+      "w1s_centre": false,
+      "w1s_density": 0.12,
+      "w1s_lam": 0.8,
+      "w1s_latch": 6.0,
+      "w1s_schmitt": [
+        1.2,
+        0.8
+      ],
+      "w1s_pre": 0,
+      "w1s_win": 24,
+      "w1s_nms": 8,
+      "w1s_store": "slots",
+      "w1s_K": 16,
+      "w1s_delta": 0.0,
+      "w1s_key": "learned",
+      "w1s_native_layer": 21,
+      "w1s_key_taps": null,
+      "w1s_pool": 8,
+      "w1s_dk": 128,
+      "w1s_dv": 32,
+      "w1s_align": "lex",
+      "w1s_recency": 0.002,
+      "w1s_out": "additive",
+      "w1s_L": 4,
+      "w1s_ctrl": "none",
+      "w1s_recency_form": "linear",
+      "w1s_time_feat": "none",
+      "w1s_rope_dims": 32,
+      "w1s_rope_periods": "64,65536",
+      "w1s_ord_dim": 16,
+      "w1s_sup_w": 3.0,
+      "w1s_sup_gamma": 40.0,
+      "w1s_sup_theta": 0.9,
+      "w1s_sup_omega": 3.0,
+      "w1s_lex_init": null,
+      "w1s_align_init": null,
+      "w1s_code": "lex",
+      "w1s_dc": 64,
+      "w1s_keep": 0,
+      "w1s_keep_by": "first",
+      "w1s_keep_init": "zero",
+      "w1s_gate_norm": "none",
+      "w1s_gate_norm_window": 64,
+      "w1s_replay": "match",
+      "w1s_ptr_init": 4.0,
+      "w1s_align_stream": "lex"
+    }
+  },
+  "w1s_state": {
+    "state_floats": 906727,
+    "state_components": {
+      "ring": 70720,
+      "slot_keys": 34848,
+      "slot_codes": 786432,
+      "slot_values": 12288,
+      "slot_weights": 384,
+      "sup_tags": 0,
+      "superposed": 0,
+      "gate": 2055
+    },
+    "params": 450569
+  }
+}
