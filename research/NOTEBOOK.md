@@ -1778,3 +1778,5 @@ side-memory track landing a generalizing mechanism.
 
 **Next (proposed, DEC20).** Round 14, `plans/round14_plan.md`: tests where content matching is at chance by construction (update, context binding, rejecting recalls, write gate on natural text), run as a screen-first loop on cached activations. Round 13's steps 1–3 are not run as planned. Awaiting Daniel.
 
+[Addition, 12 Nov 2026: an adversarial review of the round-14 draft (RV7) showed that on an exact store with positions, "find the entity, take its latest statement" solves the update test and a wider retrieval window solves context binding, so draft 1 could have reported success with no evidence for any circuit part. Draft 2 imposes a fixed store budget and credits a part only if it beats its one-line stand-in.]
+
