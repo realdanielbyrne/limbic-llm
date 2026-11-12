@@ -1,0 +1,140 @@
+Loading weights:   0%|          | 0/484 [00:00<?, ?it/s]Loading weights:  41%|████      | 197/484 [00:00<00:00, 1969.86it/s]Loading weights:  96%|█████████▋| 466/484 [00:00<00:00, 2328.13it/s]Loading weights: 100%|██████████| 484/484 [00:00<00:00, 2338.15it/s]
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 13891.43it/s]
+Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 14600.88it/s]
+google/recurrentgemma-2b: W=2048, attention layers [2, 5, 8, 11, 14, 17, 20, 23], L=8192, types ['plain', 'decoy', 'jitter', 'paraphrase', 'update'], cells ['beyond'], n=400, chat=off, gate novelty@64 > 0.8164
+2000 items to run (0 already in rank_rg2b.json)
+  16/2000 items, 2.29 s/item, peak 18.0 GB
+  32/2000 items, 2.30 s/item, peak 18.0 GB
+  48/2000 items, 2.29 s/item, peak 18.0 GB
+  64/2000 items, 2.29 s/item, peak 18.0 GB
+  80/2000 items, 2.30 s/item, peak 18.0 GB
+  96/2000 items, 2.30 s/item, peak 18.0 GB
+  112/2000 items, 2.30 s/item, peak 18.0 GB
+  128/2000 items, 2.30 s/item, peak 18.0 GB
+  144/2000 items, 2.30 s/item, peak 18.0 GB
+  160/2000 items, 2.30 s/item, peak 18.0 GB
+  176/2000 items, 2.30 s/item, peak 18.0 GB
+  192/2000 items, 2.30 s/item, peak 18.0 GB
+  208/2000 items, 2.30 s/item, peak 18.0 GB
+  224/2000 items, 2.30 s/item, peak 18.0 GB
+  240/2000 items, 2.31 s/item, peak 18.0 GB
+  256/2000 items, 2.30 s/item, peak 18.0 GB
+  272/2000 items, 2.30 s/item, peak 18.0 GB
+  288/2000 items, 2.30 s/item, peak 18.0 GB
+  304/2000 items, 2.30 s/item, peak 18.0 GB
+  320/2000 items, 2.31 s/item, peak 18.0 GB
+  336/2000 items, 2.31 s/item, peak 18.0 GB
+  352/2000 items, 2.31 s/item, peak 18.0 GB
+  368/2000 items, 2.31 s/item, peak 18.0 GB
+  384/2000 items, 2.31 s/item, peak 18.0 GB
+  400/2000 items, 2.31 s/item, peak 18.0 GB
+  416/2000 items, 2.31 s/item, peak 18.0 GB
+  432/2000 items, 2.31 s/item, peak 18.0 GB
+  448/2000 items, 2.31 s/item, peak 18.0 GB
+  464/2000 items, 2.31 s/item, peak 18.0 GB
+  480/2000 items, 2.31 s/item, peak 18.0 GB
+  496/2000 items, 2.31 s/item, peak 18.0 GB
+  512/2000 items, 2.31 s/item, peak 18.0 GB
+  528/2000 items, 2.31 s/item, peak 18.0 GB
+  544/2000 items, 2.31 s/item, peak 18.0 GB
+  560/2000 items, 2.31 s/item, peak 18.0 GB
+  576/2000 items, 2.31 s/item, peak 18.0 GB
+  592/2000 items, 2.31 s/item, peak 18.0 GB
+  608/2000 items, 2.31 s/item, peak 18.0 GB
+  624/2000 items, 2.31 s/item, peak 18.0 GB
+  640/2000 items, 2.31 s/item, peak 18.0 GB
+  656/2000 items, 2.31 s/item, peak 18.0 GB
+  672/2000 items, 2.31 s/item, peak 18.0 GB
+  688/2000 items, 2.31 s/item, peak 18.0 GB
+  704/2000 items, 2.31 s/item, peak 18.0 GB
+  720/2000 items, 2.31 s/item, peak 18.0 GB
+  736/2000 items, 2.31 s/item, peak 18.0 GB
+  752/2000 items, 2.31 s/item, peak 18.0 GB
+  768/2000 items, 2.31 s/item, peak 18.0 GB
+  784/2000 items, 2.31 s/item, peak 18.0 GB
+  800/2000 items, 2.31 s/item, peak 18.0 GB
+  816/2000 items, 2.31 s/item, peak 18.0 GB
+  832/2000 items, 2.31 s/item, peak 18.0 GB
+  848/2000 items, 2.32 s/item, peak 18.0 GB
+  864/2000 items, 2.32 s/item, peak 18.0 GB
+  880/2000 items, 2.32 s/item, peak 18.0 GB
+  896/2000 items, 2.32 s/item, peak 18.0 GB
+  912/2000 items, 2.32 s/item, peak 18.0 GB
+  928/2000 items, 2.32 s/item, peak 18.0 GB
+  944/2000 items, 2.32 s/item, peak 18.0 GB
+  960/2000 items, 2.32 s/item, peak 18.0 GB
+  976/2000 items, 2.32 s/item, peak 18.0 GB
+  992/2000 items, 2.32 s/item, peak 18.0 GB
+  1008/2000 items, 2.32 s/item, peak 18.0 GB
+  1024/2000 items, 2.32 s/item, peak 18.0 GB
+  1040/2000 items, 2.32 s/item, peak 18.0 GB
+  1056/2000 items, 2.32 s/item, peak 18.0 GB
+  1072/2000 items, 2.32 s/item, peak 18.0 GB
+  1088/2000 items, 2.32 s/item, peak 18.0 GB
+  1104/2000 items, 2.32 s/item, peak 18.0 GB
+  1120/2000 items, 2.32 s/item, peak 18.0 GB
+  1136/2000 items, 2.32 s/item, peak 18.0 GB
+  1152/2000 items, 2.32 s/item, peak 18.0 GB
+  1168/2000 items, 2.32 s/item, peak 18.0 GB
+  1184/2000 items, 2.32 s/item, peak 18.0 GB
+  1200/2000 items, 2.32 s/item, peak 18.0 GB
+  1216/2000 items, 2.32 s/item, peak 18.0 GB
+  1232/2000 items, 2.32 s/item, peak 18.0 GB
+  1248/2000 items, 2.32 s/item, peak 18.0 GB
+  1264/2000 items, 2.32 s/item, peak 18.0 GB
+  1280/2000 items, 2.32 s/item, peak 18.0 GB
+  1296/2000 items, 2.32 s/item, peak 18.0 GB
+  1312/2000 items, 2.32 s/item, peak 18.0 GB
+  1328/2000 items, 2.32 s/item, peak 18.0 GB
+  1344/2000 items, 2.32 s/item, peak 18.0 GB
+  1360/2000 items, 2.32 s/item, peak 18.0 GB
+  1376/2000 items, 2.32 s/item, peak 18.0 GB
+  1392/2000 items, 2.32 s/item, peak 18.0 GB
+  1408/2000 items, 2.32 s/item, peak 18.0 GB
+  1424/2000 items, 2.32 s/item, peak 18.0 GB
+  1440/2000 items, 2.32 s/item, peak 18.0 GB
+  1456/2000 items, 2.32 s/item, peak 18.0 GB
+  1472/2000 items, 2.32 s/item, peak 18.0 GB
+  1488/2000 items, 2.32 s/item, peak 18.0 GB
+  1504/2000 items, 2.32 s/item, peak 18.0 GB
+  1520/2000 items, 2.32 s/item, peak 18.0 GB
+  1536/2000 items, 2.32 s/item, peak 18.0 GB
+  1552/2000 items, 2.32 s/item, peak 18.0 GB
+  1568/2000 items, 2.32 s/item, peak 18.0 GB
+  1584/2000 items, 2.32 s/item, peak 18.0 GB
+  1600/2000 items, 2.32 s/item, peak 18.0 GB
+  1616/2000 items, 2.32 s/item, peak 18.0 GB
+  1632/2000 items, 2.32 s/item, peak 18.0 GB
+  1648/2000 items, 2.32 s/item, peak 18.0 GB
+  1664/2000 items, 2.32 s/item, peak 18.0 GB
+  1680/2000 items, 2.32 s/item, peak 18.0 GB
+  1696/2000 items, 2.32 s/item, peak 18.0 GB
+  1712/2000 items, 2.32 s/item, peak 18.0 GB
+  1728/2000 items, 2.32 s/item, peak 18.0 GB
+  1744/2000 items, 2.32 s/item, peak 18.0 GB
+  1760/2000 items, 2.32 s/item, peak 18.0 GB
+  1776/2000 items, 2.32 s/item, peak 18.0 GB
+  1792/2000 items, 2.32 s/item, peak 18.0 GB
+  1808/2000 items, 2.32 s/item, peak 18.0 GB
+  1824/2000 items, 2.32 s/item, peak 18.0 GB
+  1840/2000 items, 2.32 s/item, peak 18.0 GB
+  1856/2000 items, 2.32 s/item, peak 18.0 GB
+  1872/2000 items, 2.32 s/item, peak 18.0 GB
+  1888/2000 items, 2.32 s/item, peak 18.0 GB
+  1904/2000 items, 2.32 s/item, peak 18.0 GB
+  1920/2000 items, 2.32 s/item, peak 18.0 GB
+  1936/2000 items, 2.32 s/item, peak 18.0 GB
+  1952/2000 items, 2.33 s/item, peak 18.0 GB
+  1968/2000 items, 2.33 s/item, peak 18.0 GB
+  1984/2000 items, 2.33 s/item, peak 18.0 GB
+  2000/2000 items, 2.33 s/item, peak 18.0 GB
+sanity: {'oracle_queried_recall': 1.0, 'random_recall': 0.0625, 'random_chance': 0.07621686035209464, 'nan_items': 0, 'cand_mode_all': 0}
+  qk: qk.nope.max.qfoot dev recall 0.890
+  retriever: retriever.bge dev recall 1.000
+  infllm: infllm.foot*novelty@4 dev recall 0.715
+  circuit: cos_early.max*novelty@16 dev recall 0.940
+  qk_layer: qk_layer.L5 dev recall 0.932
+  qk_head: qk_head.L5.H8 dev recall 0.983
+  retriever_upper: retriever.qwen3_4b dev recall 1.000
+stop rule: {'parts': {'salience.dentate': {'auc': 0.4782976052660659, 'hi': 0.4838679116494207, 'below_0.6': True, 'upper_below_0.6': True}, 'context_tag.matched': {'auc': 0.765339033696875, 'hi': 0.7667004105082031, 'below_0.6': False, 'upper_below_0.6': False}, 'comparator@0': {'auc': 0.8401017832006429, 'hi': 0.8586187149031862, 'below_0.6': False, 'upper_below_0.6': False}}, 'parts_below_0.6': ['salience.dentate'], 'comparator_lambda': '0', 'plain_selector': {'qk': {'scorer': 'qk.nope.max.qfoot', 'held_recall': 0.88, 'lo': 0.8475, 'ge_0.9': False}, 'retriever': {'scorer': 'retriever.bge', 'held_recall': 0.9975, 'lo': 0.9925, 'ge_0.9': True}}, 'selection_not_missing': True}
+saved /mnt/data/limbic-llm/results_archive/evolve/round13/step0b/rank_rg2b.json (labels, ranks and scores only); parts in /mnt/data/limbic-llm/round13_traces/step0b_rank_rg2b

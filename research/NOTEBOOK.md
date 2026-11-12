@@ -1750,3 +1750,31 @@ side-memory track landing a generalizing mechanism.
 **Next.** Round 13 (DEC17): the gated memory circuit, `plans/round13_gated_memory_plan.md`, a draft under adversarial review.
 
 [Correction, 11 Nov 2026: the adversarial review of the round-13 plan (register RV5) narrows P100 and point 5 above. The oracle reads back every statement and never uses the question, and the InfLLM-style arm is at chance through faults in our implementation, so "selection is the open problem" is not established: a plain selector has not been given a fair test. The 0.08 → 0.94 figure is the needle cell on the base model; pooled over needle and update it is 0.10 → 0.70 (base) and 0.14 → 0.72 (-it). The update cell on the base model (0.46) missed its gate, and the inside-window check failed (native 0.65 on update items with the facts in view). The review's verdict on draft 1 of the plan was "do not run as written"; draft 2 answers its findings and is not approved or built.]
+
+## Round 13 step 0b: the circuit's selectors lose to a plain retriever; the comparator and the time question survive (12 Nov 2026)
+
+**Setup** (DEC17–DEC19; plan `plans/round13_gated_memory_plan.md`, draft 2). Code: `experiments/ca2/circuit.py`, `items13.py`, `selectors13.py`, `rank13.py`. Ranking only, one forward pass per item, no read-back and no generation. RecurrentGemma-2b and -2b-it, 8,192-token inputs, 24 same-form statements per item with one queried, item types plain, decoy, jitter, paraphrase and update, 400 per type, half dev and half held out. Register P102.
+
+**What happened on the way.**
+- An 8-item smoke showed that 512 columns hold all 24 statements, so recall at that budget measures form detection. The primary measures became top-1 and MRR before any real run (DEC18).
+- A code review (RV6) found that the comparator received an unnormalised state, and that the dentate salience is constant by construction (layer norm, then a Gaussian projection). The first runs were stopped unread and step 0b reran the same items with the fix, five other saliences, query-key variants that read at the answer position, per-layer and per-head families and a position reference (DEC19).
+
+**Results** (held out, pooled decoy + paraphrase, top-1; base / -it).
+- `bge-small` 0.89 / 0.89; Qwen3-Embedding-4B 0.97 / 0.97.
+- The model's best single attention head 0.52 / 0.43; the circuit's dev-chosen scorer (early-tap cosine) 0.32 / 0.47; dentate key + context tag 0.07 / 0.09; the repaired InfLLM-style arm 0.01 / 0.03.
+- Every model-internal key is lexical: 0.70–0.97 on same-wording items, 0.05–0.20 on paraphrase.
+- Update items: retrievers rank the superseded statement above the current one in 75–87% of items.
+- Parts: comparator AUC 0.84 / 0.74; context tag 0.77 / 0.75 (distance-matched); novelty salience 0.95 / 0.93 but confounded by insertion; dentate strength at chance.
+
+**Reading.**
+1. The dentate sparse key is not a usable address. With an exact store, a random sparse code can only add noise to the similarity it is derived from.
+2. "What" matching from a verbal cue is the home ground of a trained text encoder. Losing it says little about the rest of the circuit.
+3. The comparator works as a signal of whether a recall is right, even over a poor selector.
+4. Time is open: content matching cannot tell the current value from the superseded one.
+
+**Process note.** The 40-item smoke (90 seconds) already showed the ordering that 2,000 items per model confirmed; about five GPU-hours went on confirming a gap of 0.4–0.6. Daniel's comment, 12 Nov: "It seems as if you are spending an inordinate amount of time on obviously failing experiments." From here: cache activations once, screen each new part on about 50 items with a kill rule written first, and keep full-size runs for survivors.
+
+**Literature review** (three Fable research agents, 12 Nov; `reviews/2026-11-12_hippocampus_models/`). The dentate code is for separating memories at write time, not for matching cues; no hippocampal model is expected to beat a trained encoder at single-fact cued recall (HippoRAG 2 reaches parity there); the expected wins are time and order, updating, near-duplicate events, novelty-gated storage and rejecting wrong recalls. Published retrievers are roughly indifferent between current and superseded facts, so our update result (stale statement first in 75–87% of items) is probably an item artefact: the updating statement alone contains "now" and is one token longer (RV6.3).
+
+**Next (proposed, DEC20).** Round 14, `plans/round14_plan.md`: tests where content matching is at chance by construction (update, context binding, rejecting recalls, write gate on natural text), run as a screen-first loop on cached activations. Round 13's steps 1–3 are not run as planned. Awaiting Daniel.
+

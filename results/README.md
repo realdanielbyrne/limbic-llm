@@ -124,8 +124,21 @@ Round 12 (register P90–P101; NOTEBOOK "Round 12"). Produced by `experiments/ca
 
 Notes:
 - **Reruns.** Runs that failed on GPU memory were rerun from scratch at smaller batches; the failed logs are in the `queue_*` folders, which are not committed. `cancelled/` holds the queue entries dropped at the re-plan (DEC16).
-- **Slimmed files (12 Nov 2026).** Eleven JSONs of 13–415 MB (867 MB in all) were replaced in the repo by slimmed copies under the same names: `stage0/ceiling_*.json`, `laggrid_screen_q35b.json`, `multisite_*.json`, `s0c_text_*.json` and `stage1/c2screen_*.json`. A slimmed copy keeps every aggregate and drops only the per-item arrays (`per_item`, `rows`) and the per-site `signal_means`. Its `_archive` key gives the full file's path, size, SHA-256 and the keys dropped. The full files are on geof under `~/limbic-data/results_archive/evolve/round12/` (hashes also in `MANIFEST.sha256` there).
+- **Slimmed files (12 Nov 2026).** Eleven JSONs of 13–415 MB (867 MB in all) were replaced in the repo by slimmed copies under the same names: `stage0/ceiling_*.json`, `laggrid_screen_q35b.json`, `multisite_*.json`, `s0c_text_*.json` and `stage1/c2screen_*.json`. A slimmed copy keeps every aggregate and drops only the per-item arrays (`per_item`, `rows`) and the per-site `signal_means`. Its `_archive` key gives the full file's path, size, SHA-256 and the keys dropped. The full files are on geof under `~/limbic-data/results_archive/evolve/round12/` (hashes also in `MANIFEST.sha256` there); since 12 Nov 2026 that path is a symlink to `/mnt/data/limbic-llm/results_archive/` on the large drive, and `~/limbic-data/ca2_traces` likewise points to `/mnt/data/limbic-llm/ca2_traces/`.
 - **`guard/`** belongs to the alignment-guard session, not to this table.
+
+## evolve/round13/
+
+Round 13, gated memory circuit (register P102, DEC17–DEC19, RV6; plan `research/plans/round13_gated_memory_plan.md`). Produced by `experiments/ca2/rank13.py` on geof, 12 Nov 2026.
+
+| Files | What | Register |
+|---|---|---|
+| `step0b/rank_rg2b.json`, `rank_rg2b_it.json` | ranking of the queried statement under every selector, beyond-window cell, 400 items per type, RecurrentGemma-2b and -2b-it; AUC checks of the circuit's parts | P102 |
+| `step0b/rank_rg2b_near.json` | the same on the near cell (100 items per type), base model only | P102 |
+
+Notes:
+- **Slimmed files.** Each JSON is a slimmed copy: per-item rows are dropped, and the summary table keeps the non-product scorers in full and the salience-product scorers as held-out primary-pool top-1 and MRR only. The `_archive` key gives the full file's path, size and SHA-256. Full files and per-span traces are on geof under `/mnt/data/limbic-llm/results_archive/evolve/round13/step0b/` and `/mnt/data/limbic-llm/round13_traces/`.
+- **Not results.** `step0/` in the archive holds the first runs, stopped unread at 656 and 456 of 2,000 items because of a comparator bug (RV6.1, DEC19). The near-cell run on the -it model was cancelled.
 
 ## alignment/
 

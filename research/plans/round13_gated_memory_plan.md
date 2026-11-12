@@ -1,6 +1,6 @@
 # Round 13, gated memory circuit: design and first experiment (draft 2, 11 Nov 2026)
 
-Status: **draft 2, revised after an adversarial review (Opus, 11 Nov 2026). Nothing here has been built or run, and the round is not approved.** Written by the round-12 GPU session from the design discussion with Daniel on 11 Nov 2026. The review's verdict on draft 1 was "do not run as written"; §6 lists its findings and where each is answered.
+Status: **draft 2, revised after an adversarial review (Opus, 11 Nov 2026). Approved by Daniel on 12 Nov 2026 ("Start round 13"); step 0 is being built.** Written by the round-12 GPU session from the design discussion with Daniel on 11 Nov 2026. The review's verdict on draft 1 was "do not run as written"; §6 lists its findings and where each is answered.
 
 ## 1. Why this, and what it must show
 
@@ -126,6 +126,7 @@ One forward pass per item. For each scorer, the rank of the queried statement am
 
 - Scorers: qk, retriever, repaired infllm, cos-early, dentate overlap, dentate + context tag, each alone and multiplied by write-time salience (dentate strength; the recurrent layers' own gate values, taken by hooks; attention received).
 - Measures: recall@budget (is the queried span among those that fit in 512 columns), mean reciprocal rank, on plain, decoy, jitter and paraphrase items.
+- [Change, 12 Nov 2026, register DEC18, made before the real runs: statements are 10–14 tokens, so 512 columns hold all 24 and recall@budget measures form detection. The primary measures are top-1 and MRR of the queried span, with recall@k spans (k = 2, 4, 8) beside recall@budget; the stop rule below is read on top-1 ≥ 0.9.]
 - **Checks of the circuit's parts, same pass:**
   - Salience: AUC of dentate salience for "this sentence states a fact" against filler.
   - Context tag: AUC for "same passage" against "same document, other passage".
