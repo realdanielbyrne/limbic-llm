@@ -1,0 +1,91 @@
+Loading weights:   0%|          | 0/320 [00:00<?, ?it/s]Loading weights: 100%|██████████| 320/320 [00:00<00:00, 13612.07it/s]
+Qwen/Qwen3.5-2B: thinking end 248069, open 248068; 200 problems x 1 samples; 7 arms; ref dyn
+[dyn] dyn@T=0.6;pp=0;inj=conclude;block=15;gmin=0;gmax=0.3;law=elapsed-256
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+[transformers] `causal_conv1d_update` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+  [dyn] batch 1/7: acc 0.56 closed 0.66 reason 2430 tok  (97s)
+  [dyn] batch 2/7: acc 0.69 closed 0.75 reason 1814 tok  (191s)
+  [dyn] batch 3/7: acc 0.59 closed 0.69 reason 2214 tok  (287s)
+  [dyn] batch 4/7: acc 0.62 closed 0.66 reason 2168 tok  (381s)
+  [dyn] batch 5/7: acc 0.59 closed 0.62 reason 2231 tok  (478s)
+  [dyn] batch 6/7: acc 0.62 closed 0.72 reason 2257 tok  (573s)
+  [dyn] batch 7/7: acc 0.50 closed 0.50 reason 3002 tok  (649s)
+[dyn] injection block 15, g in [0, 0.3]: realised mean gain 0.2826, tokens_total 2414
+[dyn] acc 0.610  non-close 0.32  reason 2218  n_gen 2414  TTC median 512.0
+[fixm] fixm@T=0.6;pp=0;inj=conclude;block=15;g=match:dyn
+  [fixm] batch 1/7: acc 0.47 closed 0.62 reason 2595 tok  (94s)
+  [fixm] batch 2/7: acc 0.75 closed 0.81 reason 1763 tok  (189s)
+  [fixm] batch 3/7: acc 0.75 closed 0.81 reason 2115 tok  (282s)
+  [fixm] batch 4/7: acc 0.59 closed 0.75 reason 2165 tok  (377s)
+  [fixm] batch 5/7: acc 0.66 closed 0.66 reason 2377 tok  (473s)
+  [fixm] batch 6/7: acc 0.69 closed 0.75 reason 2357 tok  (569s)
+  [fixm] batch 7/7: acc 0.50 closed 0.50 reason 2738 tok  (644s)
+[fixm] injection block 15, g in [0, 0.282628]: realised mean gain 0.2826, tokens_total 2445
+[fixm] acc 0.645  non-close 0.28  reason 2249  n_gen 2445  TTC median 512.0
+[yoke] yoke@T=0.6;pp=0;inj=conclude;block=15;yoke=dyn
+  [yoke] batch 1/7: acc 0.56 closed 0.66 reason 2430 tok  (96s)
+  [yoke] batch 2/7: acc 0.69 closed 0.75 reason 1814 tok  (191s)
+  [yoke] batch 3/7: acc 0.59 closed 0.69 reason 2214 tok  (288s)
+  [yoke] batch 4/7: acc 0.62 closed 0.66 reason 2168 tok  (383s)
+  [yoke] batch 5/7: acc 0.59 closed 0.62 reason 2231 tok  (480s)
+  [yoke] batch 6/7: acc 0.62 closed 0.72 reason 2257 tok  (576s)
+  [yoke] batch 7/7: acc 0.50 closed 0.50 reason 3002 tok  (655s)
+[yoke] injection block 15, g in [0, 0.3]: realised mean gain 0.2826, tokens_total 2414
+[yoke] acc 0.610  non-close 0.32  reason 2218  n_gen 2414  TTC median 512.0
+[rand] rand@T=0.6;pp=0;inj=random;block=15;gmin=0;gmax=0.3;law=elapsed-256
+  [rand] batch 1/7: acc 0.16 closed 0.19 reason 3538 tok  (106s)
+  [rand] batch 2/7: acc 0.25 closed 0.28 reason 3241 tok  (214s)
+  [rand] batch 3/7: acc 0.28 closed 0.28 reason 3282 tok  (321s)
+  [rand] batch 4/7: acc 0.16 closed 0.16 reason 3658 tok  (427s)
+  [rand] batch 5/7: acc 0.25 closed 0.25 reason 3368 tok  (531s)
+  [rand] batch 6/7: acc 0.19 closed 0.19 reason 3585 tok  (627s)
+  [rand] batch 7/7: acc 0.00 closed 0.00 reason 4096 tok  (702s)
+[rand] injection block 15, g in [0, 0.3]: realised mean gain 0.2889, tokens_total 3523
+[rand] acc 0.205  non-close 0.79  reason 3471  n_gen 3523  TTC median 512.0
+[neg] neg@T=0.6;pp=0;inj=-conclude;block=15;gmin=0;gmax=0.3;law=elapsed-256
+  [neg] batch 1/7: acc 0.00 closed 0.00 reason 4096 tok  (95s)
+  [neg] batch 2/7: acc 0.00 closed 0.00 reason 4096 tok  (191s)
+  [neg] batch 3/7: acc 0.00 closed 0.00 reason 4096 tok  (286s)
+  [neg] batch 4/7: acc 0.00 closed 0.00 reason 4096 tok  (382s)
+  [neg] batch 5/7: acc 0.00 closed 0.00 reason 4096 tok  (478s)
+  [neg] batch 6/7: acc 0.00 closed 0.00 reason 4096 tok  (574s)
+  [neg] batch 7/7: acc 0.00 closed 0.00 reason 4096 tok  (650s)
+[neg] injection block 15, g in [0, 0.3]: realised mean gain 0.2906, tokens_total 4096
+[neg] acc 0.000  non-close 1.00  reason 4096  n_gen 4096  TTC median 640.0
+[el] el@T=0.6;pp=0;inj=conclude;block=15;gmin=0;gmax=0.3;law=elapsed-1024
+  [el] batch 1/7: acc 0.47 closed 0.59 reason 2614 tok  (95s)
+  [el] batch 2/7: acc 0.69 closed 0.81 reason 1740 tok  (189s)
+  [el] batch 3/7: acc 0.78 closed 0.84 reason 2143 tok  (284s)
+  [el] batch 4/7: acc 0.69 closed 0.75 reason 2042 tok  (378s)
+  [el] batch 5/7: acc 0.59 closed 0.75 reason 2182 tok  (472s)
+  [el] batch 6/7: acc 0.72 closed 0.72 reason 2138 tok  (566s)
+  [el] batch 7/7: acc 0.50 closed 0.50 reason 2727 tok  (641s)
+[el] injection block 15, g in [0, 0.3]: realised mean gain 0.2308, tokens_total 2373
+[el] acc 0.650  non-close 0.27  reason 2166  n_gen 2373  TTC median 512.0
+[fix] fix@T=0.6;pp=0;inj=conclude;block=15;g=0.2
+  [fix] batch 1/7: acc 0.34 closed 0.38 reason 3092 tok  (96s)
+  [fix] batch 2/7: acc 0.66 closed 0.69 reason 1979 tok  (191s)
+  [fix] batch 3/7: acc 0.62 closed 0.66 reason 2311 tok  (285s)
+  [fix] batch 4/7: acc 0.53 closed 0.66 reason 2426 tok  (381s)
+  [fix] batch 5/7: acc 0.59 closed 0.69 reason 2407 tok  (477s)
+  [fix] batch 6/7: acc 0.53 closed 0.56 reason 2569 tok  (576s)
+  [fix] batch 7/7: acc 0.25 closed 0.38 reason 3322 tok  (656s)
+[fix] injection block 15, g in [0, 0.2]: realised mean gain 0.2000, tokens_total 2647
+[fix] acc 0.535  non-close 0.41  reason 2498  n_gen 2647  TTC median 512.0
+saved /home/realdanielbyrne/limbic-llm/results/evolve/round12/stage1/c3inj_q35.json (no generated text); traces in /home/realdanielbyrne/limbic-data/ca2_traces/c3inj_q35
+           t06: acc 0.210 tokens 3532  vertical -0.625  tokens saved at matched acc -
+          f256: acc 0.835 tokens 883  vertical +0.000  tokens saved at matched acc 0
+          f512: acc 0.795 tokens 1221  vertical -0.040  tokens saved at matched acc -473
+         f1024: acc 0.795 tokens 1630  vertical -0.040  tokens saved at matched acc -882
+         f2048: acc 0.820 tokens 2387  vertical -0.015  tokens saved at matched acc -1554
+        biasc3: acc 0.460 tokens 3108  vertical -0.375  tokens saved at matched acc -
+        stopc3: acc 0.800 tokens 1461  vertical -0.035  tokens saved at matched acc -696
+       nothink: acc 0.765 tokens 647  vertical +0.000  tokens saved at matched acc 0
+           dyn: acc 0.610 tokens 2414  vertical -0.225  tokens saved at matched acc -
+          fixm: acc 0.645 tokens 2445  vertical -0.190  tokens saved at matched acc -
+          yoke: acc 0.610 tokens 2414  vertical -0.225  tokens saved at matched acc -
+          rand: acc 0.205 tokens 3523  vertical -0.630  tokens saved at matched acc -
+           neg: acc 0.000 tokens 4096  vertical -0.835  tokens saved at matched acc -
+            el: acc 0.650 tokens 2373  vertical -0.185  tokens saved at matched acc -
+           fix: acc 0.535 tokens 2647  vertical -0.300  tokens saved at matched acc -
+analysis saved in /home/realdanielbyrne/limbic-llm/results/evolve/round12/stage1/c3inj_q35.json

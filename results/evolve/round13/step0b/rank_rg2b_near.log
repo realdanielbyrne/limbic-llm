@@ -1,0 +1,47 @@
+Loading weights:   0%|          | 0/484 [00:00<?, ?it/s]Loading weights:  21%|██        | 101/484 [00:00<00:00, 996.18it/s]Loading weights:  78%|███████▊  | 377/484 [00:00<00:00, 2005.85it/s]Loading weights: 100%|██████████| 484/484 [00:00<00:00, 2033.18it/s]
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 14041.46it/s]
+Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 19685.53it/s]
+google/recurrentgemma-2b: W=2048, attention layers [2, 5, 8, 11, 14, 17, 20, 23], L=8192, types ['plain', 'decoy', 'jitter', 'paraphrase', 'update'], cells ['near'], n=100, chat=off, gate novelty@16 > 0.711
+500 items to run (0 already in rank_rg2b_near.json)
+  16/500 items, 2.29 s/item, peak 18.0 GB
+  32/500 items, 2.27 s/item, peak 18.0 GB
+  48/500 items, 2.27 s/item, peak 18.0 GB
+  64/500 items, 2.27 s/item, peak 18.0 GB
+  80/500 items, 2.27 s/item, peak 18.0 GB
+  96/500 items, 2.27 s/item, peak 18.0 GB
+  112/500 items, 2.28 s/item, peak 18.0 GB
+  128/500 items, 2.28 s/item, peak 18.0 GB
+  144/500 items, 2.28 s/item, peak 18.0 GB
+  160/500 items, 2.29 s/item, peak 18.0 GB
+  176/500 items, 2.29 s/item, peak 18.0 GB
+  192/500 items, 2.29 s/item, peak 18.0 GB
+  208/500 items, 2.29 s/item, peak 18.0 GB
+  224/500 items, 2.29 s/item, peak 18.0 GB
+  240/500 items, 2.29 s/item, peak 18.0 GB
+  256/500 items, 2.30 s/item, peak 18.0 GB
+  272/500 items, 2.30 s/item, peak 18.0 GB
+  288/500 items, 2.30 s/item, peak 18.0 GB
+  304/500 items, 2.30 s/item, peak 18.0 GB
+  320/500 items, 2.30 s/item, peak 18.0 GB
+  336/500 items, 2.30 s/item, peak 18.0 GB
+  352/500 items, 2.30 s/item, peak 18.0 GB
+  368/500 items, 2.30 s/item, peak 18.0 GB
+  384/500 items, 2.30 s/item, peak 18.0 GB
+  400/500 items, 2.30 s/item, peak 18.0 GB
+  416/500 items, 2.30 s/item, peak 18.0 GB
+  432/500 items, 2.30 s/item, peak 18.0 GB
+  448/500 items, 2.30 s/item, peak 18.0 GB
+  464/500 items, 2.30 s/item, peak 18.0 GB
+  480/500 items, 2.30 s/item, peak 18.0 GB
+  496/500 items, 2.30 s/item, peak 18.0 GB
+  500/500 items, 2.30 s/item, peak 18.0 GB
+sanity: {'oracle_queried_recall': 1.0, 'random_recall': 0.088, 'random_chance': 0.07636933658558041, 'nan_items': 0, 'cand_mode_all': 0}
+  qk: qk.nope.max.qfoot dev recall 0.900
+  retriever: retriever.bge dev recall 1.000
+  infllm: infllm.foot*novelty@4 dev recall 0.650
+  circuit: dentate*novelty@4 dev recall 0.980
+  qk_layer: qk_layer.L5 dev recall 0.920
+  qk_head: qk_head.L5.H3 dev recall 0.990
+  retriever_upper: retriever.qwen3_4b dev recall 1.000
+stop rule: {'parts': {'salience.dentate': {'auc': 0.4733043475738716, 'hi': 0.4834955757879652, 'below_0.6': True, 'upper_below_0.6': True}, 'context_tag.matched': {'auc': 0.73754018855, 'hi': 0.7402509684512499, 'below_0.6': False, 'upper_below_0.6': False}, 'comparator@0': {'auc': 0.7481658107116654, 'hi': 0.8094874373176276, 'below_0.6': False, 'upper_below_0.6': False}}, 'parts_below_0.6': ['salience.dentate'], 'comparator_lambda': '0', 'plain_selector': {'qk': {'scorer': 'qk.nope.max.qfoot', 'held_recall': 0.91, 'lo': 0.85, 'ge_0.9': True}, 'retriever': {'scorer': 'retriever.bge', 'held_recall': 1.0, 'lo': 1.0, 'ge_0.9': True}}, 'selection_not_missing': True}
+saved /mnt/data/limbic-llm/results_archive/evolve/round13/step0b/rank_rg2b_near.json (labels, ranks and scores only); parts in /mnt/data/limbic-llm/round13_traces/step0b_rank_rg2b_near

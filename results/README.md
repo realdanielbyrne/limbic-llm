@@ -104,6 +104,42 @@ Round 2, candidates W1b (W1 with context-bearing addresses, `evolve/w1_gdn.py` f
 
 Planned outputs of the round-0 diagnostic arms g0–g7 (`research/plans/round0_plan.md` §2: `g0_ctrl`, `g1_flat`, `g2_exp098`, `g3_flat_notime`, `g4_flat_nocontrast`, `g5_flat_pairs2`, `g6_flat_l6`, `g7_flat_l22`). None has run; their status is in the register's round-0 table.
 
+## evolve/round12/
+
+Round 12 (register P90–P101; NOTEBOOK "Round 12"). Produced by `experiments/ca2/` on geof, 9–11 Nov 2026, bf16 base models with float32 side computations. Each JSON has a `.log` beside it. Raw per-token and per-item traces, generated text and direction files are outside the repo, under `~/limbic-data/` (`ca2_traces/`, `ca2_dirs/`, `m1a/`); the JSONs record pointers and hashes.
+
+| Files | What | Register |
+|---|---|---|
+| `stage0/hybrid_diag.json` | GDN diagnostics on Qwen3.5-2B-Base (census, attenuation, recurrent-only, state swap, signals, gate shift, impulse) | P90 |
+| `stage0/ceiling_q3b.json`, `ceiling_q35b_s7_11_12.json`, `ceiling_q35b_s14_19.json` | gain sweeps per direction and site, teacher-forced and free generation | P91 |
+| `stage0/ceiling_q35b_branch.json` | branch-gain sweep on the hybrid (GDN, attention and MLP branches; three window conditions) | P94 |
+| `stage0/s0c_text_q3b.json`, `s0c_text_q35b.json` | text check of the gist against matched controls | P92, P93 |
+| `stage0/laggrid_screen_q35b.json` | lagged cross-layer injection screen | P95 |
+| `stage0/multisite_q3b.json`, `multisite_q35b.json` | multi-site injection; **the hybrid file is incomplete** (stopped at 160 of 209 runs) | P96 |
+| `stage0/reason_base_q3.json`, `reason_base_q35.json` | unsteered GSM8K baselines; **only the `none` and `nothink` arms** (the `trunc@B` arms failed on a `reason.py` bug) | P97 |
+| `stage1/c0_*.json`, `c1_*.json`, `c3dev_*.json` | stop-rule study, decoding grid, stop controllers against the truncation frontier | P97, P98 |
+| `stage1/m1a_q3.json`, `m1a_q35.json` | P5 replica: trained loop against a matched memory-free adapter | P99 |
+| `stage1/m2_readback_rg2b.json`, `m2_readback_rg2b_it.json` | attention read-back on RecurrentGemma | P100 |
+| `stage1/c2dirs_*.log`, `c2screen_*.json`, `c3inj_*.json` | "finish thinking" injection: directions, screen, generation | P101 |
+
+Notes:
+- **Reruns.** Runs that failed on GPU memory were rerun from scratch at smaller batches; the failed logs are in the `queue_*` folders, which are not committed. `cancelled/` holds the queue entries dropped at the re-plan (DEC16).
+- **Slimmed files (12 Nov 2026).** Eleven JSONs of 13–415 MB (867 MB in all) were replaced in the repo by slimmed copies under the same names: `stage0/ceiling_*.json`, `laggrid_screen_q35b.json`, `multisite_*.json`, `s0c_text_*.json` and `stage1/c2screen_*.json`. A slimmed copy keeps every aggregate and drops only the per-item arrays (`per_item`, `rows`) and the per-site `signal_means`. Its `_archive` key gives the full file's path, size, SHA-256 and the keys dropped. The full files are on geof under `~/limbic-data/results_archive/evolve/round12/` (hashes also in `MANIFEST.sha256` there); since 12 Nov 2026 that path is a symlink to `/mnt/data/limbic-llm/results_archive/` on the large drive, and `~/limbic-data/ca2_traces` likewise points to `/mnt/data/limbic-llm/ca2_traces/`.
+- **`guard/`** belongs to the alignment-guard session, not to this table.
+
+## evolve/round13/
+
+Round 13, gated memory circuit (register P102, DEC17–DEC19, RV6; plan `research/plans/round13_gated_memory_plan.md`). Produced by `experiments/ca2/rank13.py` on geof, 12 Nov 2026.
+
+| Files | What | Register |
+|---|---|---|
+| `step0b/rank_rg2b.json`, `rank_rg2b_it.json` | ranking of the queried statement under every selector, beyond-window cell, 400 items per type, RecurrentGemma-2b and -2b-it; AUC checks of the circuit's parts | P102 |
+| `step0b/rank_rg2b_near.json` | the same on the near cell (100 items per type), base model only | P102 |
+
+Notes:
+- **Slimmed files.** Each JSON is a slimmed copy: per-item rows are dropped, and the summary table keeps the non-product scorers in full and the salience-product scorers as held-out primary-pool top-1 and MRR only. The `_archive` key gives the full file's path, size and SHA-256. Full files and per-span traces are on geof under `/mnt/data/limbic-llm/results_archive/evolve/round13/step0b/` and `/mnt/data/limbic-llm/round13_traces/`.
+- **Not results.** `step0/` in the archive holds the first runs, stopped unread at 656 and 456 of 2,000 items because of a comparator bug (RV6.1, DEC19). The near-cell run on the -it model was cancelled.
+
 ## alignment/
 
 Written by `experiments/alignment/run.py` as `results/alignment/<--name>.json` (`tiny.json` for `--tiny`). For A1, A2 and A6 (register). `tests/test_alignment.py` writes `pytest_tiny.json` here and deletes it at the end; do not commit it if a test crashes first.

@@ -174,6 +174,17 @@ track** landing a selection mechanism that generalizes past held-out names (P54,
 **Not started**: A2, A3, A4, A5, A7, A8, R6, S1/S9, J1, or any reasoning runner. Do not start these
 without Daniel's separate go-ahead, per the original scope.
 
+## Round 12 is finished; round 13 has started (round-12 GPU session, 12 Nov 2026)
+
+- **Branch.** Rounds 12 and 13 live on `feat/round12-ca2-gdn`, branched from `main` at `45ddded` (after PR #9). The sections above that name `feat/round1-side-memory` as the working branch describe rounds 1–11.
+- **Round 12 is committed** (`467ba4b`) and in PR #10 from `snapshot/round12-ca2-gdn`.
+- **Round 12 results:** register P90–P101, DEC15–DEC17, W19; NOTEBOOK "Round 12". In short: no benefit from re-injecting the model's own state under full attention; the P5 loop was adaptation (P99); attention read-back with an oracle selector works on RecurrentGemma (P100).
+- **Code:** `experiments/ca2/` and `tests/test_ca2*.py`. `experiments/hippo/` and `tests/test_hippo.py` are from a build that was stopped; they are unreviewed and unused.
+- **Results:** `results/evolve/round12/stage0/` and `stage1/`. The eleven largest JSONs are slimmed copies in the repo; the full files are in `/mnt/data/limbic-llm/results_archive/evolve/round12/` on geof (see `results/README.md`). Raw traces are in `/mnt/data/limbic-llm/ca2_traces/` on geof. `~/limbic-data/results_archive` and `~/limbic-data/ca2_traces` are symlinks to those folders (moved on 12 Nov 2026).
+- **Round 13:** `plans/round13_gated_memory_plan.md` (draft 2; figure in `docs/design/gated-memory-circuit.svg`). An adversarial review (register RV5) said draft 1 should not run as written: P100's oracle never uses the question and its InfLLM-style arm is broken, so "selection is the missing piece" is not established. Draft 2 starts with a no-generation ranking check (step 0). **Approved by Daniel on 12 Nov; step 0b is done (P102):** the circuit's selectors lose to a plain retriever at ranking the queried fact; the comparator and the context tag carry signal. Code: `experiments/ca2/` (`circuit.py`, `items13.py`, `selectors13.py`, `rank13.py`); results `results/evolve/round13/step0b/` (slimmed; full files in `/mnt/data/limbic-llm/results_archive/evolve/round13/`). Reviews: RV6 (code), `reviews/2026-11-12_hippocampus_models/` (literature). Steps 1–3 are not run as planned.
+- **Round 14 is proposed, not approved:** `plans/round14_plan.md` (DEC20, W21). Both GPUs are idle.
+- **GPU 0 on geof has about 23 GB usable**; size batches for that.
+
 ## Earlier contents
 
 Earlier versions of this note carried the result tables of the pretrained and round-1 runs. Every number from them is now in `results/README.md` (per-file tables), the register (P1–P12) or RESULTS.md (§4.7–4.8). The GPU session's review of the coordinating session's 2 Nov additions was applied (NOTEBOOK, "Corrections from the GPU session's review"); that review also checked that Zhao et al. 2025 (arXiv 2507.11878) and the four A6/A7 models exist. The full earlier text is in git history (`53caa77`).

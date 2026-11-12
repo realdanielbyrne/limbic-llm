@@ -1,0 +1,122 @@
+Loading weights:   0%|          | 0/320 [00:00<?, ?it/s]Loading weights: 100%|██████████| 320/320 [00:00<00:00, 13019.98it/s]
+Qwen/Qwen3.5-2B: thinking end 248069, open 248068; 200 problems x 1 samples; 13 arms; ref t06
+[t06] t06@T=0.6;pp=0
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+[transformers] `causal_conv1d_update` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+  [t06] batch 1/7: acc 0.22 closed 0.28 reason 3317 tok  (110s)
+  [t06] batch 2/7: acc 0.31 closed 0.38 reason 3118 tok  (219s)
+  [t06] batch 3/7: acc 0.25 closed 0.25 reason 3414 tok  (322s)
+  [t06] batch 4/7: acc 0.19 closed 0.19 reason 3593 tok  (411s)
+  [t06] batch 5/7: acc 0.19 closed 0.22 reason 3481 tok  (503s)
+  [t06] batch 6/7: acc 0.16 closed 0.19 reason 3766 tok  (593s)
+  [t06] batch 7/7: acc 0.00 closed 0.00 reason 4096 tok  (663s)
+[t06] acc 0.210  non-close 0.76  reason 3474  n_gen 3532  TTC median 512.0
+[f256] f256@T=0.6;pp=0;trunc=256
+  [f256] batch 1/7: acc 0.78 closed 0.00 reason 256 tok  (78s)
+  [f256] batch 2/7: acc 0.91 closed 0.00 reason 256 tok  (155s)
+  [f256] batch 3/7: acc 0.88 closed 0.00 reason 256 tok  (233s)
+  [f256] batch 4/7: acc 0.84 closed 0.00 reason 256 tok  (311s)
+  [f256] batch 5/7: acc 0.84 closed 0.00 reason 256 tok  (389s)
+  [f256] batch 6/7: acc 0.81 closed 0.00 reason 256 tok  (467s)
+  [f256] batch 7/7: acc 0.62 closed 0.00 reason 256 tok  (530s)
+[f256] acc 0.835  non-close 1.00  reason 256  n_gen 883  TTC median None
+[f512] f512@T=0.6;pp=0;trunc=512
+  [f512] batch 1/7: acc 0.75 closed 0.00 reason 512 tok  (78s)
+  [f512] batch 2/7: acc 0.88 closed 0.00 reason 512 tok  (157s)
+  [f512] batch 3/7: acc 0.78 closed 0.03 reason 511 tok  (235s)
+  [f512] batch 4/7: acc 0.81 closed 0.00 reason 512 tok  (314s)
+  [f512] batch 5/7: acc 0.78 closed 0.00 reason 512 tok  (392s)
+  [f512] batch 6/7: acc 0.81 closed 0.00 reason 512 tok  (471s)
+  [f512] batch 7/7: acc 0.62 closed 0.00 reason 512 tok  (534s)
+[f512] acc 0.795  non-close 0.99  reason 512  n_gen 1221  TTC median 512.0
+[f1024] f1024@T=0.6;pp=0;trunc=1024
+  [f1024] batch 1/7: acc 0.72 closed 0.06 reason 1002 tok  (80s)
+  [f1024] batch 2/7: acc 0.84 closed 0.16 reason 968 tok  (159s)
+  [f1024] batch 3/7: acc 0.88 closed 0.16 reason 982 tok  (239s)
+  [f1024] batch 4/7: acc 0.88 closed 0.09 reason 998 tok  (318s)
+  [f1024] batch 5/7: acc 0.78 closed 0.12 reason 976 tok  (398s)
+  [f1024] batch 6/7: acc 0.72 closed 0.03 reason 1022 tok  (478s)
+  [f1024] batch 7/7: acc 0.62 closed 0.00 reason 1024 tok  (542s)
+[f1024] acc 0.795  non-close 0.90  reason 992  n_gen 1630  TTC median 512.0
+[f2048] f2048@T=0.6;pp=0;trunc=2048
+  [f2048] batch 1/7: acc 0.75 closed 0.28 reason 1845 tok  (82s)
+  [f2048] batch 2/7: acc 0.88 closed 0.28 reason 1732 tok  (164s)
+  [f2048] batch 3/7: acc 0.88 closed 0.19 reason 1826 tok  (246s)
+  [f2048] batch 4/7: acc 0.84 closed 0.16 reason 1886 tok  (328s)
+  [f2048] batch 5/7: acc 0.78 closed 0.19 reason 1818 tok  (410s)
+  [f2048] batch 6/7: acc 0.81 closed 0.09 reason 1972 tok  (493s)
+  [f2048] batch 7/7: acc 0.75 closed 0.00 reason 2048 tok  (559s)
+[f2048] acc 0.820  non-close 0.81  reason 1854  n_gen 2387  TTC median 512.0
+[stopc3] stopc3@T=0.6;pp=0;ctrl=consist-3:stop
+  [stopc3] batch 1/7: acc 0.75 closed 0.00 reason 664 tok  (82s)
+  [stopc3] batch 2/7: acc 0.91 closed 0.00 reason 628 tok  (161s)
+  [stopc3] batch 3/7: acc 0.84 closed 0.03 reason 659 tok  (241s)
+  [stopc3] batch 4/7: acc 0.78 closed 0.00 reason 612 tok  (320s)
+  [stopc3] batch 5/7: acc 0.81 closed 0.03 reason 609 tok  (399s)
+  [stopc3] batch 6/7: acc 0.75 closed 0.00 reason 648 tok  (479s)
+  [stopc3] batch 7/7: acc 0.62 closed 0.00 reason 624 tok  (544s)
+[stopc3] acc 0.800  non-close 0.99  reason 636  n_gen 1337  TTC median 512.0
+[stopc5] stopc5@T=0.6;pp=0;ctrl=consist-5:stop
+  [stopc5] batch 1/7: acc 0.78 closed 0.06 reason 1174 tok  (85s)
+  [stopc5] batch 2/7: acc 0.84 closed 0.16 reason 964 tok  (167s)
+  [stopc5] batch 3/7: acc 0.84 closed 0.12 reason 1127 tok  (254s)
+  [stopc5] batch 4/7: acc 0.88 closed 0.06 reason 972 tok  (336s)
+  [stopc5] batch 5/7: acc 0.84 closed 0.12 reason 1000 tok  (417s)
+  [stopc5] batch 6/7: acc 0.78 closed 0.03 reason 1062 tok  (499s)
+  [stopc5] batch 7/7: acc 0.50 closed 0.00 reason 992 tok  (565s)
+[stopc5] acc 0.815  non-close 0.91  reason 1047  n_gen 1600  TTC median 512.0
+[stopng] stopng@T=0.6;pp=0;ctrl=ngram-32-4-0.7:stop
+  [stopng] batch 1/7: acc 0.22 closed 0.28 reason 3317 tok  (91s)
+  [stopng] batch 2/7: acc 0.31 closed 0.38 reason 3118 tok  (182s)
+  [stopng] batch 3/7: acc 0.25 closed 0.25 reason 3414 tok  (273s)
+  [stopng] batch 4/7: acc 0.19 closed 0.19 reason 3593 tok  (364s)
+  [stopng] batch 5/7: acc 0.19 closed 0.22 reason 3481 tok  (455s)
+  [stopng] batch 6/7: acc 0.16 closed 0.19 reason 3766 tok  (547s)
+  [stopng] batch 7/7: acc 0.00 closed 0.00 reason 4096 tok  (618s)
+[stopng] acc 0.210  non-close 0.76  reason 3474  n_gen 3532  TTC median 512.0
+[stopconf] stopconf@T=0.6;pp=0;ctrl=conf-0.9:stop
+  [stopconf] batch 1/7: acc 0.75 closed 0.00 reason 980 tok  (87s)
+  [stopconf] batch 2/7: acc 0.88 closed 0.00 reason 692 tok  (173s)
+  [stopconf] batch 3/7: acc 0.84 closed 0.00 reason 776 tok  (260s)
+  [stopconf] batch 4/7: acc 0.81 closed 0.00 reason 940 tok  (347s)
+  [stopconf] batch 5/7: acc 0.81 closed 0.00 reason 1020 tok  (434s)
+  [stopconf] batch 6/7: acc 0.81 closed 0.00 reason 1004 tok  (521s)
+  [stopconf] batch 7/7: acc 0.62 closed 0.00 reason 1696 tok  (591s)
+[stopconf] acc 0.810  non-close 1.00  reason 934  n_gen 1351  TTC median 512.0
+[biasc3] biasc3@T=0.6;pp=0;ctrl=consist-3:bias6
+  [biasc3] batch 1/7: acc 0.34 closed 0.38 reason 3143 tok  (134s)
+  [biasc3] batch 2/7: acc 0.56 closed 0.66 reason 2406 tok  (254s)
+  [biasc3] batch 3/7: acc 0.53 closed 0.53 reason 2658 tok  (379s)
+  [biasc3] batch 4/7: acc 0.50 closed 0.50 reason 2670 tok  (504s)
+  [biasc3] batch 5/7: acc 0.41 closed 0.44 reason 3034 tok  (637s)
+  [biasc3] batch 6/7: acc 0.47 closed 0.47 reason 3003 tok  (769s)
+  [biasc3] batch 7/7: acc 0.25 closed 0.25 reason 3709 tok  (855s)
+[biasc3] acc 0.460  non-close 0.52  reason 2855  n_gen 2984  TTC median 512.0
+[c3cap] c3cap@T=0.6;pp=0;trunc=2048;ctrl=consist-3:stop
+  [c3cap] batch 1/7: acc 0.75 closed 0.00 reason 660 tok  (82s)
+  [c3cap] batch 2/7: acc 0.91 closed 0.00 reason 628 tok  (162s)
+  [c3cap] batch 3/7: acc 0.84 closed 0.03 reason 659 tok  (242s)
+  [c3cap] batch 4/7: acc 0.78 closed 0.00 reason 612 tok  (322s)
+  [c3cap] batch 5/7: acc 0.81 closed 0.03 reason 609 tok  (402s)
+  [c3cap] batch 6/7: acc 0.75 closed 0.00 reason 648 tok  (482s)
+  [c3cap] batch 7/7: acc 0.62 closed 0.00 reason 624 tok  (547s)
+[c3cap] acc 0.800  non-close 0.99  reason 636  n_gen 1337  TTC median 512.0
+[nowait] nowait@T=0.6;pp=0;suppress=wait
+  [nowait] batch 1/7: acc 0.19 closed 0.22 reason 3447 tok  (91s)
+  [nowait] batch 2/7: acc 0.50 closed 0.53 reason 2551 tok  (181s)
+  [nowait] batch 3/7: acc 0.25 closed 0.25 reason 3308 tok  (272s)
+  [nowait] batch 4/7: acc 0.34 closed 0.34 reason 3159 tok  (363s)
+  [nowait] batch 5/7: acc 0.31 closed 0.31 reason 3238 tok  (454s)
+  [nowait] batch 6/7: acc 0.41 closed 0.41 reason 3070 tok  (546s)
+  [nowait] batch 7/7: acc 0.12 closed 0.12 reason 3752 tok  (617s)
+[nowait] acc 0.325  non-close 0.67  reason 3154  n_gen 3241  TTC median 512.0
+[rp11] rp11@T=0.6;pp=0;rp=1.1
+  [rp11] batch 1/7: acc 0.34 closed 0.47 reason 3097 tok  (90s)
+  [rp11] batch 2/7: acc 0.47 closed 0.56 reason 2847 tok  (179s)
+  [rp11] batch 3/7: acc 0.34 closed 0.41 reason 3043 tok  (268s)
+  [rp11] batch 4/7: acc 0.41 closed 0.41 reason 3294 tok  (358s)
+  [rp11] batch 5/7: acc 0.44 closed 0.56 reason 3025 tok  (448s)
+  [rp11] batch 6/7: acc 0.28 closed 0.34 reason 3560 tok  (538s)
+  [rp11] batch 7/7: acc 0.12 closed 0.12 reason 3857 tok  (608s)
+[rp11] acc 0.370  non-close 0.55  reason 3173  n_gen 3304  TTC median 768.0
+saved /home/realdanielbyrne/limbic-llm/results/evolve/round12/stage1/c3dev_q35.json (no generated text); traces in /home/realdanielbyrne/limbic-data/ca2_traces/c3dev_q35

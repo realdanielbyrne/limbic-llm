@@ -1,0 +1,221 @@
+<title>Gated Memory Circuit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one tall architecture figure, input at the bottom and output at the top, then the filter equations and a stage table. */
+:root {
+  --bg: #f6f7f9; --surface: #ffffff; --fg: #1a2130; --muted: #566074; --rule: #d9dee7;
+  --c-model: #e6e9ef; --c-ec: #d6eedf; --c-gate: #fbe2c8; --c-store: #faefbf; --c-ca1: #e5dbf6;
+  --ok: #2f7a4f; --open: #8a6d1a;
+  --display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161d; --surface: #1a2029; --fg: #e6eaf1; --muted: #a1abbb; --rule: #2c3542;
+    --c-model: #2b323d; --c-ec: #1f3b2e; --c-gate: #4b3321; --c-store: #463d18; --c-ca1: #382c52;
+    --ok: #6fc291; --open: #d6b65a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161d; --surface: #1a2029; --fg: #e6eaf1; --muted: #a1abbb; --rule: #2c3542;
+  --c-model: #2b323d; --c-ec: #1f3b2e; --c-gate: #4b3321; --c-store: #463d18; --c-ca1: #382c52;
+  --ok: #6fc291; --open: #d6b65a; color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.55; }
+.page { max-width: 940px; margin: 0 auto; padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 28px; }
+h1 { font-family: var(--display); font-weight: 600; font-size: 1.8rem; line-height: 1.15; margin: 6px 0 8px; text-wrap: balance; }
+h2 { font-family: var(--display); font-weight: 600; font-size: 1.15rem; margin: 0 0 10px; text-wrap: balance; }
+p { margin: 0; max-width: 68ch; }
+.lede { color: var(--muted); }
+.status { font-family: var(--mono); font-size: 0.8rem; color: var(--open); letter-spacing: 0.02em; }
+figure { margin: 0; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; }
+.scroll { overflow-x: auto; padding: 12px; }
+.scroll svg { display: block; width: 100%; min-width: 660px; height: auto; color: var(--fg); font-family: var(--body); }
+figcaption { border-top: 1px solid var(--rule); padding: 12px 16px; color: var(--muted); font-size: 0.92rem; }
+/* figure marks */
+.blk { stroke: currentColor; stroke-width: 1.4; }
+.model { fill: var(--c-model); } .ec { fill: var(--c-ec); } .gate { fill: var(--c-gate); }
+.store { fill: var(--c-store); } .ca1 { fill: var(--c-ca1); } .hole { fill: var(--surface); }
+.grp { fill: none; stroke: currentColor; stroke-width: 1.1; stroke-dasharray: 3 4; }
+.w { fill: none; stroke: currentColor; stroke-width: 1.5; }
+.thick { stroke-width: 2.4; }
+.d { stroke-dasharray: 6 5; }
+.dot { fill: currentColor; }
+.t { font-size: 16px; font-weight: 500; text-anchor: middle; fill: var(--fg); }
+.s { font-size: 12px; text-anchor: middle; fill: var(--muted); }
+.l { font-size: 13px; fill: var(--muted); }
+.lm { text-anchor: middle; } .le { text-anchor: end; }
+pre.eq { margin: 0; padding: 14px 16px; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px;
+  font-family: var(--mono); font-size: 0.86rem; line-height: 1.6; overflow-x: auto; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 0.92rem; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px 9px 0; border-bottom: 1px solid var(--rule); }
+th { font-weight: 600; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+td:first-child { font-weight: 600; white-space: nowrap; }
+.tag { font-family: var(--mono); font-size: 0.78rem; white-space: nowrap; }
+.tag.ok { color: var(--ok); } .tag.open { color: var(--open); }
+ul.notes { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 6px; max-width: 72ch; }
+</style>
+
+<div class="page">
+  <header>
+    <p class="status">PROPOSED · ROUND-ONE CONFIGURATION, ALL FILTERS FIXED · NOT BUILT</p>
+    <h1>Gated memory circuit beside a frozen model</h1>
+    <p class="lede">Read from the bottom up. The frozen model is the left column. The side circuit taps it twice, keeps past states in a ring buffer, and returns recalled content to an early attention layer only when the comparator agrees.</p>
+  </header>
+
+  <figure>
+    <div class="scroll">
+      <svg viewBox="0 0 950 1130" role="img" aria-label="Architecture: a frozen model stack on the left; on the right, a dentate gate and episodic store fed from an early block, a ring buffer with fast and slow tap-filter banks fed from a deep block, and a CA1 comparator at the top that gates read-back into early attention and sends mismatch to the write gate.">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+        </defs>
+
+        <!-- frozen model stack -->
+        <text class="l lm" x="160" y="1108">token t</text>
+        <line class="w" x1="160" y1="1090" x2="160" y2="1048" marker-end="url(#ah)"/>
+        <rect class="blk model" x="50" y="1000" width="220" height="46" rx="8"/><text class="t" x="160" y="1029">Embedding</text>
+        <line class="w" x1="160" y1="1000" x2="160" y2="950" marker-end="url(#ah)"/>
+        <rect class="grp" x="38" y="822" width="244" height="140" rx="10"/>
+        <text class="l lm" x="24" y="892" transform="rotate(-90 24 892)">early block</text>
+        <rect class="blk model" x="50" y="902" width="220" height="46" rx="8"/><text class="t" x="160" y="931">Attention</text>
+        <line class="w" x1="160" y1="902" x2="160" y2="886" marker-end="url(#ah)"/>
+        <rect class="blk model" x="50" y="838" width="220" height="46" rx="8"/><text class="t" x="160" y="867">MLP</text>
+        <line class="w" x1="160" y1="838" x2="160" y2="738" marker-end="url(#ah)"/>
+        <rect class="blk model" x="50" y="690" width="220" height="46" rx="8"/><text class="t" x="160" y="719">Middle blocks</text>
+        <line class="w" x1="160" y1="690" x2="160" y2="628" marker-end="url(#ah)"/>
+        <rect class="blk model" x="50" y="580" width="220" height="46" rx="8"/><text class="t" x="160" y="609">Deep block</text>
+        <line class="w" x1="160" y1="580" x2="160" y2="398" marker-end="url(#ah)"/>
+        <rect class="blk model" x="50" y="350" width="220" height="46" rx="8"/><text class="t" x="160" y="379">Later blocks</text>
+        <line class="w" x1="160" y1="350" x2="160" y2="198" marker-end="url(#ah)"/>
+        <rect class="blk model" x="50" y="150" width="220" height="46" rx="8"/><text class="t" x="160" y="179">LM head</text>
+        <line class="w" x1="160" y1="150" x2="160" y2="118" marker-end="url(#ah)"/>
+        <text class="l lm" x="160" y="106">next-token logits</text>
+
+        <!-- taps -->
+        <circle class="dot" cx="160" cy="790" r="4"/>
+        <polyline class="w" points="160,790 750,790 750,768" marker-end="url(#ah)"/>
+        <text class="l" x="176" y="782">word-level state</text>
+        <circle class="dot" cx="160" cy="550" r="4"/>
+        <polyline class="w thick" points="160,550 592,550 592,202" marker-end="url(#ah)"/>
+        <text class="l" x="176" y="542">contextual state</text>
+        <text class="l lm" x="608" y="380" transform="rotate(-90 608 380)">direct path: the EC to CA1 skip</text>
+
+        <!-- entorhinal context: ring buffer and tap-filter banks -->
+        <circle class="dot" cx="460" cy="550" r="4"/>
+        <line class="w" x1="460" y1="550" x2="460" y2="522" marker-end="url(#ah)"/>
+        <rect class="blk ec" x="360" y="468" width="200" height="52" rx="8"/>
+        <text class="t" x="460" y="490">Ring buffer</text><text class="s" x="460" y="508">4,096 past states, newest excluded</text>
+        <line class="w" x1="460" y1="468" x2="460" y2="455"/>
+        <circle class="dot" cx="460" cy="455" r="3.5"/>
+        <polyline class="w" points="460,455 407,455 407,434" marker-end="url(#ah)"/>
+        <polyline class="w" points="460,455 513,455 513,434" marker-end="url(#ah)"/>
+        <rect class="blk ec" x="360" y="380" width="94" height="52" rx="8"/>
+        <text class="t" x="407" y="402" style="font-size:15px">Fast bank</text><text class="s" x="407" y="420">τ 4 · 16 · 64</text>
+        <rect class="blk ec" x="466" y="380" width="94" height="52" rx="8"/>
+        <text class="t" x="513" y="402" style="font-size:15px">Slow bank</text><text class="s" x="513" y="420">τ 256 · 1024</text>
+        <line class="w" x1="407" y1="380" x2="407" y2="344" marker-end="url(#ah)"/>
+        <line class="w" x1="513" y1="380" x2="513" y2="344" marker-end="url(#ah)"/>
+        <rect class="blk ec" x="360" y="290" width="200" height="52" rx="8"/>
+        <text class="t" x="460" y="312">Band differences</text><text class="s" x="460" y="330">document mean removed</text>
+        <line class="w thick" x1="460" y1="290" x2="460" y2="202" marker-end="url(#ah)"/>
+        <text class="l" x="468" y="250">context</text>
+        <!-- event gate on the slow bank -->
+        <polyline class="w d" points="650,667 575,667 575,406 562,406" marker-end="url(#ah)"/>
+        <text class="l lm" x="612" y="660">salience</text>
+
+        <!-- dentate gate -->
+        <rect class="blk gate" x="650" y="720" width="200" height="46" rx="8"/><text class="t" x="750" y="749">Random expansion</text>
+        <line class="w" x1="750" y1="720" x2="750" y2="692" marker-end="url(#ah)"/>
+        <rect class="blk gate" x="650" y="644" width="200" height="46" rx="8"/><text class="t" x="750" y="673">ReLU² + top-k</text>
+        <line class="w" x1="750" y1="644" x2="750" y2="608" marker-end="url(#ah)"/>
+        <text class="l le" x="742" y="624">sparse key</text>
+        <!-- query bypass -->
+        <circle class="dot" cx="750" cy="632" r="3.5"/>
+        <polyline class="w" points="750,632 865,632 865,366 852,366" marker-end="url(#ah)"/>
+        <text class="l lm" x="808" y="624">query</text>
+
+        <!-- CA3 store -->
+        <rect class="blk gate" x="665" y="572" width="170" height="34" rx="17"/><text class="t" x="750" y="594" style="font-size:15px">write gate</text>
+        <line class="w" x1="750" y1="572" x2="750" y2="532" marker-end="url(#ah)"/>
+        <path class="blk store" d="M660,452 v66 a90,12 0 0 0 180,0 v-66 z"/>
+        <ellipse class="blk store" cx="750" cy="452" rx="90" ry="12"/>
+        <text class="t" x="750" y="490">Episodic store</text><text class="s" x="750" y="508">key · tag · ordinal · span</text>
+        <line class="w" x1="750" y1="440" x2="750" y2="378" marker-end="url(#ah)"/>
+        <rect class="blk store" x="650" y="330" width="200" height="46" rx="8"/><text class="t" x="750" y="359">Recall by key overlap</text>
+        <line class="w thick" x1="750" y1="330" x2="750" y2="202" marker-end="url(#ah)"/>
+        <text class="l" x="758" y="270">recalled entries</text>
+
+        <!-- CA1 comparator -->
+        <rect class="blk ca1" x="400" y="150" width="410" height="50" rx="8"/>
+        <text class="t" x="605" y="181">CA1 comparator: fit of recall vs. other entries</text>
+        <!-- mismatch to the write gate -->
+        <polyline class="w d" points="620,200 620,589 663,589" marker-end="url(#ah)"/>
+        <text class="l lm" x="638" y="400" transform="rotate(-90 638 400)">mismatch</text>
+        <!-- match opens the read gate -->
+        <polyline class="w d" points="810,175 915,175 915,345 899,345" marker-end="url(#ah)"/>
+        <text class="l lm" x="862" y="167">match</text>
+
+        <!-- read gate and read-back -->
+        <line class="w thick" x1="850" y1="345" x2="871" y2="345" marker-end="url(#ah)"/>
+        <circle class="blk hole" cx="885" cy="345" r="12"/>
+        <line class="w" x1="877" y1="337" x2="893" y2="353"/><line class="w" x1="877" y1="353" x2="893" y2="337"/>
+        <polyline class="w thick" points="885,357 885,925 272,925" marker-end="url(#ah)"/>
+        <text class="l lm" x="899" y="650" transform="rotate(90 899 650)">read-back at ordinal positions</text>
+
+        <!-- legend -->
+        <rect class="blk model" x="400" y="988" width="16" height="16" rx="3"/><text class="l" x="424" y="1001">Frozen model</text>
+        <rect class="blk ec" x="400" y="1014" width="16" height="16" rx="3"/><text class="l" x="424" y="1027">Entorhinal context: buffer and filter banks</text>
+        <rect class="blk gate" x="400" y="1040" width="16" height="16" rx="3"/><text class="l" x="424" y="1053">Dentate and squared-ReLU gates</text>
+        <rect class="blk store" x="706" y="988" width="16" height="16" rx="3"/><text class="l" x="730" y="1001">CA3 episodic store</text>
+        <rect class="blk ca1" x="706" y="1014" width="16" height="16" rx="3"/><text class="l" x="730" y="1027">CA1 comparator</text>
+        <circle class="blk hole" cx="714" cy="1048" r="8"/><line class="w" x1="709" y1="1043" x2="719" y2="1053"/><line class="w" x1="709" y1="1053" x2="719" y2="1043"/><text class="l" x="730" y="1053">read gate</text>
+        <line class="w thick" x1="400" y1="1084" x2="440" y2="1084"/><text class="l" x="448" y="1088">state or content</text>
+        <line class="w d" x1="706" y1="1084" x2="746" y2="1084"/><text class="l" x="754" y="1088">gate or learning signal</text>
+      </svg>
+    </div>
+    <figcaption>Both banks are tap filters over one buffer of past deep-layer states. The fast bank is always on; the slow bank is charged only when the dentate gate's salience is high. Their band differences give the context that the comparator checks against the direct path and the recalled entries. The comparator opens the read gate when the top recalled entry fits the current state better than the store's other entries do; the mismatch goes to the write gate.</figcaption>
+  </figure>
+
+  <section>
+    <h2>Filter bank, per band</h2>
+<pre class="eq">a_k = exp(-1 / tau_k)            tau_k in {4, 16, 64, 256, 1024} tokens
+num_k[t] = a_k * num_k[t-1] + g[t-1] * x[t-1]
+den_k[t] = a_k * den_k[t-1] + g[t-1]
+content_k[t]  = num_k[t] / den_k[t]      what the band holds
+strength_k[t] = den_k[t]                 how recently and how often it was charged
+g = 1 for the fast bank; g = 1 only on gated events for the slow bank</pre>
+  </section>
+
+  <section>
+    <h2>Stage by stage</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Stage</th><th>Round-one setting</th><th>Learned later?</th><th>Evidence so far</th></tr></thead>
+        <tbody>
+          <tr><td>Ring buffer</td><td>4,096 past states per tap, normalised; sink and very-large-activation tokens dropped.</td><td>No</td><td><span class="tag open">untested</span></td></tr>
+          <tr><td>Fast bank</td><td>Time constants 4, 16, 64; always on; newest token excluded.</td><td>Mixing weights</td><td><span class="tag ok">measured</span> running context carries no items</td></tr>
+          <tr><td>Slow bank</td><td>Time constants 256, 1,024; charged only when salience passes a fixed threshold set on dev items.</td><td>The gate</td><td><span class="tag open">untested</span> ungated, a slow average hurt</td></tr>
+          <tr><td>Band differences</td><td>Neighbouring bands subtracted, after the document mean is removed from the input.</td><td>No</td><td><span class="tag open">untested</span></td></tr>
+          <tr><td>Dentate gate</td><td>Fixed random expansion, squared ReLU, top 5%. Pattern is the key; strength is salience.</td><td>The expansion</td><td><span class="tag open">untested</span> as a selector</td></tr>
+          <tr><td>Episodic store</td><td>Entries of key, context tag, ordinal index and span; written by a fixed salience rule.</td><td>Write gate</td><td><span class="tag ok">measured</span> separate entries beat blends</td></tr>
+          <tr><td>CA1 comparator</td><td>Direct path, context and recall, each centred. The read gate opens when the top recalled entry fits the current state better than the store's other entries.</td><td>No</td><td><span class="tag open">untested</span></td></tr>
+          <tr><td>Read-back</td><td>Recalled spans offered to attention at ordinal positions, 512 entries.</td><td>No</td><td><span class="tag ok">measured</span> recall 0.10 → 0.70 pooled (needle 0.80–0.94) with an oracle that reads every statement</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Left out of round one</h2>
+    <ul class="notes">
+      <li>Feedback from the banks into themselves.</li>
+      <li>Any content added to the residual stream.</li>
+      <li>Learned time constants and learned gates.</li>
+    </ul>
+  </section>
+</div>

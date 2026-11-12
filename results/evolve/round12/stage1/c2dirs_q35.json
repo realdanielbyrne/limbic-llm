@@ -1,0 +1,233 @@
+{
+ "kind": "c2_directions",
+ "args": {
+  "model": "Qwen/Qwen3.5-2B",
+  "tiny": false,
+  "tiny_arch": "qwen3",
+  "dtype": "bfloat16",
+  "device": "cuda",
+  "attn_impl": "sdpa",
+  "seed": 0,
+  "name": "c2dirs_q35",
+  "out": null,
+  "blocks": null,
+  "think_data": "gsm8k:train:400",
+  "data_seed": 0,
+  "heldout_from": "results/evolve/round12/stage1/c3dev_q35.json",
+  "n_think": 0,
+  "conclude_traces": "/home/realdanielbyrne/limbic-data/ca2_traces/reason_base_q35/none",
+  "window": 16,
+  "min_conclude": 24,
+  "instruction": "Please reason step by step, and put your final answer within \\boxed{}.",
+  "batch": 8,
+  "dir_out": null
+ },
+ "git": {
+  "commit": "45ddded20802a0c1d52106c17e8afd2a870b5453",
+  "branch": "feat/round12-ca2-gdn",
+  "dirty": true
+ },
+ "versions": {
+  "python": "3.13.7",
+  "torch": "2.11.0+cu128",
+  "transformers": "5.22.1",
+  "numpy": "2.5.4",
+  "cuda": "12.8",
+  "gpu": "NVIDIA GeForce RTX 5090",
+  "math_verify": null,
+  "datasets": "5.1.0"
+ },
+ "model": {
+  "name": "Qwen/Qwen3.5-2B",
+  "n_blocks": 24,
+  "kinds": [
+   "linear",
+   "linear",
+   "linear",
+   "attention",
+   "linear",
+   "linear",
+   "linear",
+   "attention",
+   "linear",
+   "linear",
+   "linear",
+   "attention",
+   "linear",
+   "linear",
+   "linear",
+   "attention",
+   "linear",
+   "linear",
+   "linear",
+   "attention",
+   "linear",
+   "linear",
+   "linear",
+   "attention"
+  ],
+  "d_model": 2048,
+  "vocab": 248320,
+  "tap": 12,
+  "inject_before": 13,
+  "attn_tap_layer": null,
+  "hybrid": true,
+  "gdn_layers": [
+   0,
+   1,
+   2,
+   4,
+   5,
+   6,
+   8,
+   9,
+   10,
+   12,
+   13,
+   14,
+   16,
+   17,
+   18,
+   20,
+   21,
+   22
+  ],
+  "chat_template": true,
+  "chat": true,
+  "thinking_switch": true,
+  "thinking": true,
+  "think_end_id": 248069,
+  "stop_ids": [
+   248044,
+   248046
+  ],
+  "pad_id": 248044,
+  "lens_layers": [
+   6,
+   12,
+   18,
+   21
+  ],
+  "release_ids": [],
+  "dtype": "bfloat16",
+  "device": "cuda:0",
+  "n_params": 1881825088,
+  "think_open_id": 248068,
+  "hook": null
+ },
+ "blocks": [
+  12,
+  15,
+  18
+ ],
+ "dir_file": {
+  "path": "/home/realdanielbyrne/limbic-data/ca2_dirs/c2dirs_q35.pt",
+  "sha256": "d00f017ba0da1543eb42c1bdd844eb20d5044b0e5f23e31fabda9b9fbf7aaaee"
+ },
+ "think": {
+  "n_problems": 200,
+  "rule": "mean h_off[-1] - mean h_on[-1] (last prompt position)",
+  "stats": {
+   "12": {
+    "n_rows": 200,
+    "raw_norm": 6.2386345863342285,
+    "row_cos_mean": 0.9851109981536865,
+    "split_half_cos": 0.9996680021286011
+   },
+   "15": {
+    "n_rows": 200,
+    "raw_norm": 10.621726989746094,
+    "row_cos_mean": 0.9852200150489807,
+    "split_half_cos": 0.999695897102356
+   },
+   "18": {
+    "n_rows": 200,
+    "raw_norm": 19.709300994873047,
+    "row_cos_mean": 0.9803707599639893,
+    "split_half_cos": 0.9996390342712402
+   }
+  }
+ },
+ "conclude": {
+  "rule": "mean over closed rows of (mean h at the 16 positions before the close - mean h at 16 positions centred on the span middle)",
+  "rows": {
+   "rows": 200,
+   "natural_close": 31,
+   "fit_windows": 31,
+   "min_rows": 24,
+   "enough": true
+  },
+  "uids": [
+   "gsm8k/train/3947",
+   "gsm8k/train/4035",
+   "gsm8k/train/4321",
+   "gsm8k/train/4459",
+   "gsm8k/train/4585",
+   "gsm8k/train/4654",
+   "gsm8k/train/5012",
+   "gsm8k/train/5122",
+   "gsm8k/train/5221",
+   "gsm8k/train/5424",
+   "gsm8k/train/5473",
+   "gsm8k/train/5510",
+   "gsm8k/train/5558",
+   "gsm8k/train/5560",
+   "gsm8k/train/5565",
+   "gsm8k/train/5722",
+   "gsm8k/train/5736",
+   "gsm8k/train/5749",
+   "gsm8k/train/5764",
+   "gsm8k/train/5777",
+   "gsm8k/train/5818",
+   "gsm8k/train/6182",
+   "gsm8k/train/6790",
+   "gsm8k/train/6794",
+   "gsm8k/train/6860",
+   "gsm8k/train/6967",
+   "gsm8k/train/7088",
+   "gsm8k/train/7168",
+   "gsm8k/train/7182",
+   "gsm8k/train/7306",
+   "gsm8k/train/7363"
+  ],
+  "stats": {
+   "12": {
+    "n_rows": 31,
+    "raw_norm": 2.1194655895233154,
+    "row_cos_mean": 0.5917990803718567,
+    "split_half_cos": 0.8592461943626404
+   },
+   "15": {
+    "n_rows": 31,
+    "raw_norm": 4.010656833648682,
+    "row_cos_mean": 0.5623921155929565,
+    "split_half_cos": 0.8311116695404053
+   },
+   "18": {
+    "n_rows": 31,
+    "raw_norm": 6.318838596343994,
+    "row_cos_mean": 0.5810042023658752,
+    "split_half_cos": 0.8464330434799194
+   }
+  }
+ },
+ "cosines": {
+  "12": {
+   "think|conclude": -0.003590833628550172,
+   "think|random0": -0.030168086290359497,
+   "conclude|random0": -0.009653674438595772
+  },
+  "15": {
+   "think|conclude": 0.032840605825185776,
+   "think|random0": -0.013628711923956871,
+   "conclude|random0": -0.010311258025467396
+  },
+  "18": {
+   "think|conclude": -0.025495020672678947,
+   "think|random0": -0.017742853611707687,
+   "conclude|random0": 0.014092379249632359
+  }
+ },
+ "gpu_peak_gb": 3.82,
+ "seconds": 7.043272018432617
+}

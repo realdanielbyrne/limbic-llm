@@ -1,0 +1,79 @@
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]Loading weights: 100%|██████████| 311/311 [00:00<00:00, 14120.86it/s]
+Qwen/Qwen3-1.7B: 64 rows of 200 with both labels; blocks [14, 17, 21], gains [0.05, 0.1, 0.2, 0.3], directions ['think', '-think', 'conclude', '-conclude', 'random0', 'random1']
+  row 1/64 (1521 tokens)  6s
+  row 2/64 (2690 tokens)  15s
+  row 3/64 (1103 tokens)  18s
+  row 4/64 (1402 tokens)  22s
+  row 5/64 (575 tokens)  24s
+  row 6/64 (1744 tokens)  29s
+  row 7/64 (785 tokens)  31s
+  row 8/64 (2066 tokens)  37s
+  row 9/64 (724 tokens)  39s
+  row 10/64 (1588 tokens)  44s
+  row 11/64 (998 tokens)  47s
+  row 12/64 (1827 tokens)  52s
+  row 13/64 (979 tokens)  56s
+  row 14/64 (648 tokens)  58s
+  row 15/64 (1110 tokens)  61s
+  row 16/64 (1287 tokens)  65s
+  row 17/64 (2739 tokens)  73s
+  row 18/64 (1516 tokens)  77s
+  row 19/64 (898 tokens)  80s
+  row 20/64 (2813 tokens)  88s
+  row 21/64 (877 tokens)  90s
+  row 22/64 (1399 tokens)  95s
+  row 23/64 (3421 tokens)  104s
+  row 24/64 (4196 tokens)  115s
+  row 25/64 (1517 tokens)  119s
+  row 26/64 (1115 tokens)  123s
+  row 27/64 (1499 tokens)  127s
+  row 28/64 (1324 tokens)  131s
+  row 29/64 (1111 tokens)  134s
+  row 30/64 (1790 tokens)  139s
+  row 31/64 (1270 tokens)  143s
+  row 32/64 (890 tokens)  145s
+  row 33/64 (1415 tokens)  150s
+  row 34/64 (707 tokens)  152s
+  row 35/64 (937 tokens)  155s
+  row 36/64 (2189 tokens)  161s
+  row 37/64 (2027 tokens)  166s
+  row 38/64 (1477 tokens)  171s
+  row 39/64 (3099 tokens)  180s
+  row 40/64 (907 tokens)  182s
+  row 41/64 (1958 tokens)  188s
+  row 42/64 (1140 tokens)  191s
+  row 43/64 (710 tokens)  194s
+  row 44/64 (2335 tokens)  200s
+  row 45/64 (1314 tokens)  203s
+  row 46/64 (2084 tokens)  209s
+  row 47/64 (3041 tokens)  218s
+  row 48/64 (3985 tokens)  228s
+  row 49/64 (3881 tokens)  239s
+  row 50/64 (831 tokens)  241s
+  row 51/64 (1001 tokens)  245s
+  row 52/64 (1913 tokens)  250s
+  row 53/64 (902 tokens)  253s
+  row 54/64 (3208 tokens)  262s
+  row 55/64 (2355 tokens)  268s
+  row 56/64 (2833 tokens)  276s
+  row 57/64 (2260 tokens)  282s
+  row 58/64 (1690 tokens)  286s
+  row 59/64 (1408 tokens)  291s
+  row 60/64 (4173 tokens)  302s
+  row 61/64 (1548 tokens)  306s
+  row 62/64 (664 tokens)  309s
+  row 63/64 (4095 tokens)  319s
+  row 64/64 (1507 tokens)  324s
+passing: ['21|think|0.3|correct', '21|-conclude|0.05|correct', '21|-conclude|0.1|correct']; position-matched: []; saved /home/realdanielbyrne/limbic-llm/results/evolve/round12/stage1/c2screen_q3.json
+  L14 g0.05: think -0.065/-  -think +0.063/2.64  conclude -0.164/-  -conclude +0.269/2.64  random0 -0.029/-  random1 +0.043/sign
+  L14 g0.1: think -0.100/-  -think +0.115/2.16  conclude -0.259/-  -conclude +0.679/2.88  random0 +0.013/sign  random1 +0.173/sign
+  L14 g0.2: think +0.036/sign  -think +0.085/0.81  conclude -0.227/-  -conclude +2.209/3.03  random0 +0.340/sign  random1 +0.858/8.39
+  L14 g0.3: think +0.667/3.02  -think +0.013/0.05  conclude +0.439/sign  -conclude +5.238/2.57  random0 +1.225/sign  random1 +2.475/4.67
+  L17 g0.05: think +0.333/5.65  -think -0.205/-  conclude -0.482/-  -conclude +0.630/2.50  random0 -0.109/-  random1 +0.154/3.60
+  L17 g0.1: think +0.798/4.39  -think -0.309/-7.83  conclude -0.835/-  -conclude +1.422/2.39  random0 -0.155/-  random1 +0.399/2.80
+  L17 g0.2: think +2.207/3.16  -think -0.227/-0.82  conclude -1.207/-  -conclude +3.512/2.19  random0 -0.048/-  random1 +1.147/2.36
+  L17 g0.3: think +4.301/2.52  -think +0.134/0.18  conclude -1.180/-  -conclude +6.213/1.94  random0 +0.352/sign  random1 +2.287/2.09
+  L21 g0.05: think -0.175/-  -think +0.271/0.83  conclude -0.298/-3.39  -conclude +0.482/16.22  random0 -0.099/-  random1 -0.046/-
+  L21 g0.1: think -0.257/-  -think +0.624/0.86  conclude -0.418/-1.51  -conclude +1.143/5.95  random0 -0.102/-  random1 -0.027/-0.43
+  L21 g0.2: think -0.145/-  -think +1.553/0.90  conclude -0.188/-0.21  -conclude +2.911/3.24  random0 +0.127/sign  random1 +0.277/0.63
+  L21 g0.3: think +0.321/sign  -think +2.711/0.92  conclude +0.460/0.26  -conclude +5.134/2.41  random0 +0.657/1.71  random1 +0.919/0.80
