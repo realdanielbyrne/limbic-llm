@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 950 1130" role="img" aria-label="Architecture: a frozen model stack on the left; on the right, a dentate gate and episodic store fed from an early block, a ring buffer with fast and slow tap-filter banks fed from a deep block, and a CA1 comparator at the top that gates read-back into early attention and sends mismatch to the write gate.">
+        <style>
+svg{color:#1a2130;font-family:Inter,Helvetica,Arial,sans-serif;background:#fff}
+.blk{stroke:currentColor;stroke-width:1.4}.model{fill:#e6e9ef}.ec{fill:#d6eedf}.gate{fill:#fbe2c8}.store{fill:#faefbf}.ca1{fill:#e5dbf6}.hole{fill:#fff}
+.grp{fill:none;stroke:currentColor;stroke-width:1.1;stroke-dasharray:3 4}.w{fill:none;stroke:currentColor;stroke-width:1.5}.thick{stroke-width:2.4}.d{stroke-dasharray:6 5}.dot{fill:currentColor}
+.t{font-size:16px;font-weight:500;text-anchor:middle;fill:#1a2130}.s{font-size:12px;text-anchor:middle;fill:#566074}.l{font-size:13px;fill:#566074}.lm{text-anchor:middle}.le{text-anchor:end}
+</style><defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+        </defs>
+
+        <!-- frozen model stack -->
+        <text class="l lm" x="160" y="1108">token t</text>
+        <line class="w" x1="160" y1="1090" x2="160" y2="1048" marker-end="url(#ah)"/>
+        <rect class="blk model" x="50" y="1000" width="220" height="46" rx="8"/><text class="t" x="160" y="1029">Embedding</text>
+        <line class="w" x1="160" y1="1000" x2="160" y2="950" marker-end="url(#ah)"/>
+        <rect class="grp" x="38" y="822" width="244" height="140" rx="10"/>
+        <text class="l lm" x="24" y="892" transform="rotate(-90 24 892)">early block</text>
+        <rect class="blk model" x="50" y="902" width="220" height="46" rx="8"/><text class="t" x="160" y="931">Attention</text>
+        <line class="w" x1="160" y1="902" x2="160" y2="886" marker-end="url(#ah)"/>
+        <rect class="blk model" x="50" y="838" width="220" height="46" rx="8"/><text class="t" x="160" y="867">MLP</text>
+        <line class="w" x1="160" y1="838" x2="160" y2="738" marker-end="url(#ah)"/>
+        <rect class="blk model" x="50" y="690" width="220" height="46" rx="8"/><text class="t" x="160" y="719">Middle blocks</text>
+        <line class="w" x1="160" y1="690" x2="160" y2="628" marker-end="url(#ah)"/>
+        <rect class="blk model" x="50" y="580" width="220" height="46" rx="8"/><text class="t" x="160" y="609">Deep block</text>
+        <line class="w" x1="160" y1="580" x2="160" y2="398" marker-end="url(#ah)"/>
+        <rect class="blk model" x="50" y="350" width="220" height="46" rx="8"/><text class="t" x="160" y="379">Later blocks</text>
+        <line class="w" x1="160" y1="350" x2="160" y2="198" marker-end="url(#ah)"/>
+        <rect class="blk model" x="50" y="150" width="220" height="46" rx="8"/><text class="t" x="160" y="179">LM head</text>
+        <line class="w" x1="160" y1="150" x2="160" y2="118" marker-end="url(#ah)"/>
+        <text class="l lm" x="160" y="106">next-token logits</text>
+
+        <!-- taps -->
+        <circle class="dot" cx="160" cy="790" r="4"/>
+        <polyline class="w" points="160,790 750,790 750,768" marker-end="url(#ah)"/>
+        <text class="l" x="176" y="782">word-level state</text>
+        <circle class="dot" cx="160" cy="550" r="4"/>
+        <polyline class="w thick" points="160,550 592,550 592,202" marker-end="url(#ah)"/>
+        <text class="l" x="176" y="542">contextual state</text>
+        <text class="l lm" x="608" y="380" transform="rotate(-90 608 380)">direct path: the EC to CA1 skip</text>
+
+        <!-- entorhinal context: ring buffer and tap-filter banks -->
+        <circle class="dot" cx="460" cy="550" r="4"/>
+        <line class="w" x1="460" y1="550" x2="460" y2="522" marker-end="url(#ah)"/>
+        <rect class="blk ec" x="360" y="468" width="200" height="52" rx="8"/>
+        <text class="t" x="460" y="490">Ring buffer</text><text class="s" x="460" y="508">4,096 past states, newest excluded</text>
+        <line class="w" x1="460" y1="468" x2="460" y2="455"/>
+        <circle class="dot" cx="460" cy="455" r="3.5"/>
+        <polyline class="w" points="460,455 407,455 407,434" marker-end="url(#ah)"/>
+        <polyline class="w" points="460,455 513,455 513,434" marker-end="url(#ah)"/>
+        <rect class="blk ec" x="360" y="380" width="94" height="52" rx="8"/>
+        <text class="t" x="407" y="402" style="font-size:15px">Fast bank</text><text class="s" x="407" y="420">τ 4 · 16 · 64</text>
+        <rect class="blk ec" x="466" y="380" width="94" height="52" rx="8"/>
+        <text class="t" x="513" y="402" style="font-size:15px">Slow bank</text><text class="s" x="513" y="420">τ 256 · 1024</text>
+        <line class="w" x1="407" y1="380" x2="407" y2="344" marker-end="url(#ah)"/>
+        <line class="w" x1="513" y1="380" x2="513" y2="344" marker-end="url(#ah)"/>
+        <rect class="blk ec" x="360" y="290" width="200" height="52" rx="8"/>
+        <text class="t" x="460" y="312">Band differences</text><text class="s" x="460" y="330">document mean removed</text>
+        <line class="w thick" x1="460" y1="290" x2="460" y2="202" marker-end="url(#ah)"/>
+        <text class="l" x="468" y="250">context</text>
+        <!-- event gate on the slow bank -->
+        <polyline class="w d" points="650,667 575,667 575,406 562,406" marker-end="url(#ah)"/>
+        <text class="l lm" x="612" y="660">salience</text>
+
+        <!-- dentate gate -->
+        <rect class="blk gate" x="650" y="720" width="200" height="46" rx="8"/><text class="t" x="750" y="749">Random expansion</text>
+        <line class="w" x1="750" y1="720" x2="750" y2="692" marker-end="url(#ah)"/>
+        <rect class="blk gate" x="650" y="644" width="200" height="46" rx="8"/><text class="t" x="750" y="673">ReLU² + top-k</text>
+        <line class="w" x1="750" y1="644" x2="750" y2="608" marker-end="url(#ah)"/>
+        <text class="l le" x="742" y="624">sparse key</text>
+        <!-- query bypass -->
+        <circle class="dot" cx="750" cy="632" r="3.5"/>
+        <polyline class="w" points="750,632 865,632 865,366 852,366" marker-end="url(#ah)"/>
+        <text class="l lm" x="808" y="624">query</text>
+
+        <!-- CA3 store -->
+        <rect class="blk gate" x="665" y="572" width="170" height="34" rx="17"/><text class="t" x="750" y="594" style="font-size:15px">write gate</text>
+        <line class="w" x1="750" y1="572" x2="750" y2="532" marker-end="url(#ah)"/>
+        <path class="blk store" d="M660,452 v66 a90,12 0 0 0 180,0 v-66 z"/>
+        <ellipse class="blk store" cx="750" cy="452" rx="90" ry="12"/>
+        <text class="t" x="750" y="490">Episodic store</text><text class="s" x="750" y="508">key · tag · ordinal · span</text>
+        <line class="w" x1="750" y1="440" x2="750" y2="378" marker-end="url(#ah)"/>
+        <rect class="blk store" x="650" y="330" width="200" height="46" rx="8"/><text class="t" x="750" y="359">Recall by key overlap</text>
+        <line class="w thick" x1="750" y1="330" x2="750" y2="202" marker-end="url(#ah)"/>
+        <text class="l" x="758" y="270">recalled entries</text>
+
+        <!-- CA1 comparator -->
+        <rect class="blk ca1" x="400" y="150" width="410" height="50" rx="8"/>
+        <text class="t" x="605" y="181">CA1 comparator: fit of recall vs. other entries</text>
+        <!-- mismatch to the write gate -->
+        <polyline class="w d" points="620,200 620,589 663,589" marker-end="url(#ah)"/>
+        <text class="l lm" x="638" y="400" transform="rotate(-90 638 400)">mismatch</text>
+        <!-- match opens the read gate -->
+        <polyline class="w d" points="810,175 915,175 915,345 899,345" marker-end="url(#ah)"/>
+        <text class="l lm" x="862" y="167">match</text>
+
+        <!-- read gate and read-back -->
+        <line class="w thick" x1="850" y1="345" x2="871" y2="345" marker-end="url(#ah)"/>
+        <circle class="blk hole" cx="885" cy="345" r="12"/>
+        <line class="w" x1="877" y1="337" x2="893" y2="353"/><line class="w" x1="877" y1="353" x2="893" y2="337"/>
+        <polyline class="w thick" points="885,357 885,925 272,925" marker-end="url(#ah)"/>
+        <text class="l lm" x="899" y="650" transform="rotate(90 899 650)">read-back at ordinal positions</text>
+
+        <!-- legend -->
+        <rect class="blk model" x="400" y="988" width="16" height="16" rx="3"/><text class="l" x="424" y="1001">Frozen model</text>
+        <rect class="blk ec" x="400" y="1014" width="16" height="16" rx="3"/><text class="l" x="424" y="1027">Entorhinal context: buffer and filter banks</text>
+        <rect class="blk gate" x="400" y="1040" width="16" height="16" rx="3"/><text class="l" x="424" y="1053">Dentate and squared-ReLU gates</text>
+        <rect class="blk store" x="706" y="988" width="16" height="16" rx="3"/><text class="l" x="730" y="1001">CA3 episodic store</text>
+        <rect class="blk ca1" x="706" y="1014" width="16" height="16" rx="3"/><text class="l" x="730" y="1027">CA1 comparator</text>
+        <circle class="blk hole" cx="714" cy="1048" r="8"/><line class="w" x1="709" y1="1043" x2="719" y2="1053"/><line class="w" x1="709" y1="1053" x2="719" y2="1043"/><text class="l" x="730" y="1053">read gate</text>
+        <line class="w thick" x1="400" y1="1084" x2="440" y2="1084"/><text class="l" x="448" y="1088">state or content</text>
+        <line class="w d" x1="706" y1="1084" x2="746" y2="1084"/><text class="l" x="754" y="1088">gate or learning signal</text>
+      </svg>

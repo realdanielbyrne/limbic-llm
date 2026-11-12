@@ -1716,3 +1716,37 @@ side-memory track landing a generalizing mechanism.
    - tap 7, with recall as at tap 21 and better language modelling.
 
 **Next.** Phase 3 (the factorial, DEC14). Phase 0–2 results trim the factor list, and add two candidates (the fitted code; tap 7 against 21) that need Daniel's approval: see the checkpoint report.
+
+## Round 12: a training-free CA2 side channel shows no benefit under full attention; read-back on a windowed model is the one positive (9–11 Nov 2026)
+
+**Setup** (DEC15, re-planned by DEC16). New branch `feat/round12-ca2-gdn`. Code in `experiments/ca2/`; results in `results/evolve/round12/stage0/` and `stage1/`; raw per-token traces in `~/limbic-data/ca2_traces/` (not in the repo). Models: Qwen3-1.7B(-Base), the hybrid Qwen3.5-2B(-Base), RecurrentGemma-2b(-it). Nothing was trained except the P5 replica (P99). Everything is one run unless stated. Register P90–P101.
+
+- **Stage 0** tested Activation Addition made dynamic: a controller adds g·‖h‖·d at one block, with d the "gist" (a fast running average of the stream minus a slow one) and matched controls, plus branch gains on the hybrid, lagged cross-layer injection and multi-site injection.
+- **After Stage 0** Daniel re-planned (DEC16): cancel what cannot show a benefit, cast windowing correctly, allow training if reportable, measure tasks. Stage 1 then ran thinking baselines and controllers, the P5 adjudication, read-back on RecurrentGemma and the CA2 "finish thinking" injection.
+
+| Finding | Numbers | Register |
+|---|---|---|
+| **Under full attention nothing helps**, on any tracked metric, across about 700 arms | best effects are 0.1% of the loss and not distinguishable from a random direction | P91, P92, P95, P96 |
+| **The gist hurts everywhere** and drives repetition; its negation is the better direction under a window | hybrid, gain 0.3: +0.069 full, +0.198 windowed; anti-gist −0.021 to −0.030 with everything windowed | P91–P93 |
+| **The hybrid's GDN state carries context, not items** | zeroing it under a 64-token window: +0.32 nats; recurrent-only digit accuracy 0.09 (chance 0.10) | P90 |
+| **Rebalancing branches repairs the windowed hybrid** | attention × 0.75: −0.26 nats (48% of the gap), top-1 +3.6 points; hurts with GDN reset or full attention | P94 |
+| Lagged injection helps only under a window, deep-to-early best | block 19 → 3, out-of-window mean: −0.038 | P95 |
+| Splitting the dose over sites does not reduce repetition at matched effect | — | P96 |
+| **The hybrid's thinking rarely ends**; vendor decoding does not fix it | GSM8K: 0.18 thinking, 0.78 without; presence penalty 1.5: 0.31 | P97 |
+| No stop rule beats a fixed thinking budget; an oracle shows 23 points of headroom | cut at 256 tokens: 0.835 at 883 tokens (hybrid) | P98 |
+| **The P5 loop was adaptation, not memory** | a matched memory-free adapter beats it: −1.9 and −7.3 closure points | P99 |
+| **Read-back through attention works with no training when an oracle selects**, with ordinal positions | RecurrentGemma, beyond the window: 0.08 → 0.94; true positions 0.26; InfLLM-style selection 0.06 | P100 |
+| A "finish thinking" injection is a real lever but loses to the fixed cut | hybrid 0.61–0.65 against 0.835; random 0.205, negated 0.00 | P101 |
+
+**What it shows**
+1. **Re-adding a model's own state to itself gives it no new information.** With the context in view there is nothing to gain; the benefits appear only where information is missing, and the large one (P94) is partly repair of a condition we imposed.
+2. **Content needs a reader.** Attention read-back delivers content (P100); residual addition does not. Ordinal position works where true rotary distance does not, as P66 suggested.
+3. **Low-pass state and discrete entries do different jobs.** Running averages and the GDN state carry context (P90, P93); only stored entries carried items (P100, P51).
+4. **Trained side modules need two controls** from now on: a parameter-matched adapter with no memory, and another document's memory (P99).
+5. **Selection is the open problem.** The oracle supplies it in P100; the training-free retriever does not.
+
+**Problems met.** GPU 0 has about 23 GB usable (the desktop holds the rest): several runs failed on memory there and were rerun at smaller batches. `reason.py` rejects `trunc@B` arms (a bug in `resolve()`), so the baseline files hold only the `none` and `nothink` arms. The hybrid multi-site run was stopped at 160 of 209 runs. The free-generation collapse measure has a noise floor of about 0.1.
+
+**Next.** Round 13 (DEC17): the gated memory circuit, `plans/round13_gated_memory_plan.md`, a draft under adversarial review.
+
+[Correction, 11 Nov 2026: the adversarial review of the round-13 plan (register RV5) narrows P100 and point 5 above. The oracle reads back every statement and never uses the question, and the InfLLM-style arm is at chance through faults in our implementation, so "selection is the open problem" is not established: a plain selector has not been given a fair test. The 0.08 → 0.94 figure is the needle cell on the base model; pooled over needle and update it is 0.10 → 0.70 (base) and 0.14 → 0.72 (-it). The update cell on the base model (0.46) missed its gate, and the inside-window check failed (native 0.65 on update items with the facts in view). The review's verdict on draft 1 of the plan was "do not run as written"; draft 2 answers its findings and is not approved or built.]

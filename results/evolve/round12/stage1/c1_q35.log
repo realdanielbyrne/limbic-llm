@@ -1,0 +1,50 @@
+Loading weights:   0%|          | 0/320 [00:00<?, ?it/s]Loading weights: 100%|██████████| 320/320 [00:00<00:00, 13641.26it/s]
+Qwen/Qwen3.5-2B: thinking end 248069, open 248068; 200 problems x 1 samples; 5 arms; ref t06
+[t06] t06@T=0.6;pp=0
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+[transformers] `causal_conv1d_update` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+  [t06] batch 1/7: acc 0.22 closed 0.28 reason 3317 tok  (109s)
+  [t06] batch 2/7: acc 0.31 closed 0.38 reason 3118 tok  (218s)
+  [t06] batch 3/7: acc 0.25 closed 0.25 reason 3414 tok  (325s)
+  [t06] batch 4/7: acc 0.19 closed 0.19 reason 3593 tok  (431s)
+  [t06] batch 5/7: acc 0.19 closed 0.22 reason 3481 tok  (532s)
+  [t06] batch 6/7: acc 0.16 closed 0.19 reason 3766 tok  (622s)
+  [t06] batch 7/7: acc 0.00 closed 0.00 reason 4096 tok  (691s)
+[t06] acc 0.210  non-close 0.76  reason 3474  n_gen 3532  TTC median 512.0
+[t10] t10@T=1.0;pp=0
+  [t10] batch 1/7: acc 0.12 closed 0.12 reason 3824 tok  (90s)
+  [t10] batch 2/7: acc 0.22 closed 0.22 reason 3578 tok  (179s)
+  [t10] batch 3/7: acc 0.19 closed 0.19 reason 3633 tok  (268s)
+  [t10] batch 4/7: acc 0.22 closed 0.22 reason 3604 tok  (358s)
+  [t10] batch 5/7: acc 0.22 closed 0.28 reason 3598 tok  (448s)
+  [t10] batch 6/7: acc 0.28 closed 0.28 reason 3564 tok  (538s)
+  [t10] batch 7/7: acc 0.12 closed 0.12 reason 3902 tok  (609s)
+[t10] acc 0.205  non-close 0.79  reason 3644  n_gen 3701  TTC median 640.0
+[t10pp15] t10pp15@T=1.0;pp=1.5
+  [t10pp15] batch 1/7: acc 0.16 closed 0.25 reason 3597 tok  (93s)
+  [t10pp15] batch 2/7: acc 0.47 closed 0.50 reason 2923 tok  (187s)
+  [t10pp15] batch 3/7: acc 0.25 closed 0.31 reason 3521 tok  (281s)
+  [t10pp15] batch 4/7: acc 0.28 closed 0.31 reason 3455 tok  (377s)
+  [t10pp15] batch 5/7: acc 0.38 closed 0.38 reason 3161 tok  (468s)
+  [t10pp15] batch 6/7: acc 0.34 closed 0.34 reason 3464 tok  (559s)
+  [t10pp15] batch 7/7: acc 0.25 closed 0.25 reason 3343 tok  (629s)
+[t10pp15] acc 0.310  non-close 0.66  reason 3353  n_gen 3447  TTC median 768.0
+[nothink] nothink@think=off;T=0.6;pp=0
+  [nothink] batch 1/7: acc 0.69 closed 0.00 reason 719 tok  (75s)
+  [nothink] batch 2/7: acc 0.84 closed 0.00 reason 418 tok  (109s)
+  [nothink] batch 3/7: acc 0.84 closed 0.00 reason 670 tok  (199s)
+  [nothink] batch 4/7: acc 0.72 closed 0.00 reason 527 tok  (285s)
+  [nothink] batch 5/7: acc 0.84 closed 0.00 reason 498 tok  (368s)
+  [nothink] batch 6/7: acc 0.66 closed 0.00 reason 992 tok  (459s)
+  [nothink] batch 7/7: acc 0.75 closed 0.00 reason 851 tok  (538s)
+[nothink] acc 0.765  non-close   -    reason 646  n_gen 647  TTC median None
+[t10pp15-trunc1024] t10pp15-trunc1024@T=1.0;pp=1.5;trunc=1024
+  [t10pp15-trunc1024] batch 1/7: acc 0.59 closed 0.06 reason 1019 tok  (96s)
+  [t10pp15-trunc1024] batch 2/7: acc 0.78 closed 0.16 reason 981 tok  (195s)
+  [t10pp15-trunc1024] batch 3/7: acc 0.72 closed 0.03 reason 1014 tok  (294s)
+  [t10pp15-trunc1024] batch 4/7: acc 0.69 closed 0.09 reason 1002 tok  (393s)
+  [t10pp15-trunc1024] batch 5/7: acc 0.75 closed 0.09 reason 1002 tok  (491s)
+  [t10pp15-trunc1024] batch 6/7: acc 0.69 closed 0.03 reason 1021 tok  (592s)
+  [t10pp15-trunc1024] batch 7/7: acc 0.62 closed 0.12 reason 1018 tok  (677s)
+[t10pp15-trunc1024] acc 0.700  non-close 0.92  reason 1007  n_gen 2061  TTC median 768.0
+saved /home/realdanielbyrne/limbic-llm/results/evolve/round12/stage1/c1_q35.json (no generated text); traces in /home/realdanielbyrne/limbic-data/ca2_traces/c1_q35

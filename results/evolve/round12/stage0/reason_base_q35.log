@@ -1,0 +1,43 @@
+Loading weights:   0%|          | 0/320 [00:00<?, ?it/s]Loading weights: 100%|██████████| 320/320 [00:00<00:00, 12218.05it/s]
+Qwen/Qwen3.5-2B: 24 blocks, tap 12 -> inject 13, attn tap 11, hybrid True, thinking True; 400 problems x 1 samples; 6 arms
+[none] none dir gist g [0, 0] source constant reinforce
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+[transformers] `causal_conv1d_update` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+  [none] batch 1/13: acc 0.22 reason 3317 tok  (340s)
+  [none] batch 2/13: acc 0.31 reason 3118 tok  (644s)
+  [none] batch 3/13: acc 0.25 reason 3414 tok  (950s)
+  [none] batch 4/13: acc 0.19 reason 3593 tok  (1333s)
+  [none] batch 5/13: acc 0.19 reason 3481 tok  (1719s)
+  [none] batch 6/13: acc 0.16 reason 3766 tok  (2103s)
+  [none] batch 7/13: acc 0.12 reason 3712 tok  (2494s)
+  [none] batch 8/13: acc 0.09 reason 3913 tok  (2880s)
+  [none] batch 9/13: acc 0.19 reason 3558 tok  (3188s)
+  [none] batch 10/13: acc 0.28 reason 3384 tok  (3491s)
+  [none] batch 11/13: acc 0.03 reason 3991 tok  (3810s)
+  [none] batch 12/13: acc 0.19 reason 3432 tok  (4115s)
+  [none] batch 13/13: acc 0.12 reason 3756 tok  (4368s)
+[none] acc 0.182  reason 3564  trunc 0.81  gain 0.000  TTC median 512.0
+[nothink] nothink dir gist g [0, 0] source constant reinforce
+  [nothink] batch 1/13: acc 0.69 reason 719 tok  (251s)
+  [nothink] batch 2/13: acc 0.84 reason 418 tok  (365s)
+  [nothink] batch 3/13: acc 0.84 reason 670 tok  (611s)
+  [nothink] batch 4/13: acc 0.72 reason 527 tok  (853s)
+  [nothink] batch 5/13: acc 0.84 reason 498 tok  (1075s)
+  [nothink] batch 6/13: acc 0.66 reason 992 tok  (1323s)
+  [nothink] batch 7/13: acc 0.75 reason 553 tok  (1561s)
+  [nothink] batch 8/13: acc 0.78 reason 613 tok  (1801s)
+  [nothink] batch 9/13: acc 0.81 reason 755 tok  (2044s)
+  [nothink] batch 10/13: acc 0.84 reason 491 tok  (2181s)
+  [nothink] batch 11/13: acc 0.81 reason 766 tok  (2423s)
+  [nothink] batch 12/13: acc 0.81 reason 583 tok  (2664s)
+  [nothink] batch 13/13: acc 0.62 reason 665 tok  (2877s)
+[nothink] acc 0.777  reason 633  trunc 0.04  gain 0.000  TTC median 380.0
+Traceback (most recent call last):
+  File "/home/realdanielbyrne/limbic-llm/experiments/ca2/reason.py", line 1642, in <module>
+    main()
+    ~~~~^^
+  File "/home/realdanielbyrne/limbic-llm/experiments/ca2/reason.py", line 1621, in main
+    st = resolve(a_, report, args, env)
+  File "/home/realdanielbyrne/limbic-llm/experiments/ca2/reason.py", line 1261, in resolve
+    raise ValueError(f"{arm.spec}: arm {arm.ref!r} must be complete first (run it earlier in --arms)")
+ValueError: trunc@256: arm None must be complete first (run it earlier in --arms)

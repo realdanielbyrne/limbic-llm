@@ -1,0 +1,229 @@
+Loading weights:   0%|          | 0/320 [00:00<?, ?it/s]Loading weights: 100%|██████████| 320/320 [00:00<00:00, 13901.08it/s]
+[multisite] Qwen/Qwen3.5-2B-Base sets={'L12': [12], 'L7,12,19': [7, 12, 19], 'L2,6,10,14,18,22': [2, 6, 10, 14, 18, 22], 'L2-21': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]} modes=['text', 'gen'] out=/home/realdanielbyrne/limbic-llm/results/evolve/round12/stage0/multisite_q35b.json
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+[multisite] text/full/none: dloss +0.0000 kl 0.0000 inj 0.000 norm 1.000 t 16.8s
+[multisite] text/full/L12:one:gist@0.1: dloss +0.0086 kl 0.0094 inj 0.100 norm 0.997 t 11.4s
+[multisite] text/full/L12:one:gist@0.2: dloss +0.0305 kl 0.0331 inj 0.200 norm 0.992 t 11.5s
+[multisite] text/full/L12:one:gist@0.3: dloss +0.0648 kl 0.0706 inj 0.300 norm 0.987 t 11.4s
+[multisite] text/full/L12:one:gist@0.5: dloss +0.1714 kl 0.1928 inj 0.500 norm 0.974 t 11.2s
+[multisite] text/full/L12:one:gist@0.75: dloss +0.3903 kl 0.4863 inj 0.750 norm 0.957 t 11.3s
+[multisite] text/full/L12:one:random@0.1: dloss +0.0022 kl 0.0052 inj 0.100 norm 0.999 t 11.2s
+[multisite] text/full/L12:one:random@0.2: dloss +0.0136 kl 0.0193 inj 0.200 norm 0.998 t 11.1s
+[multisite] text/full/L12:one:random@0.3: dloss +0.0350 kl 0.0439 inj 0.300 norm 0.997 t 11.1s
+[multisite] text/full/L12:one:random@0.5: dloss +0.1125 kl 0.1317 inj 0.500 norm 0.991 t 11.2s
+[multisite] text/full/L12:one:random@0.75: dloss +0.2851 kl 0.3429 inj 0.750 norm 0.976 t 11.1s
+[multisite] text/full/L7,12,19:lin:gist@0.2: dloss +0.0211 kl 0.0226 inj 0.200 norm 1.010 t 11.9s
+[multisite] text/full/L7,12,19:lin:gist@0.5: dloss +0.1318 kl 0.1405 inj 0.500 norm 1.027 t 11.9s
+[multisite] text/full/L7,12,19:lin:gist@0.75: dloss +0.3141 kl 0.3621 inj 0.750 norm 1.040 t 12.0s
+[multisite] text/full/L7,12,19:lin:gist@1: dloss +0.6305 kl 0.8309 inj 1.000 norm 1.055 t 12.0s
+[multisite] text/full/L7,12,19:lin:gist@1.5: dloss +1.8983 kl 2.6924 inj 1.500 norm 1.092 t 12.2s
+[multisite] text/full/L7,12,19:lin:gist@2: dloss +3.6865 kl 4.7228 inj 2.000 norm 1.132 t 11.9s
+[multisite] text/full/L7,12,19:lin:random@0.2: dloss +0.0071 kl 0.0073 inj 0.200 norm 0.999 t 11.8s
+[multisite] text/full/L7,12,19:lin:random@0.5: dloss +0.0472 kl 0.0454 inj 0.500 norm 1.001 t 11.8s
+[multisite] text/full/L7,12,19:lin:random@0.75: dloss +0.1135 kl 0.1118 inj 0.750 norm 1.006 t 11.9s
+[multisite] text/full/L7,12,19:lin:random@1: dloss +0.2166 kl 0.2232 inj 1.000 norm 1.013 t 11.9s
+[multisite] text/full/L7,12,19:lin:random@1.5: dloss +0.5703 kl 0.6565 inj 1.500 norm 1.037 t 12.1s
+[multisite] text/full/L7,12,19:lin:random@2: dloss +1.1812 kl 1.4448 inj 2.000 norm 1.071 t 11.8s
+[multisite] text/full/L7,12,19:sqrt:gist@0.2: dloss +0.0626 kl 0.0660 inj 0.346 norm 1.018 t 11.9s
+[multisite] text/full/L7,12,19:sqrt:gist@0.5: dloss +0.4395 kl 0.5374 inj 0.866 norm 1.047 t 11.8s
+[multisite] text/full/L7,12,19:sqrt:gist@0.75: dloss +1.2867 kl 1.8505 inj 1.299 norm 1.076 t 12.1s
+[multisite] text/full/L7,12,19:sqrt:gist@1: dloss +2.7085 kl 3.6705 inj 1.732 norm 1.110 t 11.8s
+[multisite] text/full/L7,12,19:sqrt:gist@1.5: dloss +5.6232 kl 6.6501 inj 2.598 norm 1.182 t 11.8s
+[multisite] text/full/L7,12,19:sqrt:gist@2: dloss +7.4701 kl 8.6954 inj 3.464 norm 1.317 t 11.9s
+[multisite] text/full/L7,12,19:sqrt:random@0.2: dloss +0.0221 kl 0.0212 inj 0.346 norm 0.999 t 12.1s
+[multisite] text/full/L7,12,19:sqrt:random@0.5: dloss +0.1560 kl 0.1569 inj 0.866 norm 1.009 t 11.8s
+[multisite] text/full/L7,12,19:sqrt:random@0.75: dloss +0.4012 kl 0.4410 inj 1.299 norm 1.026 t 11.9s
+[multisite] text/full/L7,12,19:sqrt:random@1: dloss +0.8190 kl 0.9828 inj 1.732 norm 1.052 t 12.0s
+[multisite] text/full/L7,12,19:sqrt:random@1.5: dloss +2.2450 kl 2.6176 inj 2.598 norm 1.119 t 11.9s
+[multisite] text/full/L7,12,19:sqrt:random@2: dloss +4.0465 kl 4.4883 inj 3.464 norm 1.164 t 12.0s
+[multisite] text/full/L2,6,10,14,18,22:lin:gist@0.2: dloss +0.0199 kl 0.0195 inj 0.200 norm 1.017 t 12.8s
+[multisite] text/full/L2,6,10,14,18,22:lin:gist@0.5: dloss +0.1265 kl 0.1291 inj 0.500 norm 1.045 t 12.7s
+[multisite] text/full/L2,6,10,14,18,22:lin:gist@0.75: dloss +0.3309 kl 0.3715 inj 0.750 norm 1.074 t 12.7s
+[multisite] text/full/L2,6,10,14,18,22:lin:gist@1: dloss +0.7950 kl 1.0712 inj 1.000 norm 1.115 t 12.8s
+[multisite] text/full/L2,6,10,14,18,22:lin:gist@1.5: dloss +2.8552 kl 3.7995 inj 1.500 norm 1.225 t 12.8s
+[multisite] text/full/L2,6,10,14,18,22:lin:gist@2: dloss +5.2783 kl 6.2188 inj 2.000 norm 1.294 t 12.9s
+[multisite] text/full/L2,6,10,14,18,22:lin:random@0.2: dloss +0.0016 kl 0.0039 inj 0.200 norm 0.998 t 12.9s
+[multisite] text/full/L2,6,10,14,18,22:lin:random@0.5: dloss +0.0165 kl 0.0210 inj 0.500 norm 0.999 t 12.8s
+[multisite] text/full/L2,6,10,14,18,22:lin:random@0.75: dloss +0.0403 kl 0.0478 inj 0.750 norm 1.000 t 12.9s
+[multisite] text/full/L2,6,10,14,18,22:lin:random@1: dloss +0.0766 kl 0.0882 inj 1.000 norm 1.004 t 12.9s
+[multisite] text/full/L2,6,10,14,18,22:lin:random@1.5: dloss +0.1932 kl 0.2207 inj 1.500 norm 1.014 t 12.9s
+[multisite] text/full/L2,6,10,14,18,22:lin:random@2: dloss +0.3869 kl 0.4551 inj 2.000 norm 1.029 t 13.0s
+[multisite] text/full/L2,6,10,14,18,22:sqrt:gist@0.2: dloss +0.1212 kl 0.1232 inj 0.490 norm 1.044 t 12.8s
+[multisite] text/full/L2,6,10,14,18,22:sqrt:gist@0.5: dloss +1.5810 kl 2.2274 inj 1.225 norm 1.166 t 12.7s
+[multisite] text/full/L2,6,10,14,18,22:sqrt:gist@0.75: dloss +4.5263 kl 5.5108 inj 1.837 norm 1.275 t 12.7s
+[multisite] text/full/L2,6,10,14,18,22:sqrt:gist@1: dloss +6.9547 kl 7.7850 inj 2.449 norm 1.350 t 12.7s
+[multisite] text/full/L2,6,10,14,18,22:sqrt:gist@1.5: dloss +9.3083 kl 10.1227 inj 3.674 norm 1.677 t 12.7s
+[multisite] text/full/L2,6,10,14,18,22:sqrt:gist@2: dloss +11.0321 kl 11.0352 inj 4.899 norm 2.456 t 12.8s
+[multisite] text/full/L2,6,10,14,18,22:sqrt:random@0.2: dloss +0.0157 kl 0.0201 inj 0.490 norm 0.999 t 12.7s
+[multisite] text/full/L2,6,10,14,18,22:sqrt:random@0.5: dloss +0.1210 kl 0.1381 inj 1.225 norm 1.008 t 13.0s
+[multisite] text/full/L2,6,10,14,18,22:sqrt:random@0.75: dloss +0.3139 kl 0.3645 inj 1.837 norm 1.024 t 12.8s
+[multisite] text/full/L2,6,10,14,18,22:sqrt:random@1: dloss +0.6531 kl 0.8044 inj 2.449 norm 1.043 t 12.9s
+[multisite] text/full/L2,6,10,14,18,22:sqrt:random@1.5: dloss +2.1405 kl 2.7480 inj 3.674 norm 1.054 t 13.1s
+[multisite] text/full/L2,6,10,14,18,22:sqrt:random@2: dloss +4.9165 kl 6.2259 inj 4.899 norm 0.986 t 12.9s
+[multisite] text/full/L2-21:lin:gist@0.2: dloss +0.0189 kl 0.0202 inj 0.200 norm 1.013 t 16.4s
+[multisite] text/full/L2-21:lin:gist@0.5: dloss +0.1258 kl 0.1351 inj 0.500 norm 1.032 t 16.6s
+[multisite] text/full/L2-21:lin:gist@0.75: dloss +0.3245 kl 0.3829 inj 0.750 norm 1.049 t 16.4s
+[multisite] text/full/L2-21:lin:gist@1: dloss +0.7418 kl 1.0271 inj 1.000 norm 1.072 t 16.4s
+[multisite] text/full/L2-21:lin:gist@1.5: dloss +2.7183 kl 3.5834 inj 1.500 norm 1.145 t 16.3s
+[multisite] text/full/L2-21:lin:gist@2: dloss +5.4856 kl 6.3533 inj 2.000 norm 1.215 t 16.4s
+[multisite] text/full/L2-21:lin:random@0.2: dloss +0.0025 kl 0.0017 inj 0.200 norm 1.000 t 16.7s
+[multisite] text/full/L2-21:lin:random@0.5: dloss +0.0099 kl 0.0067 inj 0.500 norm 1.002 t 16.5s
+[multisite] text/full/L2-21:lin:random@0.75: dloss +0.0193 kl 0.0144 inj 0.750 norm 1.003 t 16.4s
+[multisite] text/full/L2-21:lin:random@1: dloss +0.0324 kl 0.0255 inj 1.000 norm 1.005 t 16.4s
+[multisite] text/full/L2-21:lin:random@1.5: dloss +0.0707 kl 0.0595 inj 1.500 norm 1.010 t 16.5s
+[multisite] text/full/L2-21:lin:random@2: dloss +0.1261 kl 0.1122 inj 2.000 norm 1.016 t 16.5s
+[multisite] text/full/L2-21:sqrt:gist@0.2: dloss +0.5254 kl 0.6857 inj 0.894 norm 1.062 t 16.6s
+[multisite] text/full/L2-21:sqrt:gist@0.5: dloss +6.6335 kl 7.4205 inj 2.236 norm 1.240 t 16.8s
+[multisite] text/full/L2-21:sqrt:gist@0.75: dloss +9.6805 kl 10.3202 inj 3.354 norm 1.622 t 16.7s
+[multisite] text/full/L2-21:sqrt:gist@1: dloss +11.4663 kl 11.2251 inj 4.472 norm 2.996 t 16.6s
+[multisite] text/full/L2-21:sqrt:gist@1.5: dloss +12.2178 kl 11.4859 inj 6.708 norm 13.293 t 16.5s
+[multisite] text/full/L2-21:sqrt:gist@2: dloss +12.3361 kl 11.5316 inj 8.944 norm 64.409 t 16.5s
+[multisite] text/full/L2-21:sqrt:random@0.2: dloss +0.0266 kl 0.0204 inj 0.894 norm 1.004 t 16.6s
+[multisite] text/full/L2-21:sqrt:random@0.5: dloss +0.1595 kl 0.1450 inj 2.236 norm 1.020 t 16.5s
+[multisite] text/full/L2-21:sqrt:random@0.75: dloss +0.3980 kl 0.3961 inj 3.354 norm 1.040 t 16.5s
+[multisite] text/full/L2-21:sqrt:random@1: dloss +0.8431 kl 0.9148 inj 4.472 norm 1.062 t 16.4s
+[multisite] text/full/L2-21:sqrt:random@1.5: dloss +2.8955 kl 3.1177 inj 6.708 norm 1.029 t 16.5s
+[multisite] text/full/L2-21:sqrt:random@2: dloss +5.9235 kl 6.0574 inj 8.944 norm 0.957 t 16.5s
+[transformers] `causal_conv1d_update` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+[multisite] gen/seed0/none: collapse 0.167 distinct4 0.230 kl 0.0 tok/s 86
+[multisite] gen/seed0/L12:one:gist@0.1: collapse 0.229 distinct4 0.246 kl 0.0025941848175534687 tok/s 521
+[multisite] gen/seed0/L12:one:gist@0.2: collapse 0.229 distinct4 0.250 kl 0.008707247900019865 tok/s 524
+[multisite] gen/seed0/L12:one:gist@0.3: collapse 0.229 distinct4 0.256 kl 0.020673779072239995 tok/s 527
+[multisite] gen/seed0/L12:one:gist@0.5: collapse 0.448 distinct4 0.223 kl 0.038634216473534856 tok/s 527
+[multisite] gen/seed0/L12:one:gist@0.75: collapse 0.781 distinct4 0.187 kl 0.08086992714379448 tok/s 530
+[multisite] gen/seed0/L7,12,19:lin:gist@0.2: collapse 0.229 distinct4 0.255 kl 0.007387245794840662 tok/s 326
+[multisite] gen/seed0/L7,12,19:lin:gist@0.5: collapse 0.396 distinct4 0.201 kl 0.030763455340396224 tok/s 323
+[multisite] gen/seed0/L7,12,19:lin:gist@0.75: collapse 0.625 distinct4 0.231 kl 0.08768249987042509 tok/s 320
+[multisite] gen/seed0/L7,12,19:lin:gist@1: collapse 0.938 distinct4 0.143 kl 0.109598240883012 tok/s 321
+[multisite] gen/seed0/L7,12,19:lin:gist@1.5: collapse 1.000 distinct4 0.173 kl 0.27921810757834464 tok/s 321
+[multisite] gen/seed0/L7,12,19:lin:gist@2: collapse 1.000 distinct4 0.219 kl 0.5296689388730252 tok/s 320
+[multisite] gen/seed0/L7,12,19:sqrt:gist@0.2: collapse 0.344 distinct4 0.229 kl 0.014547836629693242 tok/s 316
+[multisite] gen/seed0/L7,12,19:sqrt:gist@0.5: collapse 0.833 distinct4 0.150 kl 0.08824225054801597 tok/s 318
+[multisite] gen/seed0/L7,12,19:sqrt:gist@0.75: collapse 1.000 distinct4 0.130 kl 0.17873268490075134 tok/s 324
+[multisite] gen/seed0/L7,12,19:sqrt:gist@1: collapse 1.000 distinct4 0.196 kl 0.4077930877295633 tok/s 318
+[multisite] gen/seed0/L7,12,19:sqrt:gist@1.5: collapse 1.000 distinct4 0.251 kl 1.0501698406102757 tok/s 322
+[multisite] gen/seed0/L7,12,19:sqrt:gist@2: collapse 1.000 distinct4 0.367 kl 2.541379138827324 tok/s 318
+[multisite] gen/seed0/L2,6,10,14,18,22:lin:gist@0.2: collapse 0.156 distinct4 0.253 kl 0.006165073455122183 tok/s 219
+[multisite] gen/seed0/L2,6,10,14,18,22:lin:gist@0.5: collapse 0.302 distinct4 0.190 kl 0.025363589828581706 tok/s 220
+[multisite] gen/seed0/L2,6,10,14,18,22:lin:gist@0.75: collapse 0.594 distinct4 0.179 kl 0.06108387052275551 tok/s 218
+[multisite] gen/seed0/L2,6,10,14,18,22:lin:gist@1: collapse 0.906 distinct4 0.110 kl 0.09002093090869796 tok/s 216
+[multisite] gen/seed0/L2,6,10,14,18,22:lin:gist@1.5: collapse 1.000 distinct4 0.146 kl 0.2614288513820308 tok/s 220
+[multisite] gen/seed0/L2,6,10,14,18,22:lin:gist@2: collapse 1.000 distinct4 0.187 kl 0.573472252387243 tok/s 220
+[multisite] gen/seed0/L2,6,10,14,18,22:sqrt:gist@0.2: collapse 0.344 distinct4 0.194 kl 0.026878775087728474 tok/s 222
+[multisite] gen/seed0/L2,6,10,14,18,22:sqrt:gist@0.5: collapse 1.000 distinct4 0.133 kl 0.1568982457004798 tok/s 219
+[multisite] gen/seed0/L2,6,10,14,18,22:sqrt:gist@0.75: collapse 1.000 distinct4 0.172 kl 0.44448997646880645 tok/s 221
+[multisite] gen/seed0/L2,6,10,14,18,22:sqrt:gist@1: collapse 1.000 distinct4 0.220 kl 0.9846412507661929 tok/s 220
+[multisite] gen/seed0/L2,6,10,14,18,22:sqrt:gist@1.5: collapse 1.000 distinct4 0.548 kl 3.2010648921132088 tok/s 222
+[multisite] gen/seed0/L2,6,10,14,18,22:sqrt:gist@2: collapse 1.000 distinct4 0.731 kl 3.8690075178941092 tok/s 222
+[multisite] gen/seed0/L2-21:lin:gist@0.2: collapse 0.198 distinct4 0.259 kl 0.005959215955954278 tok/s 89
+[multisite] gen/seed0/L2-21:lin:gist@0.5: collapse 0.354 distinct4 0.221 kl 0.030770247472294916 tok/s 89
+[multisite] gen/seed0/L2-21:lin:gist@0.75: collapse 0.708 distinct4 0.198 kl 0.08093604168000941 tok/s 88
+[multisite] gen/seed0/L2-21:lin:gist@1: collapse 0.938 distinct4 0.165 kl 0.1398110723142357 tok/s 89
+[multisite] gen/seed0/L2-21:lin:gist@1.5: collapse 1.000 distinct4 0.240 kl 0.37203037342987955 tok/s 90
+[multisite] gen/seed0/L2-21:lin:gist@2: collapse 1.000 distinct4 0.290 kl 0.7853529903416833 tok/s 90
+[multisite] gen/seed0/L2-21:sqrt:gist@0.2: collapse 0.854 distinct4 0.182 kl 0.1117060102308945 tok/s 90
+[multisite] gen/seed0/L2-21:sqrt:gist@0.5: collapse 1.000 distinct4 0.335 kl 1.2067030199492972 tok/s 90
+[multisite] gen/seed0/L2-21:sqrt:gist@0.75: collapse 1.000 distinct4 0.672 kl 3.536690836151441 tok/s 89
+[multisite] gen/seed0/L2-21:sqrt:gist@1: collapse 0.948 distinct4 0.832 kl 4.050968530277411 tok/s 90
+[multisite] gen/seed0/L2-21:sqrt:gist@1.5: collapse 0.552 distinct4 0.938 kl 4.31702217956384 tok/s 90
+[multisite] gen/seed0/L2-21:sqrt:gist@2: collapse 0.521 distinct4 0.947 kl 4.361303895711899 tok/s 90
+[multisite] gen/seed1/none: collapse 0.135 distinct4 0.246 kl 0.0 tok/s 86
+[multisite] gen/seed1/L12:one:gist@0.1: collapse 0.229 distinct4 0.250 kl 0.0024425189008070447 tok/s 527
+[multisite] gen/seed1/L12:one:gist@0.2: collapse 0.208 distinct4 0.285 kl 0.010272838146192953 tok/s 528
+[multisite] gen/seed1/L12:one:gist@0.3: collapse 0.271 distinct4 0.223 kl 0.015209912725064592 tok/s 524
+[multisite] gen/seed1/L12:one:gist@0.5: collapse 0.427 distinct4 0.238 kl 0.04640488684284113 tok/s 527
+[multisite] gen/seed1/L12:one:gist@0.75: collapse 0.740 distinct4 0.185 kl 0.07738324779590282 tok/s 531
+[multisite] gen/seed1/L7,12,19:lin:gist@0.2: collapse 0.229 distinct4 0.220 kl 0.005784809056422091 tok/s 328
+[multisite] gen/seed1/L7,12,19:lin:gist@0.5: collapse 0.385 distinct4 0.194 kl 0.029823686648645282 tok/s 325
+[multisite] gen/seed1/L7,12,19:lin:gist@0.75: collapse 0.708 distinct4 0.168 kl 0.07109385859318233 tok/s 325
+[multisite] gen/seed1/L7,12,19:lin:gist@1: collapse 0.958 distinct4 0.114 kl 0.08316783868940547 tok/s 326
+[multisite] gen/seed1/L7,12,19:lin:gist@1.5: collapse 1.000 distinct4 0.172 kl 0.30227650110221777 tok/s 321
+[multisite] gen/seed1/L7,12,19:lin:gist@2: collapse 1.000 distinct4 0.247 kl 0.5857022136139373 tok/s 328
+[multisite] gen/seed1/L7,12,19:sqrt:gist@0.2: collapse 0.271 distinct4 0.194 kl 0.01412682013688027 tok/s 327
+[multisite] gen/seed1/L7,12,19:sqrt:gist@0.5: collapse 0.844 distinct4 0.163 kl 0.08599180982370551 tok/s 329
+[multisite] gen/seed1/L7,12,19:sqrt:gist@0.75: collapse 1.000 distinct4 0.152 kl 0.20465109666110948 tok/s 328
+[multisite] gen/seed1/L7,12,19:sqrt:gist@1: collapse 1.000 distinct4 0.209 kl 0.46650623200306046 tok/s 325
+[multisite] gen/seed1/L7,12,19:sqrt:gist@1.5: collapse 1.000 distinct4 0.271 kl 1.0552382025246818 tok/s 324
+[multisite] gen/seed1/L7,12,19:sqrt:gist@2: collapse 1.000 distinct4 0.396 kl 2.5965624985595546 tok/s 326
+[multisite] gen/seed1/L2,6,10,14,18,22:lin:gist@0.2: collapse 0.240 distinct4 0.202 kl 0.004511742258425026 tok/s 220
+[multisite] gen/seed1/L2,6,10,14,18,22:lin:gist@0.5: collapse 0.323 distinct4 0.248 kl 0.03672643478542644 tok/s 220
+[multisite] gen/seed1/L2,6,10,14,18,22:lin:gist@0.75: collapse 0.552 distinct4 0.177 kl 0.07119414923363365 tok/s 222
+[multisite] gen/seed1/L2,6,10,14,18,22:lin:gist@1: collapse 0.917 distinct4 0.147 kl 0.10473163730542485 tok/s 221
+[multisite] gen/seed1/L2,6,10,14,18,22:lin:gist@1.5: collapse 1.000 distinct4 0.176 kl 0.3075902491303471 tok/s 221
+[multisite] gen/seed1/L2,6,10,14,18,22:lin:gist@2: collapse 1.000 distinct4 0.179 kl 0.5375183764845133 tok/s 222
+[multisite] gen/seed1/L2,6,10,14,18,22:sqrt:gist@0.2: collapse 0.354 distinct4 0.231 kl 0.03192722156624465 tok/s 222
+[multisite] gen/seed1/L2,6,10,14,18,22:sqrt:gist@0.5: collapse 0.990 distinct4 0.137 kl 0.17632965910403678 tok/s 221
+[multisite] gen/seed1/L2,6,10,14,18,22:sqrt:gist@0.75: collapse 1.000 distinct4 0.170 kl 0.4375347178429365 tok/s 221
+[multisite] gen/seed1/L2,6,10,14,18,22:sqrt:gist@1: collapse 1.000 distinct4 0.234 kl 0.949409935468187 tok/s 221
+[multisite] gen/seed1/L2,6,10,14,18,22:sqrt:gist@1.5: collapse 1.000 distinct4 0.524 kl 3.0673949792981148 tok/s 222
+[multisite] gen/seed1/L2,6,10,14,18,22:sqrt:gist@2: collapse 0.990 distinct4 0.731 kl 3.8775917664170265 tok/s 222
+[multisite] gen/seed1/L2-21:lin:gist@0.2: collapse 0.198 distinct4 0.242 kl 0.005621457811078774 tok/s 90
+[multisite] gen/seed1/L2-21:lin:gist@0.5: collapse 0.312 distinct4 0.254 kl 0.038556533220495716 tok/s 87
+[multisite] gen/seed1/L2-21:lin:gist@0.75: collapse 0.750 distinct4 0.196 kl 0.08038511500247598 tok/s 83
+[multisite] gen/seed1/L2-21:lin:gist@1: collapse 0.958 distinct4 0.149 kl 0.1239565202073815 tok/s 87
+[multisite] gen/seed1/L2-21:lin:gist@1.5: collapse 1.000 distinct4 0.232 kl 0.3944280032883398 tok/s 80
+Traceback (most recent call last):
+  File "/home/realdanielbyrne/limbic-llm/experiments/ca2/multisite.py", line 1288, in <module>
+    main()
+    ~~~~^^
+  File "/home/realdanielbyrne/limbic-llm/experiments/ca2/multisite.py", line 1277, in main
+    rec = run_gen_arm(arm, seed, model, blocks, kinds, prompts, args, d_model, tok, w)
+  File "/home/realdanielbyrne/limbic-llm/.venv/lib/python3.13/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/realdanielbyrne/limbic-llm/experiments/ca2/multisite.py", line 793, in run_gen_arm
+    out = model(input_ids=nxt, past_key_values=cache, use_cache=True)
+  File "/home/realdanielbyrne/limbic-llm/.venv/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/realdanielbyrne/limbic-llm/.venv/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1885, in _call_impl
+    return inner()
+  File "/home/realdanielbyrne/limbic-llm/.venv/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1833, in inner
+    result = forward_call(*args, **kwargs)
+  File "/home/realdanielbyrne/limbic-llm/.venv/lib/python3.13/site-packages/transformers/utils/generic.py", line 943, in wrapper
+    output = func(self, *args, **kwargs)
+  File "/home/realdanielbyrne/limbic-llm/.venv/lib/python3.13/site-packages/transformers/models/qwen3_5/modeling_qwen3_5.py", line 1710, in forward
+    outputs: BaseModelOutputWithPast = self.model(
+                                       ~~~~~~~~~~^
+        input_ids=input_ids,
+        ^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+        **kwargs,
+        ^^^^^^^^^
+    )
+    ^
+  File "/home/realdanielbyrne/limbic-llm/.venv/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/realdanielbyrne/limbic-llm/.venv/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/realdanielbyrne/limbic-llm/.venv/lib/python3.13/site-packages/transformers/utils/generic.py", line 1081, in wrapper
+    output = func(self, *args, **kwargs)
+  File "/home/realdanielbyrne/limbic-llm/.venv/lib/python3.13/site-packages/transformers/utils/output_capturing.py", line 287, in wrapper
+    outputs = func(self, *args, **kwargs)
+  File "/home/realdanielbyrne/limbic-llm/.venv/lib/python3.13/site-packages/transformers/models/qwen3_5/modeling_qwen3_5.py", line 1279, in forward
+    hidden_states = decoder_layer(
+        hidden_states,
+    ...<5 lines>...
+        **kwargs,
+    )
+  File "/home/realdanielbyrne/limbic-llm/.venv/lib/python3.13/site-packages/transformers/modeling_layers.py", line 111, in __call__
+    return super().__call__(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/realdanielbyrne/limbic-llm/.venv/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/realdanielbyrne/limbic-llm/.venv/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1885, in _call_impl
+    return inner()
+  File "/home/realdanielbyrne/limbic-llm/.venv/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1846, in inner
+    hook_result = hook(self, args, result)
+  File "/home/realdanielbyrne/limbic-llm/experiments/ca2/controller.py", line 714, in _out_hook
+    y = self.ctrl.inject(h)
+  File "/home/realdanielbyrne/limbic-llm/experiments/ca2/controller.py", line 510, in inject
+    self._trace_step(pos, outs, pipe, g, g_law, g_eff, s, release, rho, R, rep_ngram, rep_hidden, dose,
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     dfull, dnorm, cos_dh, gist, h32, x32, bstep, ids)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/realdanielbyrne/limbic-llm/experiments/ca2/controller.py", line 589, in _trace_step
+    host = torch.stack([rec[k].detach().float() for k in flat]).cpu()
+                        ~~~~~~~~~~~~~~~~~~~~~^^
+KeyboardInterrupt
