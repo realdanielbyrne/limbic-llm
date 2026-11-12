@@ -1,0 +1,65 @@
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]Loading weights: 100%|██████████| 311/311 [00:00<00:00, 13536.33it/s]
+Qwen/Qwen3-1.7B: 28 blocks, tap 14 -> inject 15, attn tap 14, hybrid False, thinking True; 400 problems x 1 samples; 6 arms
+[none] none dir gist g [0, 0] source constant reinforce
+  [none] batch 1/25: acc 0.88 reason 1789 tok  (176s)
+  [none] batch 2/25: acc 0.94 reason 1814 tok  (355s)
+  [none] batch 3/25: acc 0.88 reason 1540 tok  (544s)
+  [none] batch 4/25: acc 1.00 reason 1136 tok  (671s)
+  [none] batch 5/25: acc 0.94 reason 1412 tok  (856s)
+  [none] batch 6/25: acc 0.94 reason 1698 tok  (1047s)
+  [none] batch 7/25: acc 0.81 reason 1744 tok  (1238s)
+  [none] batch 8/25: acc 0.69 reason 1851 tok  (1432s)
+  [none] batch 9/25: acc 0.88 reason 1642 tok  (1623s)
+  [none] batch 10/25: acc 0.94 reason 1172 tok  (1765s)
+  [none] batch 11/25: acc 0.88 reason 1625 tok  (1957s)
+  [none] batch 12/25: acc 0.81 reason 1726 tok  (2151s)
+  [none] batch 13/25: acc 0.88 reason 1700 tok  (2332s)
+  [none] batch 14/25: acc 0.94 reason 1389 tok  (2503s)
+  [none] batch 15/25: acc 0.88 reason 1736 tok  (2679s)
+  [none] batch 16/25: acc 0.88 reason 1745 tok  (2855s)
+  [none] batch 17/25: acc 0.94 reason 1841 tok  (3033s)
+  [none] batch 18/25: acc 0.75 reason 1795 tok  (3207s)
+  [none] batch 19/25: acc 0.94 reason 1264 tok  (3376s)
+  [none] batch 20/25: acc 0.94 reason 1582 tok  (3526s)
+  [none] batch 21/25: acc 0.69 reason 2290 tok  (3712s)
+  [none] batch 22/25: acc 0.88 reason 1249 tok  (3851s)
+  [none] batch 23/25: acc 1.00 reason 1389 tok  (3986s)
+  [none] batch 24/25: acc 0.94 reason 1235 tok  (4086s)
+  [none] batch 25/25: acc 0.75 reason 1934 tok  (4268s)
+[none] acc 0.877  reason 1612  trunc 0.09  gain 0.000  TTC median 384.0
+[nothink] nothink dir gist g [0, 0] source constant reinforce
+  [nothink] batch 1/25: acc 0.81 reason 277 tok  (12s)
+  [nothink] batch 2/25: acc 0.94 reason 315 tok  (27s)
+  [nothink] batch 3/25: acc 0.88 reason 278 tok  (43s)
+  [nothink] batch 4/25: acc 0.94 reason 243 tok  (53s)
+  [nothink] batch 5/25: acc 0.94 reason 258 tok  (67s)
+  [nothink] batch 6/25: acc 0.88 reason 286 tok  (81s)
+  [nothink] batch 7/25: acc 0.94 reason 253 tok  (91s)
+  [nothink] batch 8/25: acc 0.75 reason 279 tok  (105s)
+  [nothink] batch 9/25: acc 0.88 reason 281 tok  (121s)
+  [nothink] batch 10/25: acc 0.88 reason 257 tok  (131s)
+  [nothink] batch 11/25: acc 0.81 reason 309 tok  (145s)
+  [nothink] batch 12/25: acc 0.75 reason 418 tok  (167s)
+  [nothink] batch 13/25: acc 0.88 reason 309 tok  (189s)
+  [nothink] batch 14/25: acc 0.88 reason 298 tok  (201s)
+  [nothink] batch 15/25: acc 0.88 reason 297 tok  (213s)
+  [nothink] batch 16/25: acc 1.00 reason 281 tok  (230s)
+  [nothink] batch 17/25: acc 0.94 reason 309 tok  (248s)
+  [nothink] batch 18/25: acc 0.88 reason 286 tok  (259s)
+  [nothink] batch 19/25: acc 0.88 reason 219 tok  (268s)
+  [nothink] batch 20/25: acc 0.81 reason 323 tok  (285s)
+  [nothink] batch 21/25: acc 0.56 reason 451 tok  (348s)
+  [nothink] batch 22/25: acc 0.81 reason 280 tok  (360s)
+  [nothink] batch 23/25: acc 0.94 reason 277 tok  (372s)
+  [nothink] batch 24/25: acc 0.94 reason 262 tok  (383s)
+  [nothink] batch 25/25: acc 0.75 reason 287 tok  (396s)
+[nothink] acc 0.860  reason 293  trunc 0.00  gain 0.000  TTC median 256.0
+Traceback (most recent call last):
+  File "/home/realdanielbyrne/limbic-llm/experiments/ca2/reason.py", line 1642, in <module>
+    main()
+    ~~~~^^
+  File "/home/realdanielbyrne/limbic-llm/experiments/ca2/reason.py", line 1621, in main
+    st = resolve(a_, report, args, env)
+  File "/home/realdanielbyrne/limbic-llm/experiments/ca2/reason.py", line 1261, in resolve
+    raise ValueError(f"{arm.spec}: arm {arm.ref!r} must be complete first (run it earlier in --arms)")
+ValueError: trunc@256: arm None must be complete first (run it earlier in --arms)

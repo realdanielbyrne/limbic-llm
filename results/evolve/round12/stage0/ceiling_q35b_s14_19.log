@@ -1,0 +1,191 @@
+Loading weights:   0%|          | 0/320 [00:00<?, ?it/s]Loading weights: 100%|██████████| 320/320 [00:00<00:00, 17137.31it/s]
+[ceiling] Qwen/Qwen3.5-2B-Base sites=[14, 19] modes=['residual', 'gen'] rows=64 out=/home/realdanielbyrne/limbic-llm/results/evolve/round12/stage0/ceiling_q35b_s14_19.json
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+[ceiling] L14/full/none: dloss +0.0000 kl 0.0000 |dent| 0.000 norm 1.0
+[ceiling] L14/full/gist@0.025: dloss +0.0005 kl 0.0014 |dent| 0.030 norm 1.001508541472865
+[ceiling] L14/full/gist@0.05: dloss +0.0026 kl 0.0036 |dent| 0.047 norm 1.0028207963699047
+[ceiling] L14/full/gist@0.1: dloss +0.0104 kl 0.0118 |dent| 0.082 norm 1.0048902330677636
+[ceiling] L14/full/gist@0.2: dloss +0.0392 kl 0.0431 |dent| 0.151 norm 1.0071333597454606
+[ceiling] L14/full/gist@0.3: dloss +0.0856 kl 0.0945 |dent| 0.218 norm 1.0076163000343545
+[ceiling] L14/full/gist@0.5: dloss +0.2353 kl 0.2704 |dent| 0.364 norm 1.0070198551797722
+[ceiling] L14/full/gist@0.75: dloss +0.5557 kl 0.7074 |dent| 0.589 norm 1.0122901308307974
+[ceiling] L14/full/gist@1: dloss +1.0357 kl 1.3874 |dent| 0.832 norm 1.0293240936925987
+[ceiling] L14/full/gist@2: dloss +3.2217 kl 3.9950 |dent| 1.487 norm 1.119798633332931
+[ceiling] L14/full/anti_gist@0.025: dloss +0.0007 kl 0.0014 |dent| 0.031 norm 0.9982971572491043
+[ceiling] L14/full/anti_gist@0.05: dloss +0.0028 kl 0.0038 |dent| 0.050 norm 0.9963768931137685
+[ceiling] L14/full/anti_gist@0.1: dloss +0.0120 kl 0.0142 |dent| 0.094 norm 0.991824517697547
+[ceiling] L14/full/anti_gist@0.2: dloss +0.0541 kl 0.0637 |dent| 0.205 norm 0.9795549538975166
+[ceiling] L14/full/anti_gist@0.3: dloss +0.1426 kl 0.1733 |dent| 0.353 norm 0.9623560342490373
+[ceiling] L14/full/anti_gist@0.5: dloss +0.5421 kl 0.7315 |dent| 0.803 norm 0.9189572935749135
+[ceiling] L14/full/anti_gist@0.75: dloss +1.6691 kl 2.2774 |dent| 1.616 norm 0.8761506662840318
+[ceiling] L14/full/anti_gist@1: dloss +3.2835 kl 3.9650 |dent| 2.244 norm 0.858438483160271
+[ceiling] L14/full/anti_gist@2: dloss +7.9738 kl 7.7191 |dent| 2.760 norm 0.9427464049230551
+[ceiling] L14/full/mean@0.025: dloss -0.0015 kl 0.0016 |dent| 0.037 norm 1.002302121683038
+[ceiling] L14/full/mean@0.05: dloss -0.0011 kl 0.0045 |dent| 0.062 norm 1.0042362155394646
+[ceiling] L14/full/mean@0.1: dloss +0.0053 kl 0.0159 |dent| 0.119 norm 1.0070405020843722
+[ceiling] L14/full/mean@0.2: dloss +0.0407 kl 0.0635 |dent| 0.252 norm 1.0091468087358986
+[ceiling] L14/full/mean@0.3: dloss +0.1070 kl 0.1545 |dent| 0.413 norm 1.0084276478418068
+[ceiling] L14/full/mean@0.5: dloss +0.3476 kl 0.5549 |dent| 0.847 norm 1.0091367051772224
+[ceiling] L14/full/mean@0.75: dloss +0.8968 kl 1.4368 |dent| 1.439 norm 1.0271400130240154
+[ceiling] L14/full/mean@1: dloss +1.5453 kl 2.2646 |dent| 1.843 norm 1.0609764018284926
+[ceiling] L14/full/mean@2: dloss +3.2031 kl 3.9050 |dent| 2.540 norm 1.2413389800655854
+[ceiling] L14/full/self@0.025: dloss -0.0003 kl 0.0007 |dent| 0.019 norm 1.0052483093846818
+[ceiling] L14/full/self@0.05: dloss -0.0004 kl 0.0011 |dent| 0.026 norm 1.0104196608126705
+[ceiling] L14/full/self@0.1: dloss +0.0003 kl 0.0024 |dent| 0.040 norm 1.0204625326978451
+[ceiling] L14/full/self@0.2: dloss +0.0041 kl 0.0070 |dent| 0.066 norm 1.0396052224845387
+[ceiling] L14/full/self@0.3: dloss +0.0107 kl 0.0141 |dent| 0.092 norm 1.0577596189035057
+[ceiling] L14/full/self@0.5: dloss +0.0300 kl 0.0346 |dent| 0.144 norm 1.0916917687347751
+[ceiling] L14/full/self@0.75: dloss +0.0637 kl 0.0705 |dent| 0.206 norm 1.131003913917888
+[ceiling] L14/full/self@1: dloss +0.1057 kl 0.1156 |dent| 0.266 norm 1.1679056419734397
+[ceiling] L14/full/self@2: dloss +0.3262 kl 0.3614 |dent| 0.509 norm 1.3006498912268523
+[ceiling] L14/full/random:0@0.025: dloss +0.0000 kl 0.0009 |dent| 0.021 norm 0.999071759244147
+[ceiling] L14/full/random:0@0.05: dloss +0.0005 kl 0.0018 |dent| 0.031 norm 0.9980949677083374
+[ceiling] L14/full/random:0@0.1: dloss +0.0033 kl 0.0052 |dent| 0.052 norm 0.9962212536577981
+[ceiling] L14/full/random:0@0.2: dloss +0.0157 kl 0.0193 |dent| 0.103 norm 0.9923305126540476
+[ceiling] L14/full/random:0@0.3: dloss +0.0381 kl 0.0451 |dent| 0.165 norm 0.9876638454818341
+[ceiling] L14/full/random:0@0.5: dloss +0.1193 kl 0.1424 |dent| 0.323 norm 0.9746086590225111
+[ceiling] L14/full/random:0@0.75: dloss +0.3150 kl 0.3986 |dent| 0.596 norm 0.9501624131419223
+[ceiling] L14/full/random:0@1: dloss +0.6628 kl 0.8977 |dent| 0.951 norm 0.9203746364528067
+[ceiling] L14/full/random:0@2: dloss +3.4758 kl 3.8540 |dent| 2.106 norm 0.9052828635746006
+[ceiling] L14/full/random:1@0.025: dloss +0.0006 kl 0.0009 |dent| 0.022 norm 1.0008211559291804
+[ceiling] L14/full/random:1@0.05: dloss +0.0013 kl 0.0018 |dent| 0.031 norm 1.0014655828235368
+[ceiling] L14/full/random:1@0.1: dloss +0.0046 kl 0.0054 |dent| 0.050 norm 1.002361965468144
+[ceiling] L14/full/random:1@0.2: dloss +0.0184 kl 0.0198 |dent| 0.091 norm 1.0034756039755135
+[ceiling] L14/full/random:1@0.3: dloss +0.0418 kl 0.0451 |dent| 0.140 norm 1.0030858456547156
+[ceiling] L14/full/random:1@0.5: dloss +0.1232 kl 0.1370 |dent| 0.261 norm 0.9974072925017171
+[ceiling] L14/full/random:1@0.75: dloss +0.3116 kl 0.3703 |dent| 0.477 norm 0.9829478287913364
+[ceiling] L14/full/random:1@1: dloss +0.6453 kl 0.8280 |dent| 0.779 norm 0.9658224979635445
+[ceiling] L14/full/random:1@2: dloss +3.4008 kl 3.8029 |dent| 1.891 norm 1.0507494823482757
+[ceiling] L14/full/random:2@0.025: dloss -0.0001 kl 0.0009 |dent| 0.022 norm 0.999486562342023
+[ceiling] L14/full/random:2@0.05: dloss +0.0005 kl 0.0018 |dent| 0.031 norm 0.9990648987555479
+[ceiling] L14/full/random:2@0.1: dloss +0.0030 kl 0.0052 |dent| 0.050 norm 0.9981056101748007
+[ceiling] L14/full/random:2@0.2: dloss +0.0152 kl 0.0191 |dent| 0.094 norm 0.9959856893652984
+[ceiling] L14/full/random:2@0.3: dloss +0.0375 kl 0.0441 |dent| 0.147 norm 0.993353746493096
+[ceiling] L14/full/random:2@0.5: dloss +0.1198 kl 0.1404 |dent| 0.288 norm 0.9858699138421945
+[ceiling] L14/full/random:2@0.75: dloss +0.3209 kl 0.4044 |dent| 0.538 norm 0.9721308784215409
+[ceiling] L14/full/random:2@1: dloss +0.6833 kl 0.9371 |dent| 0.873 norm 0.9564916502936216
+[ceiling] L14/full/random:2@2: dloss +3.2000 kl 3.5555 |dent| 1.752 norm 0.9691597460256937
+[ceiling] L19/full/none: dloss +0.0000 kl 0.0000 |dent| 0.000 norm 1.0
+[ceiling] L19/full/gist@0.025: dloss +0.0009 kl 0.0012 |dent| 0.030 norm 1.0049113842360788
+[ceiling] L19/full/gist@0.05: dloss +0.0029 kl 0.0029 |dent| 0.046 norm 1.0098848737452994
+[ceiling] L19/full/gist@0.1: dloss +0.0102 kl 0.0094 |dent| 0.081 norm 1.019947468693153
+[ceiling] L19/full/gist@0.2: dloss +0.0364 kl 0.0341 |dent| 0.150 norm 1.040436706196528
+[ceiling] L19/full/gist@0.3: dloss +0.0770 kl 0.0736 |dent| 0.219 norm 1.0610503726963079
+[ceiling] L19/full/gist@0.5: dloss +0.1968 kl 0.1999 |dent| 0.358 norm 1.101788444788497
+[ceiling] L19/full/gist@0.75: dloss +0.4150 kl 0.4733 |dent| 0.551 norm 1.1518866349421404
+[ceiling] L19/full/gist@1: dloss +0.7073 kl 0.9200 |dent| 0.788 norm 1.2042229630271073
+[ceiling] L19/full/gist@2: dloss +2.6191 kl 4.2923 |dent| 2.926 norm 1.505193027069061
+[ceiling] L19/full/anti_gist@0.025: dloss +0.0003 kl 0.0012 |dent| 0.031 norm 0.9951615886899946
+[ceiling] L19/full/anti_gist@0.05: dloss +0.0020 kl 0.0031 |dent| 0.049 norm 0.9904028741430443
+[ceiling] L19/full/anti_gist@0.1: dloss +0.0093 kl 0.0112 |dent| 0.091 norm 0.981199686991579
+[ceiling] L19/full/anti_gist@0.2: dloss +0.0436 kl 0.0493 |dent| 0.194 norm 0.964401660846052
+[ceiling] L19/full/anti_gist@0.3: dloss +0.1128 kl 0.1314 |dent| 0.327 norm 0.9506794701430921
+[ceiling] L19/full/anti_gist@0.5: dloss +0.4176 kl 0.5467 |dent| 0.734 norm 0.9369633585124396
+[ceiling] L19/full/anti_gist@0.75: dloss +1.3439 kl 1.9076 |dent| 1.524 norm 0.9519663472950278
+[ceiling] L19/full/anti_gist@1: dloss +2.9153 kl 3.6745 |dent| 2.164 norm 0.9994894454986849
+[ceiling] L19/full/anti_gist@2: dloss +8.5443 kl 8.2558 |dent| 3.933 norm 1.2213929866325002
+[ceiling] L19/full/mean@0.025: dloss +0.0012 kl 0.0015 |dent| 0.033 norm 1.0069898024096138
+[ceiling] L19/full/mean@0.05: dloss +0.0042 kl 0.0041 |dent| 0.051 norm 1.0143860259763409
+[ceiling] L19/full/mean@0.1: dloss +0.0148 kl 0.0144 |dent| 0.093 norm 1.0304901121122205
+[ceiling] L19/full/mean@0.2: dloss +0.0537 kl 0.0589 |dent| 0.194 norm 1.0677379969992382
+[ceiling] L19/full/mean@0.3: dloss +0.1166 kl 0.1462 |dent| 0.322 norm 1.1109275163483066
+[ceiling] L19/full/mean@0.5: dloss +0.3219 kl 0.5173 |dent| 0.676 norm 1.2096437844931778
+[ceiling] L19/full/mean@0.75: dloss +0.7032 kl 1.2510 |dent| 1.173 norm 1.3433711805449484
+[ceiling] L19/full/mean@1: dloss +1.1261 kl 1.9611 |dent| 1.575 norm 1.4781045499892096
+[ceiling] L19/full/mean@2: dloss +2.3254 kl 3.4177 |dent| 2.667 norm 1.978830820616752
+[ceiling] L19/full/self@0.025: dloss +0.0008 kl 0.0007 |dent| 0.026 norm 1.0119374445540874
+[ceiling] L19/full/self@0.05: dloss +0.0020 kl 0.0013 |dent| 0.046 norm 1.0237885483819709
+[ceiling] L19/full/self@0.1: dloss +0.0051 kl 0.0034 |dent| 0.086 norm 1.047047150243303
+[ceiling] L19/full/self@0.2: dloss +0.0152 kl 0.0112 |dent| 0.166 norm 1.0921898542571622
+[ceiling] L19/full/self@0.3: dloss +0.0300 kl 0.0230 |dent| 0.243 norm 1.1356658011704954
+[ceiling] L19/full/self@0.5: dloss +0.0704 kl 0.0565 |dent| 0.383 norm 1.2185430979031007
+[ceiling] L19/full/self@0.75: dloss +0.1386 kl 0.1128 |dent| 0.533 norm 1.317209900087112
+[ceiling] L19/full/self@1: dloss +0.2220 kl 0.1804 |dent| 0.653 norm 1.413394031081984
+[ceiling] L19/full/self@2: dloss +0.6307 kl 0.5082 |dent| 0.933 norm 1.8093908080900714
+[ceiling] L19/full/random:0@0.025: dloss +0.0004 kl 0.0008 |dent| 0.021 norm 0.9996064077352299
+[ceiling] L19/full/random:0@0.05: dloss +0.0015 kl 0.0018 |dent| 0.031 norm 0.9991615961346207
+[ceiling] L19/full/random:0@0.1: dloss +0.0052 kl 0.0057 |dent| 0.052 norm 0.9986394705132446
+[ceiling] L19/full/random:0@0.2: dloss +0.0217 kl 0.0216 |dent| 0.100 norm 0.9989885971115529
+[ceiling] L19/full/random:0@0.3: dloss +0.0500 kl 0.0507 |dent| 0.156 norm 1.0010316244408293
+[ceiling] L19/full/random:0@0.5: dloss +0.1485 kl 0.1625 |dent| 0.300 norm 1.0101809997250646
+[ceiling] L19/full/random:0@0.75: dloss +0.3677 kl 0.4483 |dent| 0.568 norm 1.0311514626357678
+[ceiling] L19/full/random:0@1: dloss +0.7179 kl 0.9822 |dent| 0.981 norm 1.0592772015168375
+[ceiling] L19/full/random:0@2: dloss +4.1266 kl 7.3321 |dent| 6.277 norm 1.2667323746666779
+[ceiling] L19/full/random:1@0.025: dloss +0.0003 kl 0.0009 |dent| 0.024 norm 1.0015361181542082
+[ceiling] L19/full/random:1@0.05: dloss +0.0011 kl 0.0019 |dent| 0.034 norm 1.0031090956763953
+[ceiling] L19/full/random:1@0.1: dloss +0.0049 kl 0.0057 |dent| 0.048 norm 1.0064561739939855
+[ceiling] L19/full/random:1@0.2: dloss +0.0207 kl 0.0215 |dent| 0.090 norm 1.0149092784923934
+[ceiling] L19/full/random:1@0.3: dloss +0.0481 kl 0.0500 |dent| 0.140 norm 1.0252400474278887
+[ceiling] L19/full/random:1@0.5: dloss +0.1421 kl 0.1548 |dent| 0.266 norm 1.0510963416845358
+[ceiling] L19/full/random:1@0.75: dloss +0.3412 kl 0.4032 |dent| 0.481 norm 1.0907064335858665
+[ceiling] L19/full/random:1@1: dloss +0.6381 kl 0.8196 |dent| 0.776 norm 1.1320237179938046
+[ceiling] L19/full/random:1@2: dloss +3.4582 kl 6.5065 |dent| 5.467 norm 1.3069491420095312
+[ceiling] L19/full/random:2@0.025: dloss +0.0004 kl 0.0008 |dent| 0.021 norm 0.9998196006182104
+[ceiling] L19/full/random:2@0.05: dloss +0.0010 kl 0.0018 |dent| 0.032 norm 0.9997616593700606
+[ceiling] L19/full/random:2@0.1: dloss +0.0049 kl 0.0054 |dent| 0.048 norm 0.9999095568382655
+[ceiling] L19/full/random:2@0.2: dloss +0.0201 kl 0.0204 |dent| 0.088 norm 1.0015153047655954
+[ceiling] L19/full/random:2@0.3: dloss +0.0469 kl 0.0476 |dent| 0.136 norm 1.0047888385299235
+[ceiling] L19/full/random:2@0.5: dloss +0.1414 kl 0.1516 |dent| 0.258 norm 1.0160630935376396
+[ceiling] L19/full/random:2@0.75: dloss +0.3497 kl 0.4066 |dent| 0.468 norm 1.0380782417043306
+[ceiling] L19/full/random:2@1: dloss +0.6751 kl 0.8519 |dent| 0.756 norm 1.0665472600342167
+[ceiling] L19/full/random:2@2: dloss +2.9832 kl 4.6349 |dent| 3.853 norm 1.2952409680748562
+[transformers] `causal_conv1d_update` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+[ceiling] gen/L14/none: collapse 0.094 distinct4 0.228 tok/s 256
+[ceiling] gen/L14/gist@0.1: collapse 0.250 distinct4 0.207 tok/s 257
+[ceiling] gen/L14/gist@0.2: collapse 0.219 distinct4 0.239 tok/s 256
+[ceiling] gen/L14/gist@0.3: collapse 0.359 distinct4 0.214 tok/s 258
+[ceiling] gen/L14/gist@0.5: collapse 0.531 distinct4 0.252 tok/s 257
+[ceiling] gen/L14/gist@0.75: collapse 0.812 distinct4 0.163 tok/s 257
+[ceiling] gen/L14/gist@1: collapse 1.000 distinct4 0.109 tok/s 257
+[ceiling] gen/L14/gist@2: collapse 1.000 distinct4 0.137 tok/s 258
+[ceiling] gen/L14/random:0@0.1: collapse 0.203 distinct4 0.250 tok/s 257
+[ceiling] gen/L14/random:0@0.2: collapse 0.172 distinct4 0.221 tok/s 258
+[ceiling] gen/L14/random:0@0.3: collapse 0.297 distinct4 0.192 tok/s 258
+[ceiling] gen/L14/random:0@0.5: collapse 0.266 distinct4 0.223 tok/s 257
+[ceiling] gen/L14/random:0@0.75: collapse 0.422 distinct4 0.273 tok/s 257
+[ceiling] gen/L14/random:0@1: collapse 0.750 distinct4 0.285 tok/s 258
+[ceiling] gen/L14/random:0@2: collapse 0.672 distinct4 0.527 tok/s 257
+[ceiling] gen/L14/mean@0.1: collapse 0.141 distinct4 0.292 tok/s 256
+[ceiling] gen/L14/mean@0.2: collapse 0.266 distinct4 0.254 tok/s 254
+[ceiling] gen/L14/mean@0.3: collapse 0.391 distinct4 0.264 tok/s 256
+[ceiling] gen/L14/mean@0.5: collapse 0.812 distinct4 0.310 tok/s 258
+[ceiling] gen/L14/mean@0.75: collapse 0.891 distinct4 0.334 tok/s 255
+[ceiling] gen/L14/mean@1: collapse 0.906 distinct4 0.287 tok/s 256
+[ceiling] gen/L14/mean@2: collapse 0.938 distinct4 0.276 tok/s 258
+[ceiling] gen/L14/anti_gist@0.1: collapse 0.125 distinct4 0.250 tok/s 257
+[ceiling] gen/L14/anti_gist@0.2: collapse 0.172 distinct4 0.213 tok/s 256
+[ceiling] gen/L14/anti_gist@0.3: collapse 0.188 distinct4 0.192 tok/s 255
+[ceiling] gen/L14/anti_gist@0.5: collapse 0.516 distinct4 0.259 tok/s 254
+[ceiling] gen/L14/anti_gist@0.75: collapse 0.359 distinct4 0.670 tok/s 254
+[ceiling] gen/L14/anti_gist@1: collapse 0.016 distinct4 0.946 tok/s 253
+[ceiling] gen/L14/anti_gist@2: collapse 0.453 distinct4 0.949 tok/s 255
+[ceiling] gen/L19/none: collapse 0.094 distinct4 0.228 tok/s 254
+[ceiling] gen/L19/gist@0.1: collapse 0.172 distinct4 0.220 tok/s 253
+[ceiling] gen/L19/gist@0.2: collapse 0.219 distinct4 0.174 tok/s 255
+[ceiling] gen/L19/gist@0.3: collapse 0.297 distinct4 0.192 tok/s 253
+[ceiling] gen/L19/gist@0.5: collapse 0.359 distinct4 0.147 tok/s 252
+[ceiling] gen/L19/gist@0.75: collapse 0.547 distinct4 0.137 tok/s 255
+[ceiling] gen/L19/gist@1: collapse 0.891 distinct4 0.085 tok/s 255
+[ceiling] gen/L19/gist@2: collapse 1.000 distinct4 0.058 tok/s 253
+[ceiling] gen/L19/random:0@0.1: collapse 0.188 distinct4 0.208 tok/s 252
+[ceiling] gen/L19/random:0@0.2: collapse 0.203 distinct4 0.203 tok/s 258
+[ceiling] gen/L19/random:0@0.3: collapse 0.172 distinct4 0.198 tok/s 257
+[ceiling] gen/L19/random:0@0.5: collapse 0.156 distinct4 0.207 tok/s 256
+[ceiling] gen/L19/random:0@0.75: collapse 0.453 distinct4 0.174 tok/s 257
+[ceiling] gen/L19/random:0@1: collapse 0.750 distinct4 0.105 tok/s 253
+[ceiling] gen/L19/random:0@2: collapse 1.000 distinct4 0.051 tok/s 244
+[ceiling] gen/L19/mean@0.1: collapse 0.125 distinct4 0.189 tok/s 249
+[ceiling] gen/L19/mean@0.2: collapse 0.156 distinct4 0.162 tok/s 254
+[ceiling] gen/L19/mean@0.3: collapse 0.266 distinct4 0.161 tok/s 252
+[ceiling] gen/L19/mean@0.5: collapse 0.438 distinct4 0.154 tok/s 252
+[ceiling] gen/L19/mean@0.75: collapse 0.828 distinct4 0.107 tok/s 245
+[ceiling] gen/L19/mean@1: collapse 0.953 distinct4 0.088 tok/s 244
+[ceiling] gen/L19/mean@2: collapse 1.000 distinct4 0.049 tok/s 241
+[ceiling] gen/L19/anti_gist@0.1: collapse 0.078 distinct4 0.236 tok/s 247
+[ceiling] gen/L19/anti_gist@0.2: collapse 0.109 distinct4 0.273 tok/s 244
+[ceiling] gen/L19/anti_gist@0.3: collapse 0.234 distinct4 0.241 tok/s 253
+[ceiling] gen/L19/anti_gist@0.5: collapse 0.578 distinct4 0.324 tok/s 252
+[ceiling] gen/L19/anti_gist@0.75: collapse 0.219 distinct4 0.748 tok/s 251
+[ceiling] gen/L19/anti_gist@1: collapse 0.000 distinct4 0.935 tok/s 251
+[ceiling] gen/L19/anti_gist@2: collapse 0.016 distinct4 0.990 tok/s 239
+[ceiling] recommend {'g_min': 0.0, 'site': 14, 'g_max': 0.05, 'rule': 'g_max one grid step below the gist knee at the site with the largest g_knee / g_on'}

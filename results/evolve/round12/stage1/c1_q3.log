@@ -1,0 +1,78 @@
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]Loading weights: 100%|██████████| 311/311 [00:00<00:00, 12695.17it/s]
+Qwen/Qwen3-1.7B: thinking end 151668, open 151667; 200 problems x 1 samples; 5 arms; ref t06
+[t06] t06@T=0.6;pp=0
+  [t06] batch 1/13: acc 0.88 closed 1.00 reason 1789 tok  (146s)
+  [t06] batch 2/13: acc 0.94 closed 0.94 reason 1814 tok  (296s)
+  [t06] batch 3/13: acc 0.88 closed 0.88 reason 1540 tok  (445s)
+  [t06] batch 4/13: acc 1.00 closed 1.00 reason 1136 tok  (538s)
+  [t06] batch 5/13: acc 0.94 closed 0.94 reason 1412 tok  (681s)
+  [t06] batch 6/13: acc 0.94 closed 1.00 reason 1698 tok  (822s)
+  [t06] batch 7/13: acc 0.81 closed 0.81 reason 1744 tok  (965s)
+  [t06] batch 8/13: acc 0.69 closed 0.81 reason 1851 tok  (1108s)
+  [t06] batch 9/13: acc 0.88 closed 1.00 reason 1642 tok  (1252s)
+  [t06] batch 10/13: acc 0.94 closed 1.00 reason 1172 tok  (1354s)
+  [t06] batch 11/13: acc 0.88 closed 0.94 reason 1625 tok  (1501s)
+  [t06] batch 12/13: acc 0.81 closed 0.88 reason 1726 tok  (1648s)
+  [t06] batch 13/13: acc 0.62 closed 0.62 reason 2293 tok  (1742s)
+[t06] acc 0.870  non-close 0.08  reason 1624  n_gen 1898  TTC median 384.0
+[t10] t10@T=1.0;pp=0
+  [t10] batch 1/13: acc 0.81 closed 1.00 reason 1796 tok  (143s)
+  [t10] batch 2/13: acc 0.94 closed 0.94 reason 1666 tok  (287s)
+  [t10] batch 3/13: acc 0.81 closed 0.94 reason 1430 tok  (434s)
+  [t10] batch 4/13: acc 1.00 closed 1.00 reason 1086 tok  (515s)
+  [t10] batch 5/13: acc 0.94 closed 0.94 reason 1547 tok  (664s)
+  [t10] batch 6/13: acc 0.94 closed 0.94 reason 1530 tok  (812s)
+  [t10] batch 7/13: acc 0.81 closed 0.81 reason 1800 tok  (958s)
+  [t10] batch 8/13: acc 0.75 closed 0.81 reason 1872 tok  (1108s)
+  [t10] batch 9/13: acc 0.88 closed 0.88 reason 1727 tok  (1259s)
+  [t10] batch 10/13: acc 0.88 closed 1.00 reason 1398 tok  (1407s)
+  [t10] batch 11/13: acc 0.94 closed 0.94 reason 1510 tok  (1554s)
+  [t10] batch 12/13: acc 0.81 closed 0.81 reason 1854 tok  (1705s)
+  [t10] batch 13/13: acc 0.62 closed 0.62 reason 2262 tok  (1806s)
+[t10] acc 0.865  non-close 0.09  reason 1628  n_gen 1897  TTC median 384.0
+[t10pp15] t10pp15@T=1.0;pp=1.5
+  [t10pp15] batch 1/13: acc 0.75 closed 0.94 reason 1929 tok  (150s)
+  [t10pp15] batch 2/13: acc 0.88 closed 0.88 reason 1662 tok  (300s)
+  [t10pp15] batch 3/13: acc 0.81 closed 0.81 reason 1568 tok  (449s)
+  [t10pp15] batch 4/13: acc 1.00 closed 1.00 reason 941 tok  (498s)
+  [t10pp15] batch 5/13: acc 0.94 closed 0.94 reason 1173 tok  (647s)
+  [t10pp15] batch 6/13: acc 0.94 closed 0.94 reason 1368 tok  (792s)
+  [t10pp15] batch 7/13: acc 0.81 closed 0.88 reason 1488 tok  (934s)
+  [t10pp15] batch 8/13: acc 0.75 closed 0.94 reason 1561 tok  (1078s)
+  [t10pp15] batch 9/13: acc 0.88 closed 0.94 reason 1604 tok  (1223s)
+  [t10pp15] batch 10/13: acc 0.94 closed 1.00 reason 1270 tok  (1347s)
+  [t10pp15] batch 11/13: acc 1.00 closed 1.00 reason 1226 tok  (1453s)
+  [t10pp15] batch 12/13: acc 0.81 closed 0.88 reason 1808 tok  (1599s)
+  [t10pp15] batch 13/13: acc 0.75 closed 0.75 reason 1968 tok  (1693s)
+[t10pp15] acc 0.870  non-close 0.08  reason 1486  n_gen 1766  TTC median 384.0
+[nothink] nothink@think=off;T=0.6;pp=0
+  [nothink] batch 1/13: acc 0.81 closed 0.00 reason 277 tok  (6s)
+  [nothink] batch 2/13: acc 0.94 closed 0.00 reason 315 tok  (13s)
+  [nothink] batch 3/13: acc 0.88 closed 0.00 reason 278 tok  (23s)
+  [nothink] batch 4/13: acc 0.94 closed 0.00 reason 243 tok  (28s)
+  [nothink] batch 5/13: acc 0.94 closed 0.00 reason 258 tok  (36s)
+  [nothink] batch 6/13: acc 0.88 closed 0.00 reason 286 tok  (43s)
+  [nothink] batch 7/13: acc 0.94 closed 0.00 reason 253 tok  (49s)
+  [nothink] batch 8/13: acc 0.75 closed 0.00 reason 279 tok  (56s)
+  [nothink] batch 9/13: acc 0.88 closed 0.00 reason 281 tok  (64s)
+  [nothink] batch 10/13: acc 0.88 closed 0.00 reason 257 tok  (70s)
+  [nothink] batch 11/13: acc 0.81 closed 0.00 reason 309 tok  (77s)
+  [nothink] batch 12/13: acc 0.75 closed 0.00 reason 418 tok  (90s)
+  [nothink] batch 13/13: acc 0.75 closed 0.00 reason 332 tok  (97s)
+[nothink] acc 0.860  non-close   -    reason 290  n_gen 291  TTC median None
+[t10pp15-trunc1024] t10pp15-trunc1024@T=1.0;pp=1.5;trunc=1024
+  [t10pp15-trunc1024] batch 1/13: acc 0.88 closed 0.25 reason 961 tok  (32s)
+  [t10pp15-trunc1024] batch 2/13: acc 0.94 closed 0.25 reason 946 tok  (66s)
+  [t10pp15-trunc1024] batch 3/13: acc 0.81 closed 0.44 reason 859 tok  (100s)
+  [t10pp15-trunc1024] batch 4/13: acc 1.00 closed 0.62 reason 807 tok  (129s)
+  [t10pp15-trunc1024] batch 5/13: acc 0.94 closed 0.69 reason 835 tok  (181s)
+  [t10pp15-trunc1024] batch 6/13: acc 0.94 closed 0.56 reason 853 tok  (211s)
+  [t10pp15-trunc1024] batch 7/13: acc 0.88 closed 0.50 reason 913 tok  (244s)
+  [t10pp15-trunc1024] batch 8/13: acc 0.81 closed 0.44 reason 874 tok  (278s)
+  [t10pp15-trunc1024] batch 9/13: acc 0.94 closed 0.25 reason 934 tok  (326s)
+  [t10pp15-trunc1024] batch 10/13: acc 0.88 closed 0.56 reason 899 tok  (356s)
+  [t10pp15-trunc1024] batch 11/13: acc 1.00 closed 0.44 reason 938 tok  (389s)
+  [t10pp15-trunc1024] batch 12/13: acc 0.81 closed 0.31 reason 958 tok  (427s)
+  [t10pp15-trunc1024] batch 13/13: acc 0.75 closed 0.25 reason 972 tok  (452s)
+[t10pp15-trunc1024] acc 0.895  non-close 0.56  reason 901  n_gen 1232  TTC median 384.0
+saved /home/realdanielbyrne/limbic-llm/results/evolve/round12/stage1/c1_q3.json (no generated text); traces in /home/realdanielbyrne/limbic-data/ca2_traces/c1_q3

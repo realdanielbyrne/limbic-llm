@@ -1,0 +1,13 @@
+held-out (195 rows; selection 205; 97 settings scanned; probe cost 25 tok/probe)
+policy        setting                                         acc   tokens  front@T    Δacc            95% CI   saved
+best_and      and(consist-5,ent-64-0.5)                     0.826     2031    0.806  +0.019   [-0.015,+0.051]    1157
+best_consist  consist-5                                     0.800     1511    0.803  -0.003   [-0.032,+0.023]     -14
+best_ent      ent-64-0.5                                    0.133      482    0.210  -0.077   [-0.152,-0.021]     -74
+best_ngram    ngram-32-4-0.7                                0.831     3730    0.830  +0.001   [+0.000,+0.004]    -490
+best_or       or(ngram-32-4-0.7,consist-5)                  0.800     1511    0.803  -0.003   [-0.032,+0.023]     -14
+best_rep      rep-30-20                                     0.831     3720    0.830  +0.001   [+0.000,+0.005]    -480
+best_seen     seen-256-8-0.5                                0.815     3406    0.826  -0.010   [-0.026,+0.000]   -1826
+best_overall  consist-5                                     0.800     1511    0.803  -0.003   [-0.032,+0.023]     -14
+none                                                        0.831     3743    0.831  +0.000   [+0.000,+0.000]    -503
+oracle                                                      0.846      851    0.612  +0.234   [+0.179,+0.301]     -  
+saved /home/realdanielbyrne/limbic-llm/results/evolve/round12/stage1/c0_q35.json

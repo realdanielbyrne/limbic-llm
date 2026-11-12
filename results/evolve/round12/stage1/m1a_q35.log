@@ -1,0 +1,88 @@
+Loading weights:   0%|          | 0/320 [00:00<?, ?it/s]Loading weights: 100%|██████████| 320/320 [00:00<00:00, 13835.74it/s]
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+Qwen/Qwen3.5-2B-Base: 24 blocks, tap 12, 6 windowed (block 256), window check ok (block 3: far 0.0e+00 vs near 8.6e-01)
+loop side 4,380,675 params; MFA rank 1068: 4,381,742 (+0.024%)
+base: windowed 2.7900, full 2.2855
+
+== loop_s0: 4,380,675 trainable parameters
+step   100 loss 2.600 token_acc 0.480 inj 0.176 (37s)
+step   200 loss 2.277 token_acc 0.524 inj 0.215 (73s)
+step   300 loss 2.296 token_acc 0.511 inj 0.231 (110s)
+step   400 loss 2.048 token_acc 0.551 inj 0.238 (147s)
+step   500 loss 2.629 token_acc 0.446 inj 0.249 (184s)
+step   600 loss 2.076 token_acc 0.541 inj 0.255 (221s)
+step   700 loss 2.092 token_acc 0.548 inj 0.259 (257s)
+step   800 loss 2.257 token_acc 0.512 inj 0.261 (294s)
+step   900 loss 2.363 token_acc 0.492 inj 0.263 (331s)
+step  1000 loss 2.176 token_acc 0.510 inj 0.263 (368s)
+loop_s0: windowed+side 2.4175 (P5 format 2.4176), full+side 2.2610; foreign 2.4276, zero 2.4964, in_block 2.4480 (395s)
+
+== mfa_s0: 4,381,742 trainable parameters
+step   100 loss 2.532 token_acc 0.489 inj 0.252 (26s)
+step   200 loss 2.222 token_acc 0.528 inj 0.271 (52s)
+step   300 loss 2.238 token_acc 0.520 inj 0.286 (79s)
+step   400 loss 1.998 token_acc 0.557 inj 0.302 (105s)
+step   500 loss 2.542 token_acc 0.465 inj 0.314 (131s)
+step   600 loss 1.949 token_acc 0.561 inj 0.324 (157s)
+step   700 loss 1.977 token_acc 0.566 inj 0.331 (183s)
+step   800 loss 2.169 token_acc 0.531 inj 0.335 (210s)
+step   900 loss 2.286 token_acc 0.508 inj 0.337 (236s)
+step  1000 loss 2.081 token_acc 0.535 inj 0.337 (262s)
+mfa_s0: windowed+side 2.3820 (P5 format 2.3820), full+side 2.2494 (272s)
+
+== loop_s1: 4,380,675 trainable parameters
+step   100 loss 2.533 token_acc 0.466 inj 0.143 (37s)
+step   200 loss 2.631 token_acc 0.469 inj 0.201 (74s)
+step   300 loss 2.035 token_acc 0.549 inj 0.226 (111s)
+step   400 loss 2.429 token_acc 0.512 inj 0.242 (148s)
+step   500 loss 2.400 token_acc 0.502 inj 0.249 (185s)
+step   600 loss 2.187 token_acc 0.535 inj 0.255 (221s)
+step   700 loss 1.995 token_acc 0.563 inj 0.260 (258s)
+step   800 loss 2.199 token_acc 0.522 inj 0.263 (294s)
+step   900 loss 2.241 token_acc 0.521 inj 0.263 (331s)
+step  1000 loss 2.290 token_acc 0.514 inj 0.263 (368s)
+loop_s1: windowed+side 2.4157 (P5 format 2.4157), full+side 2.2584; foreign 2.4287, zero 2.4915, in_block 2.4340 (394s)
+
+== mfa_s1: 4,381,742 trainable parameters
+step   100 loss 2.472 token_acc 0.481 inj 0.252 (26s)
+step   200 loss 2.574 token_acc 0.469 inj 0.271 (52s)
+step   300 loss 1.990 token_acc 0.557 inj 0.287 (78s)
+step   400 loss 2.364 token_acc 0.520 inj 0.302 (105s)
+step   500 loss 2.339 token_acc 0.507 inj 0.314 (131s)
+step   600 loss 2.115 token_acc 0.544 inj 0.324 (157s)
+step   700 loss 1.891 token_acc 0.579 inj 0.331 (183s)
+step   800 loss 2.102 token_acc 0.540 inj 0.335 (209s)
+step   900 loss 2.137 token_acc 0.531 inj 0.337 (235s)
+step  1000 loss 2.186 token_acc 0.526 inj 0.337 (261s)
+mfa_s1: windowed+side 2.3775 (P5 format 2.3775), full+side 2.2462 (272s)
+
+gap closure (points; 95% bootstrap over 113 sequences)
+  loop/side/s0               73.83  [  71.93,   75.84]
+  loop/foreign/s0            71.83  [  69.91,   73.84]
+  loop/zero/s0               58.19  [  56.79,   59.60]
+  loop/in_block/s0           67.80  [  66.05,   69.68]
+  loop/side/s1               74.19  [  72.28,   76.14]
+  loop/foreign/s1            71.62  [  69.66,   73.66]
+  loop/zero/s1               59.16  [  57.76,   60.57]
+  loop/in_block/s1           70.56  [  68.80,   72.37]
+  mfa/side/s0                80.88  [  78.76,   83.09]
+  mfa/side/s1                81.77  [  79.59,   84.05]
+  loop/side/mean             74.01  [  72.14,   75.98]
+  loop/foreign/mean          71.73  [  69.80,   73.74]
+  loop/zero/mean             58.68  [  57.29,   60.09]
+  loop/in_block/mean         69.18  [  67.44,   71.02]
+  mfa/side/mean              81.33  [  79.20,   83.55]
+  loop − MFA s0             -7.05  [  -8.00,   -6.14]  p≤0 1.0000
+  loop − MFA s1             -7.58  [  -8.56,   -6.63]  p≤0 1.0000
+  loop − MFA mean           -7.32  [  -8.18,   -6.50]  p≤0 1.0000
+  drop foreign   s0          2.00  [   1.38,    2.62]
+  drop foreign   s1          2.57  [   1.92,    3.22]
+  drop foreign   mean        2.28  [   1.78,    2.79]
+  drop zero      s0         15.64  [  14.34,   16.97]
+  drop zero      s1         15.03  [  13.85,   16.28]
+  drop zero      mean       15.33  [  14.13,   16.59]
+  drop in_block  s0          6.03  [   5.38,    6.71]
+  drop in_block  s1          3.63  [   3.04,    4.24]
+  drop in_block  mean        4.83  [   4.26,    5.43]
+  gate (loop − MFA ≥ 3.0 closure points (seed mean)): fails
+saved results/evolve/round12/stage1/m1a_q35.json (1351s)

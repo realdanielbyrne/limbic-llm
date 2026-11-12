@@ -1,0 +1,80 @@
+Loading weights:   0%|          | 0/320 [00:00<?, ?it/s]Loading weights: 100%|██████████| 320/320 [00:00<00:00, 14262.25it/s]
+Qwen/Qwen3.5-2B: 64 rows of 200 with both labels; blocks [12, 15, 18], gains [0.05, 0.1, 0.2, 0.3], directions ['think', '-think', 'conclude', '-conclude', 'random0', 'random1']
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+  row 1/64 (1771 tokens)  10s
+  row 2/64 (4182 tokens)  23s
+  row 3/64 (4181 tokens)  36s
+  row 4/64 (4168 tokens)  50s
+  row 5/64 (4178 tokens)  63s
+  row 6/64 (4172 tokens)  77s
+  row 7/64 (4202 tokens)  90s
+  row 8/64 (4189 tokens)  104s
+  row 9/64 (4167 tokens)  117s
+  row 10/64 (4169 tokens)  131s
+  row 11/64 (4165 tokens)  144s
+  row 12/64 (4209 tokens)  158s
+  row 13/64 (4207 tokens)  171s
+  row 14/64 (1034 tokens)  175s
+  row 15/64 (4175 tokens)  189s
+  row 16/64 (4183 tokens)  202s
+  row 17/64 (4186 tokens)  216s
+  row 18/64 (4163 tokens)  229s
+  row 19/64 (4171 tokens)  243s
+  row 20/64 (1803 tokens)  249s
+  row 21/64 (4178 tokens)  263s
+  row 22/64 (4228 tokens)  276s
+  row 23/64 (4197 tokens)  290s
+  row 24/64 (4197 tokens)  303s
+  row 25/64 (4216 tokens)  317s
+  row 26/64 (4166 tokens)  330s
+  row 27/64 (4185 tokens)  344s
+  row 28/64 (4153 tokens)  357s
+  row 29/64 (1540 tokens)  363s
+  row 30/64 (4175 tokens)  376s
+  row 31/64 (4184 tokens)  390s
+  row 32/64 (4216 tokens)  403s
+  row 33/64 (4162 tokens)  417s
+  row 34/64 (4178 tokens)  430s
+  row 35/64 (4205 tokens)  444s
+  row 36/64 (4193 tokens)  457s
+  row 37/64 (4193 tokens)  471s
+  row 38/64 (4217 tokens)  484s
+  row 39/64 (4163 tokens)  498s
+  row 40/64 (4162 tokens)  511s
+  row 41/64 (4209 tokens)  525s
+  row 42/64 (4167 tokens)  538s
+  row 43/64 (4176 tokens)  552s
+  row 44/64 (4185 tokens)  565s
+  row 45/64 (4256 tokens)  579s
+  row 46/64 (4189 tokens)  592s
+  row 47/64 (1346 tokens)  598s
+  row 48/64 (4185 tokens)  611s
+  row 49/64 (4203 tokens)  625s
+  row 50/64 (4184 tokens)  638s
+  row 51/64 (4190 tokens)  652s
+  row 52/64 (1148 tokens)  656s
+  row 53/64 (4157 tokens)  669s
+  row 54/64 (4169 tokens)  683s
+  row 55/64 (4179 tokens)  696s
+  row 56/64 (4179 tokens)  710s
+  row 57/64 (623 tokens)  712s
+  row 58/64 (4196 tokens)  726s
+  row 59/64 (4177 tokens)  739s
+  row 60/64 (4147 tokens)  753s
+  row 61/64 (4173 tokens)  766s
+  row 62/64 (4174 tokens)  780s
+  row 63/64 (4152 tokens)  793s
+  row 64/64 (533 tokens)  795s
+no direction passes the gate: []; position-matched: []; saved /home/realdanielbyrne/limbic-llm/results/evolve/round12/stage1/c2screen_q35.json
+  L12 g0.05: think -0.071/-  -think +0.099/0.65  conclude +0.186/1.93  -conclude -0.126/-  random0 +0.066/3.41  random1 +0.098/1.75
+  L12 g0.1: think -0.118/-  -think +0.221/0.66  conclude +0.436/1.62  -conclude -0.209/-  random0 +0.157/2.39  random1 +0.222/1.64
+  L12 g0.2: think -0.139/-  -think +0.561/0.72  conclude +1.170/1.34  -conclude -0.243/-1.57  random0 +0.416/1.69  random1 +0.560/1.47
+  L12 g0.3: think -0.061/-  -think +1.012/0.76  conclude +2.278/1.16  -conclude -0.127/-0.26  random0 +0.773/1.49  random1 +1.013/1.39
+  L15 g0.05: think -0.036/-  -think +0.061/0.64  conclude +0.409/1.24  -conclude -0.347/-  random0 -0.023/-  random1 +0.026/1.17
+  L15 g0.1: think -0.041/-  -think +0.144/0.67  conclude +0.881/1.20  -conclude -0.632/-  random0 -0.025/-  random1 +0.071/1.16
+  L15 g0.2: think +0.033/sign  -think +0.387/0.74  conclude +2.012/1.12  -conclude -1.050/-  random0 +0.029/sign  random1 +0.211/1.11
+  L15 g0.3: think +0.217/sign  -think +0.730/0.78  conclude +3.358/1.04  -conclude -1.300/-  random0 +0.160/sign  random1 +0.417/1.09
+  L18 g0.05: think -0.175/-  -think +0.197/0.76  conclude +0.546/1.06  -conclude -0.504/-  random0 +0.041/sign  random1 -0.012/-1.36
+  L18 g0.1: think -0.329/-  -think +0.416/0.78  conclude +1.128/1.04  -conclude -0.963/-  random0 +0.115/7.73  random1 +0.005/0.11
+  L18 g0.2: think -0.580/-  -think +0.923/0.81  conclude +2.373/1.01  -conclude -1.753/-  random0 +0.336/2.71  random1 +0.137/0.76
+  L18 g0.3: think -0.762/-  -think +1.511/0.84  conclude +3.694/0.98  -conclude -2.380/-  random0 +0.659/2.00  random1 +0.383/0.95
